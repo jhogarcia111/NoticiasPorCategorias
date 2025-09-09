@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LinkedIn Token Exchange</title>
+</head>
+<body>
+    <script>
+        // Endpoint simple para intercambiar código por tokens
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        
+        if (!code) {
+            document.body.innerHTML = '<h1>Error: No code provided</h1>';
+        } else {
+            // Aquí harías la llamada real a LinkedIn
+            // Por ahora, retornamos datos mock
+            const mockTokens = {
+                access_token: 'mock_access_token_' + Date.now(),
+                expires_in: 3600,
+                refresh_token: 'mock_refresh_token_' + Date.now()
+            };
+            
+            // Enviar tokens de vuelta al parent window
+            if (window.opener) {
+                window.opener.postMessage({
+                    type: 'LINKEDIN_TOKENS',
+                    tokens: mockTokens
+                }, '*');
+                window.close();
+            } else {
+                document.body.innerHTML = '<h1>Tokens received: ' + JSON.stringify(mockTokens) + '</h1>';
+            }
+        }
+    </script>
+</body>
+</html>

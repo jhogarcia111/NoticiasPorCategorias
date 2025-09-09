@@ -1,0 +1,8 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/excelpar/NoticiasPorCategorias.excelparaejecutivos.net
+    - /bin/cp -r dist/* $DEPLOYPATH/
+    - /bin/cp -r dist/assets $DEPLOYPATH/
+    - /bin/cp dist/index.html $DEPLOYPATH/
+    - /bin/cp dist/favicon.ico $DEPLOYPATH/
