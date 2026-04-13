@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Supabase Connection</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Test de Conexión a Supabase</h1>
+    <button onclick="testSupabaseConnection()">Probar Conexión</button>
+    <button onclick="testInsert()">Probar Inserción</button>
+    <div id="results"></div>
+
+    <script>
+        // Configuración de Supabase
+        const supabaseUrl = 'https://ctwyiygyefrbpmgnlkgg.supabase.co'
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0d3lpeWd5ZWZyYnBtZ25sa2dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTczODYyMjAsImV4cCI6MjA3Mjk2MjIyMH0.P1w0j_F7W8FtJ5-PTZkyKI-0x5-4Tq9Bl-FmsKbLtAM'
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey)
+
+        async function testSupabaseConnection() {
+            const resultsDiv = document.getElementById('results')
+            resultsDiv.innerHTML = '<h3>Probando conexión...</h3>'
+            
+            try {
+                // Test 1: Verificar conexión
+                const { data, error } = await supabase
+                    .from('linkedin_profiles')
+                    .select('count')
+                    .limit(1)
+                
+                if (error) {
+                    resultsDiv.innerHTML += `<p style="color: red;">Error de conexión: ${JSON.stringify(error)}</p>`
+                } else {
+                    resultsDiv.innerHTML += `<p style="color: green;">✅ Conexión exitosa</p>`
+                }
+                
+                // Test 2: Verificar estructura de tabla
+                const { data: tableData, error: tableError } = await supabase
+                    .from('linkedin_profiles')
+                    .select('*')
+                    .limit(0)
+                
+                if (tableError) {
+                    resultsDiv.innerHTML += `<p style="color: red;">Error de tabla: ${JSON.stringify(tableError)}</p>`
+                } else {
+                    resultsDiv.innerHTML += `<p style="color: green;">✅ Tabla accesible</p>`
+                }
+                
+            } catch (err) {
+                resultsDiv.innerHTML += `<p style="color: red;">Error general: ${err.message}</p>`
+            }
+        }
+
+        async function testInsert() {
+            const resultsDiv = document.getElementById('results')
+            resultsDiv.innerHTML += '<h3>Probando inserción...</h3>'
+            
+            try {
+                const testData = {
+                    user_id: '00000000-0000-0000-0000-000000000000',
+                    linkedin_id: 'test_app_' + Date.now(),
+                    first_name: 'Test',
+                    last_name: 'App',
+                    email: 'test@app.com',
+                    access_token: 'test_token',
+                    refresh_token: 'test_refresh',
+                    is_active: true,
+                    is_primary: false
+                }
+                
+                console.log('Datos a insertar:', testData)
+                
+                const { data, error } = await supabase
+                    .from('linkedin_profiles')
+                    .insert([testData])
+                    .select()
+                
+                if (error) {
+                    resultsDiv.innerHTML += `<p style="color: red;">Error de inserción: ${JSON.stringify(error)}</p>`
+                } else {
+                    resultsDiv.innerHTML += `<p style="color: green;">✅ Inserción exitosa: ${JSON.stringify(data)}</p>`
+                }
+                
+            } catch (err) {
+                resultsDiv.innerHTML += `<p style="color: red;">Error general: ${err.message}</p>`
+            }
+        }
+    </script>
+</body>
+</html>

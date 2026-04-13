@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { supabase } from '../services/supabase'
 import {
   getLinkedInProfiles,
   saveLinkedInProfile,
@@ -31,20 +32,41 @@ export const useConnectLinkedIn = () => {
       const tokens = await exchangeCodeForTokens(code)
       
       // Obtener información del perfil usando proxy
+      console.log('LinkedIn Hook: About to fetch profile and email...')
       const [profile, email] = await Promise.all([
         getLinkedInProfile(tokens.access_token),
         getLinkedInEmail(tokens.access_token)
       ])
+      console.log('LinkedIn Hook: Profile and email fetched successfully')
 
       // Combinar datos del perfil
+      console.log('LinkedIn Hook: Combining profile data...')
       const profileData = {
         ...profile,
         email
       }
+      console.log('LinkedIn Hook: Profile data combined:', profileData)
 
       // Guardar en la base de datos
       console.log('LinkedIn Hook: About to save profile to database...')
-      const result = await saveLinkedInProfile(profileData, tokens)
+      
+      // Intentar obtener el userId del contexto de autenticación
+      let userId = null
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        userId = user?.id
+        console.log('LinkedIn Hook: Got userId from auth context:', userId)
+      } catch (error) {
+        console.warn('LinkedIn Hook: Could not get userId from auth context:', error.message)
+      }
+      
+      console.log('LinkedIn Hook: Calling saveLinkedInProfile with:', {
+        profileData: profileData,
+        tokens: tokens,
+        userId: userId
+      })
+      
+      const result = await saveLinkedInProfile(profileData, tokens, userId)
       console.log('LinkedIn Hook: Profile saved successfully:', result)
       return result
     },

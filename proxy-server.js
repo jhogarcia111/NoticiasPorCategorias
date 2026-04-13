@@ -59,10 +59,9 @@ app.get('/linkedin/profile', async (req, res) => {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 8000) // 8 segundos timeout
     
-    const response = await fetch('https://api.linkedin.com/v2/people/~', {
+    const response = await fetch('https://api.linkedin.com/v2/userinfo', {
       headers: {
         'Authorization': `Bearer ${access_token}`,
-        'X-Restli-Protocol-Version': '2.0.0',
       },
       signal: controller.signal
     })

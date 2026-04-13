@@ -9,3 +9,13 @@ TOp6nmaXb4vk@J!F
 deepseek
 publicadordenoticias
 sk-7d6f859498004f66ad390fe5b7012890
+
+
+
+http://localhost:3000/auth/linkedin/callback
+https://publicadordenoticias.excelparaejecutivos.net/auth/linkedin/callback
+
+
+N1Mar.!832
+
+VITE_LINKEDIN_REDIRECT_URI=https://publicadordenoticias.excelparaejecutivos.net/auth/linkedin/callback

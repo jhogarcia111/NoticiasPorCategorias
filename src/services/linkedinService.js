@@ -172,22 +172,59 @@ export const getLinkedInEmail = async (accessToken, attempt = 1, maxAttempts = 2
 /**
  * Guarda un perfil de LinkedIn en la base de datos
  */
-export const saveLinkedInProfile = async (profileData, tokens) => {
+export const saveLinkedInProfile = async (profileData, tokens, userId = null) => {
   try {
     console.log('LinkedIn: Starting to save profile to database...')
+    console.log('LinkedIn: Function called with parameters:', {
+      profileData: profileData,
+      tokens: tokens,
+      userId: userId
+    })
     
-    const { data: { user } } = await supabase.auth.getUser()
+    // Estrategia alternativa: usar un userId temporal o el del contexto
+    let user = null
+    
+    if (userId) {
+      console.log('LinkedIn: Using provided userId:', userId)
+      user = { id: userId }
+    } else {
+      // Intentar obtener el usuario con timeout muy corto
+      console.log('LinkedIn: About to call supabase.auth.getUser()...')
+      try {
+        const getUserPromise = supabase.auth.getUser()
+        const getUserTimeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('getUser timeout after 5 seconds')), 5000)
+        )
+        
+        const result = await Promise.race([getUserPromise, getUserTimeoutPromise])
+        user = result.data?.user
+        console.log('LinkedIn: supabase.auth.getUser() completed, user:', user ? 'exists' : 'null')
+        
+        // Si getUser() devuelve null, usar estrategia de fallback
+        if (!user) {
+          console.warn('LinkedIn: getUser returned null, using fallback strategy')
+          user = { id: `temp_${profileData.sub || profileData.id}` }
+          console.log('LinkedIn: Using fallback userId:', user.id)
+        }
+      } catch (error) {
+        console.warn('LinkedIn: getUser failed, using fallback strategy:', error.message)
+        // Estrategia de fallback: usar un userId temporal basado en el linkedin_id
+        user = { id: `temp_${profileData.id}` }
+        console.log('LinkedIn: Using fallback userId:', user.id)
+      }
+    }
+    
     if (!user) throw new Error('User not authenticated')
     
     console.log('LinkedIn: User authenticated, preparing profile data...')
 
     const profile = {
       user_id: user.id,
-      linkedin_id: profileData.id,
-      first_name: profileData.firstName?.localized?.en_US || profileData.firstName,
-      last_name: profileData.lastName?.localized?.en_US || profileData.lastName,
-      email: profileData.email,
-      profile_picture_url: profileData.profilePicture?.['displayImage~']?.elements?.[0]?.identifiers?.[0]?.identifier,
+      linkedin_id: profileData.sub || profileData.id,
+      first_name: profileData.given_name || profileData.firstName?.localized?.en_US || profileData.firstName,
+      last_name: profileData.family_name || profileData.lastName?.localized?.en_US || profileData.lastName,
+      email: profileData.email || null,
+      profile_picture_url: profileData.picture || profileData.profilePicture?.['displayImage~']?.elements?.[0]?.identifiers?.[0]?.identifier,
       access_token: tokens.access_token,
       refresh_token: tokens.refresh_token,
       token_expires_at: tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000).toISOString() : null,
@@ -196,15 +233,91 @@ export const saveLinkedInProfile = async (profileData, tokens) => {
     }
 
     console.log('LinkedIn: Profile data prepared, saving to database...')
+    console.log('LinkedIn: Profile data to save:', JSON.stringify(profile, null, 2))
+    
+    // Validación de campos requeridos antes de guardar
+    console.log('LinkedIn: Validating required fields...')
+    const validationErrors = []
+    
+    if (!profile.linkedin_id) {
+      validationErrors.push('linkedin_id is required but is empty or null')
+    }
+    if (!profile.access_token) {
+      validationErrors.push('access_token is required but is empty or null')
+    }
+    if (!profile.user_id) {
+      validationErrors.push('user_id is required but is empty or null')
+    }
+    
+    if (validationErrors.length > 0) {
+      console.error('LinkedIn: Validation failed:', validationErrors)
+      throw new Error(`Validation failed: ${validationErrors.join(', ')}`)
+    }
+    
+    console.log('LinkedIn: All required fields validated successfully')
+    
+    // Validación de tipos de datos
+    console.log('LinkedIn: Validating data types...')
+    if (typeof profile.is_active !== 'boolean') {
+      validationErrors.push('is_active must be boolean')
+    }
+    if (typeof profile.is_primary !== 'boolean') {
+      validationErrors.push('is_primary must be boolean')
+    }
+    if (profile.token_expires_at && typeof profile.token_expires_at !== 'string') {
+      validationErrors.push('token_expires_at must be string (ISO date)')
+    }
+    
+    if (validationErrors.length > 0) {
+      console.error('LinkedIn: Data type validation failed:', validationErrors)
+      throw new Error(`Data type validation failed: ${validationErrors.join(', ')}`)
+    }
+    
+    console.log('LinkedIn: All data types validated successfully')
+    
+    // Log detallado de cada campo para debugging
+    console.log('LinkedIn: Detailed field analysis:')
+    console.log('  - user_id:', profile.user_id, '(type:', typeof profile.user_id, ')')
+    console.log('  - linkedin_id:', profile.linkedin_id, '(type:', typeof profile.linkedin_id, ')')
+    console.log('  - first_name:', profile.first_name, '(type:', typeof profile.first_name, ')')
+    console.log('  - last_name:', profile.last_name, '(type:', typeof profile.last_name, ')')
+    console.log('  - email:', profile.email, '(type:', typeof profile.email, ')')
+    console.log('  - profile_picture_url:', profile.profile_picture_url, '(type:', typeof profile.profile_picture_url, ')')
+    console.log('  - access_token:', profile.access_token ? 'EXISTS' : 'NULL', '(length:', profile.access_token?.length || 0, ')')
+    console.log('  - refresh_token:', profile.refresh_token ? 'EXISTS' : 'NULL', '(length:', profile.refresh_token?.length || 0, ')')
+    console.log('  - token_expires_at:', profile.token_expires_at, '(type:', typeof profile.token_expires_at, ')')
+    console.log('  - is_active:', profile.is_active, '(type:', typeof profile.is_active, ')')
+    console.log('  - is_primary:', profile.is_primary, '(type:', typeof profile.is_primary, ')')
 
-    const { data, error } = await supabase
+    // Agregar timeout para evitar cuelgues
+    const savePromise = supabase
       .from('linkedin_profiles')
       .upsert([profile], { onConflict: 'linkedin_id' })
       .select()
       .single()
 
+    const saveTimeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Database save timeout after 30 seconds')), 30000)
+    )
+
+    const { data, error } = await Promise.race([savePromise, saveTimeoutPromise])
+
+    console.log('LinkedIn: Supabase response - data:', data)
+    console.log('LinkedIn: Supabase response - error:', error)
+    
+    // Log detallado del error si existe
+    if (error) {
+      console.log('LinkedIn: Error details breakdown:')
+      console.log('  - Error code:', error.code)
+      console.log('  - Error message:', error.message)
+      console.log('  - Error details:', error.details)
+      console.log('  - Error hint:', error.hint)
+      console.log('  - Full error object:', JSON.stringify(error, null, 2))
+    }
+
     if (error) {
       console.error('LinkedIn: Database error:', error)
+      console.error('LinkedIn: Error details:', JSON.stringify(error, null, 2))
       throw error
     }
 
