@@ -7,3 +7,8 @@ env-*.txt
 *credentials*
 *secrets*
 dist/
+.next/
+*.tsbuildinfo
+next-env.d.ts
+packages/database/drizzle/
+.turbo/
