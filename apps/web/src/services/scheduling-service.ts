@@ -1,8 +1,9 @@
-import { db } from "@/lib/db"
+import { getDb } from "@/lib/db"
 import { schedulingConfigs, scheduledPosts } from "@noticias/database"
 import { eq, and, gte, lte, asc } from "drizzle-orm"
 
 export async function getSchedulingConfigs(userId: string) {
+  const db = getDb()
   return db
     .select()
     .from(schedulingConfigs)
@@ -11,6 +12,7 @@ export async function getSchedulingConfigs(userId: string) {
 }
 
 export async function saveSchedulingConfig(userId: string, linkedinProfileId: number, config: any) {
+  const db = getDb()
   const [saved] = await db
     .insert(schedulingConfigs)
     .values({
@@ -29,6 +31,7 @@ export async function saveSchedulingConfig(userId: string, linkedinProfileId: nu
 }
 
 export async function getScheduledPosts(userId: string, filters: any = {}) {
+  const db = getDb()
   const conditions = [eq(scheduledPosts.userId, userId)]
 
   if (filters.status) conditions.push(eq(scheduledPosts.status, filters.status))
@@ -45,6 +48,7 @@ export async function getScheduledPosts(userId: string, filters: any = {}) {
 }
 
 export async function schedulePost(userId: string, postData: any) {
+  const db = getDb()
   const [post] = await db
     .insert(scheduledPosts)
     .values({ userId, ...postData })
@@ -54,6 +58,7 @@ export async function schedulePost(userId: string, postData: any) {
 }
 
 export async function updateScheduledPost(postId: number, updates: any) {
+  const db = getDb()
   const [updated] = await db
     .update(scheduledPosts)
     .set({ ...updates, updatedAt: new Date() })
@@ -68,6 +73,7 @@ export async function cancelScheduledPost(postId: number) {
 }
 
 export async function deleteScheduledPost(postId: number) {
+  const db = getDb()
   await db.delete(scheduledPosts).where(eq(scheduledPosts.id, postId))
 }
 

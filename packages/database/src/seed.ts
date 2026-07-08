@@ -1,6 +1,8 @@
-import { db } from "./db"
+import { getDb } from "./db"
 import { categories } from "./schema"
 import { eq } from "drizzle-orm"
+
+const db = getDb()
 
 const defaultCategories = [
   { name: "Tecnolog\u00eda", description: "Noticias sobre tecnolog\u00eda, startups y innovaci\u00f3n", newsapiCategory: "technology", providerType: "newsapi", isActive: true },

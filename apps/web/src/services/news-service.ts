@@ -1,4 +1,4 @@
-import { db } from "@/lib/db"
+import { getDb } from "@/lib/db"
 import { news, categories } from "@noticias/database"
 import { eq, desc, and, sql } from "drizzle-orm"
 
@@ -45,6 +45,7 @@ export async function getNewsFromDatabase(options: {
   if (categoryId) conditions.push(eq(news.categoryId, categoryId))
   if (processed !== null) conditions.push(eq(news.isProcessed, processed))
 
+  const db = getDb()
   const query = db
     .select()
     .from(news)
@@ -59,6 +60,7 @@ export async function getNewsFromDatabase(options: {
 }
 
 export async function processAndSaveNews(articles: any[], categoryId: number) {
+  const db = getDb()
   const processedNews = []
 
   for (const article of articles) {
@@ -91,6 +93,7 @@ export async function processAndSaveNews(articles: any[], categoryId: number) {
 }
 
 export async function markNewsAsProcessed(newsIds: number[]) {
+  const db = getDb()
   await db
     .update(news)
     .set({ isProcessed: true })
@@ -98,5 +101,6 @@ export async function markNewsAsProcessed(newsIds: number[]) {
 }
 
 export async function deleteAllNews() {
+  const db = getDb()
   await db.delete(news)
 }

@@ -1,6 +1,6 @@
 import NextAuth from "next-auth"
 import type { NextAuthConfig } from "next-auth"
-import { db, profiles } from "@noticias/database"
+import { getDb, profiles } from "@noticias/database"
 import { eq } from "drizzle-orm"
 
 export const authConfig: NextAuthConfig = {
@@ -37,7 +37,7 @@ export const authConfig: NextAuthConfig = {
       if (token.sub && session.user) {
         session.user.id = token.sub
 
-        const [profile] = await db
+        const [profile] = await getDb()
           .select()
           .from(profiles)
           .where(eq(profiles.id, token.sub))

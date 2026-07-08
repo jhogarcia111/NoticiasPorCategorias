@@ -1,11 +1,10 @@
-import { db } from "@/lib/db"
-import { linkedinProfiles, scheduledPosts } from "@noticias/database"
+import { getDb } from "@/lib/db"
+import { linkedinProfiles } from "@noticias/database"
 import { eq, and } from "drizzle-orm"
 
 const LINKEDIN_CLIENT_ID = process.env.VITE_LINKEDIN_CLIENT_ID || process.env.NEXT_PUBLIC_LINKEDIN_CLIENT_ID || ""
 const LINKEDIN_CLIENT_SECRET = process.env.VITE_LINKEDIN_CLIENT_SECRET || process.env.LINKEDIN_CLIENT_SECRET || ""
 const LINKEDIN_REDIRECT_URI = process.env.VITE_LINKEDIN_REDIRECT_URI || process.env.NEXT_PUBLIC_LINKEDIN_REDIRECT_URI || ""
-const LINKEDIN_API_URL = "https://api.linkedin.com/v2"
 
 export function getLinkedInAuthUrl() {
   const state = Math.random().toString(36).substring(7)
@@ -49,6 +48,7 @@ export async function getLinkedInProfile(accessToken: string) {
 }
 
 export async function saveLinkedInProfile(profileData: any, tokens: any, userId: string) {
+  const db = getDb()
   const [profile] = await db
     .insert(linkedinProfiles)
     .values({
@@ -72,6 +72,7 @@ export async function saveLinkedInProfile(profileData: any, tokens: any, userId:
 }
 
 export async function getLinkedInProfiles(userId: string) {
+  const db = getDb()
   return db
     .select()
     .from(linkedinProfiles)
@@ -80,6 +81,7 @@ export async function getLinkedInProfiles(userId: string) {
 }
 
 export async function disconnectLinkedInProfile(profileId: number) {
+  const db = getDb()
   await db
     .update(linkedinProfiles)
     .set({ isActive: false })

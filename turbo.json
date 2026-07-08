@@ -4,15 +4,29 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
+      "env": [
+        "DATABASE_URL",
+        "AUTH_SECRET",
+        "AUTH_URL",
+        "SUPABASE_URL",
+        "SUPABASE_ANON_KEY",
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+        "VITE_LINKEDIN_CLIENT_ID",
+        "VITE_LINKEDIN_CLIENT_SECRET",
+        "VITE_LINKEDIN_REDIRECT_URI",
+        "VITE_NEWSAPI_KEY",
+        "VITE_DEEPSEEK_API_KEY",
+        "VITE_SUPABASE_URL",
+        "VITE_SUPABASE_ANON_KEY",
+        "NEXT_PUBLIC_APP_URL"
+      ]
     },
     "dev": {
       "cache": false,
       "persistent": true
     },
-    "lint": {},
-    "db:generate": {},
-    "db:migrate": {},
-    "db:push": {}
+    "lint": {}
   }
 }

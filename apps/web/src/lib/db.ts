@@ -1,1 +1,1 @@
-export { db } from "@noticias/database"
+export { getDb } from "@noticias/database"
