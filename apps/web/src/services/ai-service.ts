@@ -1,5 +1,5 @@
 const DEEPSEEK_API_URL = "https://api.deepseek.com/v1"
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY
+const DEEPSEEK_API_KEY = process.env.VITE_DEEPSEEK_API_KEY || process.env.DEEPSEEK_API_KEY
 
 async function callDeepSeek(prompt: string, maxTokens = 300) {
   if (!DEEPSEEK_API_KEY) throw new Error("DeepSeek API key not configured")

@@ -2,9 +2,9 @@ import { db } from "@/lib/db"
 import { linkedinProfiles, scheduledPosts } from "@noticias/database"
 import { eq, and } from "drizzle-orm"
 
-const LINKEDIN_CLIENT_ID = process.env.NEXT_PUBLIC_LINKEDIN_CLIENT_ID || ""
-const LINKEDIN_CLIENT_SECRET = process.env.LINKEDIN_CLIENT_SECRET || ""
-const LINKEDIN_REDIRECT_URI = process.env.NEXT_PUBLIC_LINKEDIN_REDIRECT_URI || ""
+const LINKEDIN_CLIENT_ID = process.env.VITE_LINKEDIN_CLIENT_ID || process.env.NEXT_PUBLIC_LINKEDIN_CLIENT_ID || ""
+const LINKEDIN_CLIENT_SECRET = process.env.VITE_LINKEDIN_CLIENT_SECRET || process.env.LINKEDIN_CLIENT_SECRET || ""
+const LINKEDIN_REDIRECT_URI = process.env.VITE_LINKEDIN_REDIRECT_URI || process.env.NEXT_PUBLIC_LINKEDIN_REDIRECT_URI || ""
 const LINKEDIN_API_URL = "https://api.linkedin.com/v2"
 
 export function getLinkedInAuthUrl() {

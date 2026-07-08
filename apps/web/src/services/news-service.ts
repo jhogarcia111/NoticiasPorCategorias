@@ -3,7 +3,7 @@ import { news, categories } from "@noticias/database"
 import { eq, desc, and, sql } from "drizzle-orm"
 
 const NEWSAPI_BASE_URL = "https://newsapi.org/v2"
-const NEWSAPI_KEY = process.env.NEXT_PUBLIC_NEWSAPI_KEY
+const NEWSAPI_KEY = process.env.VITE_NEWSAPI_KEY || process.env.NEXT_PUBLIC_NEWSAPI_KEY
 
 export async function fetchNewsFromAPI(options: {
   category?: string

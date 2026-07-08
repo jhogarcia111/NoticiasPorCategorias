@@ -1,5 +1,6 @@
 import { db } from "./db"
 import { categories } from "./schema"
+import { eq } from "drizzle-orm"
 
 const defaultCategories = [
   { name: "Tecnolog\u00eda", description: "Noticias sobre tecnolog\u00eda, startups y innovaci\u00f3n", newsapiCategory: "technology", providerType: "newsapi", isActive: true },
@@ -13,9 +14,11 @@ async function seed() {
   console.log("Seeding database...")
 
   for (const cat of defaultCategories) {
-    const existing = await db.select().from(categories).where(
-      Object.assign({}, { name: cat.name })
-    )
+    const existing = await db
+      .select()
+      .from(categories)
+      .where(eq(categories.name, cat.name))
+      .limit(1)
 
     if (existing.length === 0) {
       await db.insert(categories).values(cat)

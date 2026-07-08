@@ -1,7 +1,6 @@
 import NextAuth from "next-auth"
 import type { NextAuthConfig } from "next-auth"
-import { db } from "@noticias/database"
-import { profiles } from "@noticias/database"
+import { db, profiles } from "@noticias/database"
 import { eq } from "drizzle-orm"
 
 export const authConfig: NextAuthConfig = {

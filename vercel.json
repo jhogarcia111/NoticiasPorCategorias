@@ -1,7 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "turbo build",
-  "ignoreCommand": "npx turbo-ignore",
+  "buildCommand": "npx turbo build --filter=web",
+  "installCommand": "npm install --legacy-peer-deps",
   "framework": "nextjs",
-  "outputDirectory": "apps/web/.next"
+  "rootDirectory": "apps/web",
+  "outputDirectory": ".next"
 }
