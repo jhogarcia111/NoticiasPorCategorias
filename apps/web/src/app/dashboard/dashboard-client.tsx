@@ -11,12 +11,13 @@ import { AutoScheduleNews } from "@/components/scheduling/auto-schedule-news"
 import { AIManager } from "@/components/ai/ai-manager"
 import { EditProfileDialog } from "@/components/edit-profile-dialog"
 import { SourcesManager } from "@/components/sources/sources-manager"
+import { CategoryManager } from "@/components/categories/category-manager"
 
 interface DashboardClientProps {
   user: Session["user"]
 }
 
-type Tab = "news" | "linkedin" | "scheduling" | "ai" | "sources"
+type Tab = "news" | "linkedin" | "scheduling" | "ai" | "sources" | "categories"
 
 export default function DashboardClient({ user }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<Tab>("news")
@@ -29,6 +30,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     { id: "scheduling", label: "Programación" },
     { id: "ai", label: "IA" },
     { id: "sources", label: "Fuentes" },
+    { id: "categories", label: "Categorías" },
   ]
 
   const schedulingTabs = [
@@ -103,6 +105,8 @@ export default function DashboardClient({ user }: DashboardClientProps) {
         {activeTab === "ai" && <AIManager />}
 
         {activeTab === "sources" && <SourcesManager />}
+
+        {activeTab === "categories" && <CategoryManager />}
       </main>
 
       <EditProfileDialog isOpen={showEditProfile} onClose={() => setShowEditProfile(false)} />

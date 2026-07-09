@@ -84,7 +84,7 @@ async function fetchRSSFeed(url: string) {
 
 export async function POST(request: Request) {
   try {
-    const { categoryId } = await request.json().catch(() => ({}))
+    const { categoryId, query } = await request.json().catch(() => ({}))
     const db = getDb()
 
     let cats
@@ -113,6 +113,9 @@ export async function POST(request: Request) {
 
     const results = []
 
+    // If a keyword query is provided, use it as a search across all active categories
+    const useQuery = query?.trim() || null
+
     for (const cat of cats) {
       const catResult: any = {
         category: cat.name,
@@ -126,8 +129,9 @@ export async function POST(request: Request) {
       try {
         if (cat.newsapiCategory && NEWSAPI_KEY) {
           const articles = await fetchNewsFromAPI({
-            category: cat.newsapiCategory || "technology",
+            category: cat.newsapiCategory,
             pageSize: 10,
+            query: useQuery || undefined,
           }).catch((e) => {
             catResult.errors.push(`NewsAPI: ${e.message}`)
             return []

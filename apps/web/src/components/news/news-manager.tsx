@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,8 +14,15 @@ import {
   Circle,
   Download,
   Filter,
+  Hash,
+  ToggleLeft,
+  ToggleRight,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+
+interface Category {
+  id: number; name: string; isActive: boolean; newsapiCategory: string | null
+}
 
 export function NewsManager() {
   const [searchQuery, setSearchQuery] = useState("")
@@ -23,6 +30,15 @@ export function NewsManager() {
   const [showUnprocessed, setShowUnprocessed] = useState(false)
   const [selectedNewsIds, setSelectedNewsIds] = useState<number[]>([])
   const [alert, setAlert] = useState<{ variant: string; title: string; message: string } | null>(null)
+  const [keywordSearch, setKeywordSearch] = useState("")
+
+  const [categories, setCategories] = useState<Category[]>([])
+
+  useEffect(() => {
+    fetch("/api/categories").then(r => r.json()).then(d => {
+      setCategories(d.data || [])
+    }).catch(() => {})
+  }, [])
 
   const { data: newsData, isLoading } = useNews({
     categoryId: selectedCategory,
@@ -55,9 +71,10 @@ export function NewsManager() {
 
   const handleCollectNews = async () => {
     try {
-      const result = await collectMutation.mutateAsync(undefined)
+      const opts: any = {}
+      if (keywordSearch.trim()) opts.query = keywordSearch.trim()
+      const result = await collectMutation.mutateAsync(opts)
       const data = result?.data || result || []
-      const summary = result?.summary || {}
       const totalCollected = Array.isArray(data)
         ? data.reduce((sum: number, cat: any) => sum + (cat.collected || 0), 0)
         : 0
@@ -165,14 +182,14 @@ export function NewsManager() {
         <CardHeader>
           <CardTitle>Filtros y Búsqueda</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Buscar noticias</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Buscar en resultados</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Buscar por título o contenido..."
+                  placeholder="Filtrar noticias cargadas..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
@@ -187,12 +204,27 @@ export function NewsManager() {
                 className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="">Todas las categorías</option>
-                <option value="1">Tecnología</option>
-                <option value="2">Negocios</option>
-                <option value="3">Finanzas</option>
-                <option value="4">Salud</option>
-                <option value="5">Ciencia</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name} {!cat.isActive ? "(inactiva)" : ""}
+                  </option>
+                ))}
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Buscar por keyword</label>
+              <div className="relative">
+                <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Ej: OpenClaw, ciberseguridad..."
+                  value={keywordSearch}
+                  onChange={(e) => setKeywordSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Busca en NewsAPI + RSS. Se combina con "Recolectar Noticias"
+              </p>
             </div>
             <div className="flex items-end">
               <label className="flex items-center space-x-2 cursor-pointer">
@@ -205,6 +237,20 @@ export function NewsManager() {
                 <span className="text-sm text-gray-700">Solo no procesadas</span>
               </label>
             </div>
+          </div>
+
+          {/* Active categories indicator */}
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t">
+            <span className="text-xs text-muted-foreground font-medium">Categorías activas:</span>
+            {categories.filter(c => c.isActive).length === 0 ? (
+              <span className="text-xs text-destructive">Ninguna — desactiva desde la pestaña Categorías</span>
+            ) : (
+              categories.filter(c => c.isActive).map(cat => (
+                <Badge key={cat.id} variant="secondary" className="text-xs">
+                  {cat.name}
+                </Badge>
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
