@@ -36,6 +36,8 @@ export function SourcesManager() {
   const [form, setForm] = useState({ name: "", url: "", type: "rss", categoryId: "", language: "es" })
   const [saving, setSaving] = useState(false)
   const [alert, setAlert] = useState<{ type: "success" | "error"; message: string } | null>(null)
+  const [testingId, setTestingId] = useState<number | null>(null)
+  const [testResults, setTestResults] = useState<Record<number, { ok: boolean; count?: number; error?: string }>>({})
 
   const fetchSources = async () => {
     try {
@@ -57,6 +59,29 @@ export function SourcesManager() {
   const showAlert = (type: "success" | "error", message: string) => {
     setAlert({ type, message })
     setTimeout(() => setAlert(null), 4000)
+  }
+
+  const handleTest = async (source: NewsSource) => {
+    setTestingId(source.id)
+    try {
+      const res = await fetch("/api/sources/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: source.url }),
+      })
+      const data = await res.json()
+      if (res.ok && data.data) {
+        const { items, feedTitle } = data.data
+        setTestResults((prev) => ({ ...prev, [source.id]: { ok: true, count: items } }))
+        showAlert("success", `✅ "${feedTitle}": ${items} artículos encontrados`)
+      } else {
+        throw new Error(data.error || "Error al probar feed")
+      }
+    } catch (e: any) {
+      setTestResults((prev) => ({ ...prev, [source.id]: { ok: false, error: e.message } }))
+      showAlert("error", `❌ ${source.name}: ${e.message}`)
+    }
+    setTestingId(null)
   }
 
   const handleAdd = async () => {
@@ -312,6 +337,22 @@ export function SourcesManager() {
                     >
                       {source.isActive ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
                     </button>
+                    <button
+                      onClick={() => handleTest(source)}
+                      disabled={testingId === source.id}
+                      className="p-2 rounded-md text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-30"
+                      title="Probar fuente"
+                    >
+                      {testingId === source.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                    </button>
+                    {testResults[source.id] && (
+                      <span className={cn(
+                        "text-xs font-medium",
+                        testResults[source.id].ok ? "text-green-600" : "text-red-600"
+                      )}>
+                        {testResults[source.id].ok ? `${testResults[source.id].count}` : "!"}
+                      </span>
+                    )}
                     <button
                       onClick={() => window.open(source.url, "_blank")}
                       className="p-2 rounded-md text-muted-foreground hover:bg-muted transition-colors"

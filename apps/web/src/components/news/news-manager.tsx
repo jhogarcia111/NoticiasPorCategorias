@@ -55,19 +55,33 @@ export function NewsManager() {
 
   const handleCollectNews = async () => {
     try {
-      const data = await collectMutation.mutateAsync(undefined) || []
-      const totalCollected = data.reduce((sum: number, cat: any) => sum + (cat.collected || 0), 0)
+      const result = await collectMutation.mutateAsync(undefined)
+      const data = result?.data || result || []
+      const summary = result?.summary || {}
+      const totalCollected = Array.isArray(data)
+        ? data.reduce((sum: number, cat: any) => sum + (cat.collected || 0), 0)
+        : 0
+
+      const details = Array.isArray(data)
+        ? data.map((cat: any) => {
+            const errors = cat.errors?.filter(Boolean) || []
+            const src = cat.sources?.filter(Boolean) || []
+            return `${cat.category}: ${cat.collected || 0} noticias${src.length ? ` [${src.join(", ")}]` : ""}${errors.length ? ` ⚠ ${errors.join("; ")}` : ""}`
+          }).join("\n")
+        : ""
+
       if (totalCollected > 0) {
         setAlert({
           variant: "success",
-          title: "Noticias recolectadas exitosamente",
-          message: `Se recolectaron ${totalCollected} noticias nuevas de ${data.length} categorías.`,
+          title: `✓ ${totalCollected} noticias recolectadas`,
+          message: details,
         })
       } else {
+        const hasErrors = Array.isArray(data) && data.some((c: any) => c.errors?.length)
         setAlert({
-          variant: "info",
-          title: "Recolección completada",
-          message: "No se encontraron noticias nuevas.",
+          variant: hasErrors ? "error" : "info",
+          title: hasErrors ? "⚠ Recolección con errores" : "Recolección completada",
+          message: details || "No se encontraron noticias nuevas.",
         })
       }
     } catch (error: any) {
@@ -77,7 +91,7 @@ export function NewsManager() {
         message: error.message || "Ocurrió un error al recolectar noticias.",
       })
     }
-    setTimeout(() => setAlert(null), 5000)
+    setTimeout(() => setAlert(null), 8000)
   }
 
   const handleMarkAsProcessed = async () => {

@@ -6,37 +6,78 @@ import { fetchNewsFromAPI, processAndSaveNews } from "@/services/news-service"
 
 const NEWSAPI_KEY = process.env.VITE_NEWSAPI_KEY || process.env.NEXT_PUBLIC_NEWSAPI_KEY
 
+function stripCDATA(text: string) {
+  return text.replace(/<!\[CDATA\[([^\]]*)\]\]>/g, "$1")
+}
+
+function extractTagContent(xml: string, tagName: string): string[] {
+  const regex = new RegExp(`<${tagName}[^>]*>([\\s\\S]*?)<\\/${tagName}>`, "gi")
+  const results: string[] = []
+  let match
+  while ((match = regex.exec(xml)) !== null) {
+    results.push(match[1].trim())
+  }
+  return results
+}
+
 async function fetchRSSFeed(url: string) {
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(10000) })
-    const text = await res.text()
+    const res = await fetch(url, { signal: AbortSignal.timeout(15000) })
+    const raw = await res.text()
+    const text = stripCDATA(raw)
     const articles: any[] = []
 
-    const titleMatches = text.match(/<title[^>]*>([^<]+)<\/title>/gi)
-    const linkMatches = text.match(/<link[^>]*>([^<]+)<\/link>/gi)
-    const descMatches = text.match(/<description[^>]*>([^<]+)<\/description>/gi)
-    const pubDateMatches = text.match(/<pubDate[^>]*>([^<]+)<\/pubDate>/gi)
+    const titles = extractTagContent(text, "title")
+    const links = extractTagContent(text, "link")
+    const descriptions = extractTagContent(text, "description")
+    const pubDates = extractTagContent(text, "pubDate")
 
-    if (titleMatches && titleMatches.length > 0) {
-      for (let i = 1; i < titleMatches.length; i++) {
-        const title = titleMatches[i].replace(/<\/?title[^>]*>/g, "")
-        const link = linkMatches?.[i]?.replace(/<\/?link[^>]*>/g, "") || ""
-        const description = descMatches?.[i]?.replace(/<\/?description[^>]*>/g, "") || ""
-        const pubDate = pubDateMatches?.[i - 1]?.replace(/<\/?pubDate[^>]*>/g, "") || ""
+    // Channel title is at index 0, items start at index 1
+    for (let i = 1; i < titles.length; i++) {
+      const title = titles[i]
+        .replace(/<\/?[^>]+>/g, "")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&apos;/g, "'")
+        .trim()
 
-        articles.push({
-          title,
-          url: link,
-          description,
-          source: { name: new URL(url).hostname },
-          publishedAt: pubDate || new Date().toISOString(),
-          urlToImage: null,
-        })
+      if (!title || title.length < 3) continue
+
+      let link = links?.[i]?.replace(/<\/?[^>]+>/g, "").trim() || ""
+      // Some feeds use <link> without inner text but with href attribute
+      if (!link) {
+        const linkMatch = links?.[i]?.match(/href\s*=\s*["']([^"']+)["']/)
+        if (linkMatch) link = linkMatch[1]
       }
+
+      const description = (descriptions?.[i] || "")
+        .replace(/<\/?[^>]+>/g, "")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&apos;/g, "'")
+        .trim()
+
+      const pubDate = pubDates?.[i - 1]?.trim() || ""
+
+      articles.push({
+        title,
+        url: link,
+        description: description.substring(0, 500),
+        source: { name: new URL(url).hostname.replace(/^www\./, "") },
+        publishedAt: pubDate || new Date().toISOString(),
+        urlToImage: null,
+      })
     }
 
     return articles
-  } catch {
+  } catch (e: any) {
+    console.error(`RSS fetch error for ${url}:`, e.message)
     return []
   }
 }
