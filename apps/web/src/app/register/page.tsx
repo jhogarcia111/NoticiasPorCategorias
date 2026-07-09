@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { Logo } from "@/components/logo"
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("")
@@ -40,12 +41,13 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-8">
-      <div className="w-full max-w-md space-y-6">
+    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-8">
+      <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold">Crear Cuenta</h1>
-          <p className="text-muted-foreground mt-2">
-            Regístrate para empezar
+          <Logo variant="icon" size={56} className="mx-auto mb-5" />
+          <h1 className="text-3xl font-bold tracking-tight">Crear Cuenta</h1>
+          <p className="mt-2 text-muted-foreground">
+            Regístrate para empezar a publicar
           </p>
         </div>
 
@@ -59,7 +61,7 @@ export default function RegisterPage() {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               placeholder="usuario123"
               required
             />
@@ -74,7 +76,7 @@ export default function RegisterPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               placeholder="tu@email.com"
               required
             />
@@ -89,7 +91,7 @@ export default function RegisterPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-backdrop focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               placeholder="********"
               required
             />
@@ -104,7 +106,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-md bg-primary px-8 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            className="w-full rounded-md bg-primary px-8 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
           >
             {loading ? "Registrando..." : "Crear Cuenta"}
           </button>

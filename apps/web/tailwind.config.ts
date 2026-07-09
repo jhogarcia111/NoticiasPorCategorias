@@ -16,6 +16,12 @@ const config: Config = {
     },
     extend: {
       colors: {
+        brand: {
+          linkedin: "#0A66C2",
+          "dark-blue": "#004182",
+          "light-blue": "#E5F0FA",
+          green: "#1DB954",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
