@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { getDb } from "@/lib/db"
 import { categories, newsSources } from "@noticias/database"
-import { eq, sql } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 import { fetchNewsFromAPI, processAndSaveNews } from "@/services/news-service"
 
 const NEWSAPI_KEY = process.env.VITE_NEWSAPI_KEY || process.env.NEXT_PUBLIC_NEWSAPI_KEY
@@ -84,7 +84,7 @@ async function fetchRSSFeed(url: string) {
 
 export async function POST(request: Request) {
   try {
-    const { categoryId, query: customQuery, categoryIds } = await request.json().catch(() => ({}))
+    const { categoryId } = await request.json().catch(() => ({}))
     const db = getDb()
 
     let cats
@@ -94,11 +94,6 @@ export async function POST(request: Request) {
         .from(categories)
         .where(eq(categories.id, categoryId))
         .limit(1)
-    } else if (categoryIds && Array.isArray(categoryIds) && categoryIds.length > 0) {
-      cats = await db
-        .select()
-        .from(categories)
-        .where(sql`${categories.id} = ANY(ARRAY[${categoryIds}])`)
     } else {
       cats = await db
         .select()
@@ -184,43 +179,6 @@ export async function POST(request: Request) {
         catResult.errors.push(err.message)
       }
 
-      results.push(catResult)
-    }
-
-    // Custom query search (Búsqueda personalizada)
-    if (customQuery && customQuery.trim()) {
-      const catResult: any = {
-        category: `Búsqueda: "${customQuery}"`,
-        categoryId: null,
-        collected: 0,
-        total: 0,
-        errors: [] as string[],
-        sources: [] as string[],
-      }
-      try {
-        const articles = await fetchNewsFromAPI({
-          query: customQuery.trim(),
-          country: "",
-          pageSize: 15,
-        }).catch((e) => {
-          catResult.errors.push(`NewsAPI: ${e.message}`)
-          return []
-        })
-        if (articles.length > 0) {
-          const targetCatId = cats[0]?.id
-          if (targetCatId) {
-            const processed = await processAndSaveNews(articles, targetCatId)
-            catResult.collected = processed.length
-            catResult.total = articles.length
-            catResult.sources.push("NewsAPI")
-          }
-        }
-        if (catResult.collected === 0 && catResult.errors.length === 0) {
-          catResult.errors.push("No se encontraron resultados para esta búsqueda")
-        }
-      } catch (err: any) {
-        catResult.errors.push(err.message)
-      }
       results.push(catResult)
     }
 
