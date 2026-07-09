@@ -71,6 +71,45 @@ export async function saveLinkedInProfile(profileData: any, tokens: any, userId:
   return profile
 }
 
+export async function postToLinkedIn(profileId: number, content: string, title?: string) {
+  const db = getDb()
+  const [profile] = await db
+    .select()
+    .from(linkedinProfiles)
+    .where(eq(linkedinProfiles.id, profileId))
+    .limit(1)
+  if (!profile) throw new Error("LinkedIn profile not found")
+
+  const response = await fetch("https://api.linkedin.com/v2/ugcPosts", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${profile.accessToken}`,
+      "Content-Type": "application/json",
+      "X-Restli-Protocol-Version": "2.0.0",
+    },
+    body: JSON.stringify({
+      author: `urn:li:person:${profile.linkedinId}`,
+      lifecycleState: "PUBLISHED",
+      specificContent: {
+        "com.linkedin.ugc.ShareContent": {
+          shareCommentary: { text: content },
+          shareMediaCategory: "NONE",
+        },
+      },
+      visibility: {
+        "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
+      },
+    }),
+  })
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}))
+    throw new Error(err.message || "LinkedIn post failed")
+  }
+
+  return response.json()
+}
+
 export async function getLinkedInProfiles(userId: string) {
   const db = getDb()
   return db

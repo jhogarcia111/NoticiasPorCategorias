@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import { Plus, Trash2, Globe, Rss, ExternalLink, RefreshCw, X, Check, Loader2 } from "lucide-react"
+import { Plus, Trash2, Globe, Rss, ExternalLink, RefreshCw, X, Check, Loader2, Search } from "lucide-react"
 
 const CATEGORIES = [
   { id: 1, name: "Tecnología" },
@@ -38,6 +38,10 @@ export function SourcesManager() {
   const [alert, setAlert] = useState<{ type: "success" | "error"; message: string } | null>(null)
   const [testingId, setTestingId] = useState<number | null>(null)
   const [testResults, setTestResults] = useState<Record<number, { ok: boolean; count?: number; error?: string }>>({})
+  const [feedSearch, setFeedSearch] = useState("")
+  const [discoverQuery, setDiscoverQuery] = useState("")
+  const [discovering, setDiscovering] = useState(false)
+  const [discoveredFeeds, setDiscoveredFeeds] = useState<any[]>([])
 
   const fetchSources = async () => {
     try {
@@ -172,7 +176,24 @@ export function SourcesManager() {
     { name: "El País Tecnología", url: "https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada/tecnologia", categoryId: 1, group: "Español" },
   ]
 
+  const detectLanguage = (url: string) => {
+    try {
+      const domain = new URL(url).hostname.toLowerCase()
+      if (domain.endsWith('.es') || domain.includes('es.') || url.includes('/es/')) return "es"
+    } catch {}
+    return "en"
+  }
+
   const feedGroups = [...new Set(suggestedFeeds.map((f) => f.group))]
+  const filteredSuggestedFeeds = feedSearch.trim()
+    ? suggestedFeeds.filter(f =>
+        f.name.toLowerCase().includes(feedSearch.toLowerCase()) ||
+        f.group.toLowerCase().includes(feedSearch.toLowerCase()) ||
+        f.url.toLowerCase().includes(feedSearch.toLowerCase()))
+    : suggestedFeeds
+  const filteredFeedGroups = feedSearch.trim()
+    ? [...new Set(filteredSuggestedFeeds.map((f) => f.group))]
+    : feedGroups
 
   const handleAddSuggested = async (feed: typeof suggestedFeeds[0]) => {
     // Check if already exists
@@ -180,8 +201,30 @@ export function SourcesManager() {
       showAlert("error", `"${feed.name}" ya está agregada`)
       return
     }
-    setForm({ name: feed.name, url: feed.url, type: "rss", categoryId: String(feed.categoryId), language: "es" })
+    setForm({ name: feed.name, url: feed.url, type: "rss", categoryId: String(feed.categoryId), language: detectLanguage(feed.url) })
     setShowForm(true)
+  }
+
+  const handleDiscover = async () => {
+    if (!discoverQuery.trim()) return
+    setDiscovering(true)
+    try {
+      const res = await fetch("/api/news/collect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: discoverQuery.trim(),
+          discover: true,
+          pageSize: 20,
+        }),
+      })
+      const data = await res.json()
+      setDiscoveredFeeds(data.sources || [])
+    } catch (e: any) {
+      showAlert("error", `Error: ${e.message}`)
+    } finally {
+      setDiscovering(false)
+    }
   }
 
   return (
@@ -293,11 +336,20 @@ export function SourcesManager() {
           <CardTitle className="text-sm">Fuentes sugeridas — haz click para agregar</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {feedGroups.map((group) => (
+          <Input
+            placeholder="Buscar feeds por tema (ej: AI, robotics, salud)..."
+            value={feedSearch}
+            onChange={(e) => setFeedSearch(e.target.value)}
+            className="mb-3"
+          />
+          {filteredSuggestedFeeds.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">Sin resultados para "{feedSearch}"</p>
+          ) : (
+            filteredFeedGroups.map((group) => (
             <div key={group}>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">{group}</p>
               <div className="flex flex-wrap gap-1.5">
-                {suggestedFeeds.filter((f) => f.group === group).map((feed, i) => (
+                {filteredSuggestedFeeds.filter((f) => f.group === group).map((feed, i) => (
                   <button key={i} onClick={() => handleAddSuggested(feed)}
                     className="inline-flex items-center gap-1 px-2.5 py-1 bg-muted hover:bg-muted/80 rounded-full text-xs font-medium transition-colors"
                   >
@@ -308,7 +360,43 @@ export function SourcesManager() {
                 ))}
               </div>
             </div>
-          ))}
+          )))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">Descubrir Feeds por tema</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input value={discoverQuery} onChange={(e) => setDiscoverQuery(e.target.value)}
+                placeholder="Ej: artificial intelligence, robotics, cybersecurity..."
+                className="pl-10" onKeyDown={(e) => e.key === "Enter" && handleDiscover()} />
+            </div>
+            <Button onClick={handleDiscover} disabled={!discoverQuery.trim() || discovering}>
+              {discovering ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Globe className="h-4 w-4 mr-2" />}
+              Descubrir
+            </Button>
+          </div>
+          {discoveredFeeds.length > 0 && (
+            <div className="mt-4 space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">
+                Fuentes encontradas para "{discoverQuery}":
+              </p>
+              {discoveredFeeds.map((feed, i) => (
+                <div key={i} className="flex items-center justify-between p-2 bg-muted/30 rounded-md text-sm">
+                  <span className="font-medium truncate">{feed.name || feed.url}</span>
+                  <Button variant="ghost" size="sm" onClick={() => handleAddSuggested({ name: feed.name, url: feed.url, categoryId: 1, group: "Descubierto" })}
+                    className="text-xs flex-shrink-0">
+                    <Plus className="h-3 w-3 mr-1" /> Agregar
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -347,7 +435,7 @@ export function SourcesManager() {
                           </Badge>
                         )}
                         <Badge variant="outline" className="text-xs text-muted-foreground">
-                          {source.language?.toUpperCase()}
+                          {source.language === "es" ? "🇪🇸" : source.language === "en" ? "🇬🇧" : "🌐"} {source.language?.toUpperCase()}
                         </Badge>
                         {source.lastFetchedAt && (
                           <span className="text-xs text-muted-foreground">

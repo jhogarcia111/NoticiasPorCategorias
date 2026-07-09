@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { getDb } from "@/lib/db"
 import { categories, newsSources } from "@noticias/database"
 import { eq } from "drizzle-orm"
-import { fetchNewsFromAPI, processAndSaveNews } from "@/services/news-service"
+import { fetchNewsFromAPI, processAndSaveNews, searchNewsEverything } from "@/services/news-service"
 
 const NEWSAPI_KEY = process.env.VITE_NEWSAPI_KEY || process.env.NEXT_PUBLIC_NEWSAPI_KEY
 
@@ -84,8 +84,28 @@ async function fetchRSSFeed(url: string) {
 
 export async function POST(request: Request) {
   try {
-    const { categoryId } = await request.json().catch(() => ({}))
+    const { categoryId, query, discover, pageSize: reqPageSize } = await request.json().catch(() => ({}))
     const db = getDb()
+
+    if (discover) {
+      if (!query) {
+        return NextResponse.json({ error: "Query is required for discovery" }, { status: 400 })
+      }
+      const articles = await searchNewsEverything(query, reqPageSize || 20)
+      const sourceMap = new Map<string, { name: string; url: string }>()
+      for (const article of articles) {
+        const sourceName = article.source?.name || "Unknown"
+        if (!sourceMap.has(sourceName)) {
+          try {
+            const url = new URL(article.url)
+            sourceMap.set(sourceName, { name: sourceName, url: `${url.protocol}//${url.hostname}` })
+          } catch {
+            sourceMap.set(sourceName, { name: sourceName, url: article.url })
+          }
+        }
+      }
+      return NextResponse.json({ sources: Array.from(sourceMap.values()) })
+    }
 
     let cats
     if (categoryId) {
@@ -134,7 +154,7 @@ export async function POST(request: Request) {
           })
 
           if (articles.length > 0) {
-            const processed = await processAndSaveNews(articles, cat.id)
+            const processed = await processAndSaveNews(articles, cat.id, "en")
             catResult.collected += processed.length
             catResult.total += articles.length
             catResult.sources.push("NewsAPI")
@@ -145,7 +165,7 @@ export async function POST(request: Request) {
           try {
             const rssArticles = await fetchRSSFeed(cat.rssFeedUrl)
             if (rssArticles.length > 0) {
-              const processed = await processAndSaveNews(rssArticles, cat.id)
+              const processed = await processAndSaveNews(rssArticles, cat.id, "es")
               catResult.collected += processed.length
               catResult.total += rssArticles.length
               catResult.sources.push("RSS")
@@ -161,7 +181,7 @@ export async function POST(request: Request) {
             try {
               const rssArticles = await fetchRSSFeed(source.url)
               if (rssArticles.length > 0) {
-                const processed = await processAndSaveNews(rssArticles, cat.id)
+                const processed = await processAndSaveNews(rssArticles, cat.id, source.language || "es")
                 catResult.collected += processed.length
                 catResult.total += rssArticles.length
                 catResult.sources.push(source.name)
@@ -198,7 +218,7 @@ export async function POST(request: Request) {
           if (rssArticles.length > 0) {
             const firstCatId = cats[0]?.id
             if (firstCatId) {
-              const processed = await processAndSaveNews(rssArticles, firstCatId)
+              const processed = await processAndSaveNews(rssArticles, firstCatId, source.language || "es")
               catResult.collected = processed.length
               catResult.total = rssArticles.length
             }

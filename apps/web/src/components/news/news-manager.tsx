@@ -23,6 +23,7 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
   const [showUnprocessed, setShowUnprocessed] = useState(false)
+  const [languageFilter, setLanguageFilter] = useState<string>("all")
   const [internalSelectedIds, setInternalSelectedIds] = useState<number[]>([])
 
   // Use external ids if provided, otherwise use internal
@@ -72,8 +73,11 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
         item.title?.toLowerCase().includes(q) || item.summary?.toLowerCase().includes(q) ||
         item.content?.toLowerCase().includes(q) || item.sourceName?.toLowerCase().includes(q))
     }
+    if (languageFilter !== "all") {
+      items = items.filter((item: any) => item.language === languageFilter)
+    }
     return items
-  }, [news, showUnprocessed, searchQuery])
+  }, [news, showUnprocessed, searchQuery, languageFilter])
 
   const showAlert = (variant: string, title: string, message: string) => {
     setAlert({ variant, title, message })
@@ -288,6 +292,26 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
           <CardTitle className="text-base">Filtros</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Idioma</label>
+            <div className="flex gap-1">
+              {[
+                { value: "all", label: "Todos", flag: "🌐" },
+                { value: "es", label: "Español", flag: "🇪🇸" },
+                { value: "en", label: "English", flag: "🇬🇧" },
+              ].map((opt) => (
+                <button key={opt.value}
+                  onClick={() => setLanguageFilter(opt.value)}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${
+                    languageFilter === opt.value
+                      ? "bg-primary/10 text-primary border-primary/30"
+                      : "bg-background text-muted-foreground border-input hover:bg-muted"
+                  }`}>
+                  {opt.flag} {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />

@@ -33,6 +33,22 @@ export async function fetchNewsFromAPI(options: {
   return data.articles || []
 }
 
+export async function searchNewsEverything(query: string, pageSize: number = 20) {
+  const params = new URLSearchParams({
+    apiKey: NEWSAPI_KEY || "",
+    q: query,
+    pageSize: pageSize.toString(),
+    language: "en",
+    sortBy: "relevancy",
+  })
+
+  const response = await fetch(`${NEWSAPI_BASE_URL}/everything?${params}`)
+  if (!response.ok) throw new Error(`NewsAPI error: ${response.status}`)
+  const data = await response.json()
+  if (data.status !== "ok") throw new Error(`NewsAPI error: ${data.message}`)
+  return data.articles || []
+}
+
 export async function getNewsFromDatabase(options: {
   categoryId?: number | null
   limit?: number
@@ -59,7 +75,7 @@ export async function getNewsFromDatabase(options: {
   return result.map((r) => ({ ...r.news, category: r.categories }))
 }
 
-export async function processAndSaveNews(articles: any[], categoryId: number) {
+export async function processAndSaveNews(articles: any[], categoryId: number, language?: string) {
   const db = getDb()
   const processedNews = []
 
@@ -82,6 +98,7 @@ export async function processAndSaveNews(articles: any[], categoryId: number) {
         sourceName: article.source?.name || "Fuente desconocida",
         publishedAt: article.publishedAt ? new Date(article.publishedAt) : new Date(),
         summary: article.description,
+        language: language || "es",
         isProcessed: false,
       })
       .returning()

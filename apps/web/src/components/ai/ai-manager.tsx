@@ -1,12 +1,15 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { useSession } from "next-auth/react"
 import { promptTemplates } from "@/data/prompt-templates"
 import {
   Brain, RefreshCw, FileText, Hash, Sparkles, Copy, Check, ChevronDown, ChevronUp, Eye, EyeOff,
+  Send, Calendar, Save, Loader2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -22,6 +25,103 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
   const [result, setResult] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [customText, setCustomText] = useState("")
+  const [saving, setSaving] = useState(false)
+  const [posting, setPosting] = useState(false)
+  const [scheduling, setScheduling] = useState(false)
+  const [profiles, setProfiles] = useState<any[]>([])
+  const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null)
+  const [scheduleDateTime, setScheduleDateTime] = useState("")
+  const [alert, setAlert] = useState<{ type: "success" | "error"; text: string } | null>(null)
+
+  const { data: session } = useSession()
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetch(`/api/linkedin/profiles?userId=${session.user.id}`)
+        .then((r) => r.json())
+        .then((d) => setProfiles(d.data || []))
+        .catch(() => {})
+    }
+  }, [session])
+
+  const handleSaveResult = async () => {
+    if (!result || selectedNewsIds.length === 0) return
+    setSaving(true)
+    try {
+      const res = await fetch("/api/ai/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          newsId: selectedNewsIds[0],
+          templateId: selectedTemplateId,
+          templateName: selectedTemplate.name,
+          language: "es",
+          linkedinPost: result,
+          fullResponse: result,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setAlert({ type: "success", text: "Resultado guardado exitosamente" })
+    } catch (e: any) {
+      setAlert({ type: "error", text: `Error: ${e.message}` })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handlePublishNow = async () => {
+    if (!selectedProfileId || !result) return
+    setPosting(true)
+    try {
+      const res = await fetch("/api/linkedin/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          profileId: selectedProfileId,
+          content: result,
+          title: selectedNews[0]?.title || "",
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setAlert({ type: "success", text: "Publicado en LinkedIn exitosamente" })
+    } catch (e: any) {
+      setAlert({ type: "error", text: `Error al publicar: ${e.message}` })
+    } finally {
+      setPosting(false)
+    }
+  }
+
+  const handleSchedule = async () => {
+    if (!selectedProfileId || !scheduleDateTime || !result) return
+    setScheduling(true)
+    try {
+      const res = await fetch("/api/scheduling", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: session?.user?.id,
+          type: "post",
+          postData: {
+            linkedinProfileId: selectedProfileId,
+            title: selectedNews[0]?.title || "Post generado por IA",
+            content: result,
+            summary: selectedNews[0]?.summary || "",
+            scheduledAt: new Date(scheduleDateTime).toISOString(),
+            status: "scheduled",
+          },
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setAlert({ type: "success", text: "Publicación programada exitosamente" })
+    } catch (e: any) {
+      setAlert({ type: "error", text: `Error: ${e.message}` })
+    } finally {
+      setScheduling(false)
+    }
+  }
 
   const selectedNews = useMemo(() => {
     return news.filter((n: any) => selectedNewsIds.includes(n.id))
@@ -87,6 +187,14 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
 
   return (
     <div className="space-y-6">
+      {alert && (
+        <div className={cn(
+          "p-4 rounded-md text-sm border",
+          alert.type === "success" ? "bg-green-50 text-green-800 border-green-200" : "bg-red-50 text-red-800 border-red-200"
+        )}>
+          {alert.text}
+        </div>
+      )}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Procesar con IA</h2>
@@ -187,9 +295,9 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
           </Card>
         </div>
 
-        {/* Right column: result */}
+        {/* Right column: result + actions */}
         <div className="space-y-6">
-          <Card className="h-full">
+          <Card>
             <CardHeader className="pb-3">
               <div className="flex justify-between items-center">
                 <CardTitle className="text-base">Resultado</CardTitle>
@@ -224,6 +332,48 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
               )}
             </CardContent>
           </Card>
+
+          {result && !result.startsWith("Error") && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Acciones</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button onClick={handleSaveResult} disabled={saving} className="w-full" variant="outline">
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                  Guardar resultado
+                </Button>
+                <div className="space-y-2">
+                  <select
+                    value={selectedProfileId || ""}
+                    onChange={(e) => setSelectedProfileId(e.target.value ? Number(e.target.value) : null)}
+                    className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
+                  >
+                    <option value="">Seleccionar perfil LinkedIn...</option>
+                    {profiles.map((p: any) => (
+                      <option key={p.id} value={p.id}>{p.firstName} {p.lastName}</option>
+                    ))}
+                  </select>
+                  <div className="flex gap-2">
+                    <Button onClick={handlePublishNow} disabled={!selectedProfileId || posting} className="flex-1">
+                      {posting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
+                      Publicar ahora
+                    </Button>
+                    <Button onClick={handleSchedule} disabled={!selectedProfileId || !scheduleDateTime || scheduling} variant="outline" className="flex-1">
+                      {scheduling ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Calendar className="h-4 w-4 mr-2" />}
+                      Programar
+                    </Button>
+                  </div>
+                  <Input
+                    type="datetime-local"
+                    value={scheduleDateTime}
+                    onChange={(e) => setScheduleDateTime(e.target.value)}
+                    className="text-sm"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
