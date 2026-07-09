@@ -48,6 +48,10 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
   const [copied, setCopied] = useState(false)
   const [customText, setCustomText] = useState("")
   const [saving, setSaving] = useState(false)
+  const [activeNewsIds, setActiveNewsIds] = useState<number[]>(selectedNewsIds)
+  const [savedResults, setSavedResults] = useState<any[]>([])
+  const [loadingSaved, setLoadingSaved] = useState(false)
+  const [recuperando, setRecuperando] = useState(false)
   const [posting, setPosting] = useState(false)
   const [scheduling, setScheduling] = useState(false)
   const [profiles, setProfiles] = useState<any[]>([])
@@ -66,6 +70,35 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     }
   }, [session])
 
+  // Sync active news and check for saved results
+  useEffect(() => {
+    setActiveNewsIds(selectedNewsIds)
+    if (selectedNewsIds.length > 0) {
+      setLoadingSaved(true)
+      fetch(`/api/ai/results?newsIds=${selectedNewsIds.join(",")}`)
+        .then((r) => r.json())
+        .then((d) => { setSavedResults(d.data || []); setLoadingSaved(false) })
+        .catch(() => setLoadingSaved(false))
+    } else {
+      setSavedResults([])
+    }
+  }, [selectedNewsIds])
+
+  const toggleActiveNews = (id: number) => {
+    setActiveNewsIds((prev) => prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id])
+  }
+
+  const activeNews = useMemo(() => {
+    return news.filter((n: any) => activeNewsIds.includes(n.id))
+  }, [news, activeNewsIds])
+
+  const handleRecuperar = (saved: any) => {
+    setRecuperando(true)
+    setResult(saved.fullResponse || saved.linkedinPost || "")
+    setParsedResult(parseAIResponse(saved.fullResponse || saved.linkedinPost || ""))
+    setTimeout(() => setRecuperando(false), 300)
+  }
+
   const toggleSection = (id: string) => {
     setExpandedSections((prev) => ({ ...prev, [id]: !prev[id] }))
   }
@@ -81,23 +114,23 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
   }
 
   const handleSaveResult = async () => {
-    if (!result || selectedNewsIds.length === 0) return
+    if (!result || activeNewsIds.length === 0) return
     setSaving(true)
     try {
-      const res = await fetch("/api/ai/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          newsId: selectedNewsIds[0],
-          templateId: selectedTemplateId,
-          templateName: selectedTemplate.name,
-          language: "es",
-          linkedinPost: parsedResult?.post || result,
-          fullResponse: result,
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
+      for (const newsId of activeNewsIds) {
+        await fetch("/api/ai/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            newsId,
+            templateId: selectedTemplateId,
+            templateName: selectedTemplate.name,
+            language: "es",
+            linkedinPost: parsedResult?.post || result,
+            fullResponse: result,
+          }),
+        })
+      }
       setAlert({ type: "success", text: "✅ Resultado guardado exitosamente" })
     } catch (e: any) {
       setAlert({ type: "error", text: `❌ Error: ${e.message}` })
@@ -116,7 +149,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
         body: JSON.stringify({
           profileId: selectedProfileId,
           content: parsedResult?.post || result,
-          title: selectedNews[0]?.title || "",
+          title: activeNews[0]?.title || "",
         }),
       })
       const data = await res.json()
@@ -141,9 +174,9 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
           type: "post",
           postData: {
             linkedinProfileId: selectedProfileId,
-            title: selectedNews[0]?.title || "Post generado por IA",
+            title: activeNews[0]?.title || "Post generado por IA",
             content: parsedResult?.post || result,
-            summary: selectedNews[0]?.summary || "",
+            summary: activeNews[0]?.summary || "",
             scheduledAt: new Date(scheduleDateTime).toISOString(),
             status: "scheduled",
           },
@@ -158,10 +191,6 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       setScheduling(false)
     }
   }
-
-  const selectedNews = useMemo(() => {
-    return news.filter((n: any) => selectedNewsIds.includes(n.id))
-  }, [news, selectedNewsIds])
 
   const selectedTemplate = promptTemplates.find((t) => t.id === selectedTemplateId) || promptTemplates[0]
 
@@ -178,7 +207,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     setParsedResult(null)
     setCustomImage(null)
 
-    const newsContent = selectedNews.map((n: any, i: number) =>
+    const newsContent = activeNews.map((n: any, i: number) =>
       `--- NOTICIA ${i + 1} ---\nTítulo: ${n.title}\nFuente: ${n.sourceName}\nFecha: ${n.publishedAt || ""}\nResumen: ${n.summary || ""}\nContenido: ${n.content || n.summary || "No disponible"}\nURL: ${n.sourceUrl || ""}`
     ).join("\n\n")
 
@@ -190,7 +219,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: "linkedin-post",
-          newsItems: selectedNews.map((n: any) => ({
+          newsItems: activeNews.map((n: any) => ({
             id: n.id,
             title: n.title,
             summary: n.summary || n.content,
@@ -271,25 +300,47 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
         {/* Left: Selected news + custom text + process button */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">📰 Noticias seleccionadas ({selectedNewsIds.length})</CardTitle>
+            <CardTitle className="text-base">📰 Noticias ({selectedNewsIds.length}) — marca las que procesar</CardTitle>
           </CardHeader>
           <CardContent>
-            {selectedNews.length === 0 ? (
+            {selectedNewsIds.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <p className="text-sm">No hay noticias seleccionadas</p>
                 <p className="text-xs mt-1">Ve a la pestaña Noticias y selecciona las que quieras procesar</p>
               </div>
             ) : (
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {selectedNews.map((n: any) => (
-                  <div key={n.id} className="flex items-start gap-2 p-2 bg-muted/30 rounded-md">
-                    <span className="text-xs font-mono text-muted-foreground mt-0.5">#{n.id}</span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">{n.title}</p>
-                      <p className="text-xs text-muted-foreground truncate">{n.sourceName}</p>
+              <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                {news.filter((n: any) => selectedNewsIds.includes(n.id)).map((n: any) => {
+                  const checked = activeNewsIds.includes(n.id)
+                  const saved = savedResults.find((r: any) => r.newsId === n.id)
+                  return (
+                    <div key={n.id}
+                      className={cn(
+                        "flex items-start gap-2 p-2 rounded-md cursor-pointer transition-colors",
+                        checked ? "bg-primary/10 ring-1 ring-primary/20" : "bg-muted/30 hover:bg-muted/50"
+                      )}
+                      onClick={() => toggleActiveNews(n.id)}
+                    >
+                      <div className={cn(
+                        "w-4 h-4 rounded border-2 mt-0.5 flex items-center justify-center flex-shrink-0 transition-colors",
+                        checked ? "bg-primary border-primary" : "border-gray-300"
+                      )}>
+                        {checked && <Check className="h-3 w-3 text-white" />}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{n.title}</p>
+                        <p className="text-xs text-muted-foreground truncate">{n.sourceName} · {n.language === "en" ? "🇺🇸" : "🇨🇴"}</p>
+                      </div>
+                      {saved && (
+                        <button onClick={(e) => { e.stopPropagation(); handleRecuperar(saved) }}
+                          className="text-xs text-blue-600 hover:text-blue-800 font-medium flex-shrink-0 px-1.5 py-0.5 rounded hover:bg-blue-50"
+                          title="Recuperar análisis guardado">
+                          📂 Recuperar
+                        </button>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
             <div className="mt-3">
@@ -304,7 +355,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
             </div>
             <Button
               onClick={handleProcess}
-              disabled={processing || (selectedNews.length === 0 && !customText.trim())}
+              disabled={processing || (activeNewsIds.length === 0 && !customText.trim())}
               className="mt-3 w-full"
             >
               {processing ? (
@@ -416,10 +467,10 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                       </div>
 
                       {/* News link card */}
-                      {selectedNews[0]?.sourceUrl && (
+                      {activeNews.length > 0 && activeNews[0]?.sourceUrl && (
                         <div className="bg-gray-100 rounded-lg p-3 mb-3 border border-gray-200">
-                          <p className="text-sm font-medium text-gray-900 truncate">{selectedNews[0].title}</p>
-                          <p className="text-xs text-gray-500 truncate mt-0.5">🔗 {domainFromUrl(selectedNews[0].sourceUrl)}</p>
+                          <p className="text-sm font-medium text-gray-900 truncate">{activeNews[0].title}</p>
+                          <p className="text-xs text-gray-500 truncate mt-0.5">🔗 {domainFromUrl(activeNews[0].sourceUrl)}</p>
                         </div>
                       )}
 

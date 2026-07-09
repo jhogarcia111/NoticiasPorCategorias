@@ -17,9 +17,10 @@ interface NewsManagerProps {
   selectedNewsIds?: number[]
   onSelectionChange?: (ids: number[]) => void
   onNewsDataChange?: (news: any[]) => void
+  onNavigate?: (tab: string) => void
 }
 
-export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, onNewsDataChange }: NewsManagerProps = {}) {
+export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, onNewsDataChange, onNavigate }: NewsManagerProps = {}) {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
   const [showUnprocessed, setShowUnprocessed] = useState(false)
@@ -139,7 +140,7 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
 
   const handleMarkAsProcessed = async () => {
     if (selectedNewsIds.length === 0) return
-    try { await markProcessedMutation.mutateAsync(selectedNewsIds); setSelectedNewsIds([]) }
+    try { await markProcessedMutation.mutateAsync(selectedNewsIds); setSelectedNewsIds([]); onNavigate?.("ai") }
     catch (error) { console.error("Error marking news as processed:", error) }
   }
 
@@ -297,8 +298,8 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
             <div className="flex gap-1">
               {[
                 { value: "all", label: "Todos", flag: "🌐" },
-                { value: "es", label: "Español", flag: "🇪🇸" },
-                { value: "en", label: "English", flag: "🇬🇧" },
+                { value: "es", label: "Español", flag: "🇨🇴" },
+                { value: "en", label: "English", flag: "🇺🇸" },
               ].map((opt) => (
                 <button key={opt.value}
                   onClick={() => setLanguageFilter(opt.value)}

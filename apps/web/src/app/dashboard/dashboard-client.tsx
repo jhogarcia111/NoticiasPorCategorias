@@ -27,8 +27,8 @@ export default function DashboardClient({ user }: DashboardClientProps) {
   const tabs: { id: Tab; label: string }[] = [
     { id: "news", label: "📰 Noticias" },
     { id: "ai", label: "🤖 Procesar con IA" },
-    { id: "config", label: "⚙️ Configuración" },
     { id: "calendar", label: "📅 Calendario" },
+    { id: "config", label: "⚙️ Configuración" },
   ]
 
   const configTabs = [
@@ -74,6 +74,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
             selectedNewsIds={selectedNewsIds}
             onSelectionChange={setSelectedNewsIds}
             onNewsDataChange={setCachedNews}
+            onNavigate={(tab) => setActiveTab(tab as Tab)}
           />
         )}
 
