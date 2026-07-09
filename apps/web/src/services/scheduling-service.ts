@@ -77,6 +77,35 @@ export async function deleteScheduledPost(postId: number) {
   await db.delete(scheduledPosts).where(eq(scheduledPosts.id, postId))
 }
 
+export async function scheduleMultiplePosts(
+  userId: string,
+  linkedinProfileId: number,
+  newsItems: any[],
+  config: any
+) {
+  const posts = []
+  for (const item of newsItems) {
+    const dates = calculateSchedulingDates(config, 1)
+    if (dates.length > 0) {
+      const [post] = await getDb()
+        .insert(scheduledPosts)
+        .values({
+          profileId: linkedinProfileId,
+          linkedinProfileId,
+          userId,
+          title: item.title,
+          content: item.content || item.summary,
+          summary: item.summary,
+          scheduledTime: dates[0],
+          status: "scheduled",
+        })
+        .returning()
+      posts.push(post)
+    }
+  }
+  return posts
+}
+
 export function calculateSchedulingDates(config: any, postCount: number) {
   const dates: Date[] = []
   const now = new Date()

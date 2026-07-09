@@ -5,6 +5,8 @@ import {
   getScheduledPosts,
   schedulePost,
   cancelScheduledPost,
+  deleteScheduledPost,
+  updateScheduledPost,
 } from "@/services/scheduling-service"
 
 export async function GET(request: Request) {
@@ -52,6 +54,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ data })
     }
 
+    if (type === "cancel") {
+      const postId = parseInt(body.postId)
+      if (!postId) return NextResponse.json({ error: "postId required" }, { status: 400 })
+      const data = await cancelScheduledPost(postId)
+      return NextResponse.json({ data })
+    }
+
+    if (type === "update") {
+      const data = await updateScheduledPost(body.postId, body.updates)
+      return NextResponse.json({ data })
+    }
+
+    if (type === "schedule-multiple") {
+      const { linkedinProfileId, newsItems, config } = body
+      const { scheduleMultiplePosts } = await import("@/services/scheduling-service")
+      const data = await scheduleMultiplePosts(userId, linkedinProfileId, newsItems, config)
+      return NextResponse.json({ data })
+    }
+
     return NextResponse.json({ error: "Invalid type" }, { status: 400 })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
@@ -65,7 +86,7 @@ export async function DELETE(request: Request) {
   if (!postId) return NextResponse.json({ error: "postId required" }, { status: 400 })
 
   try {
-    await cancelScheduledPost(postId)
+    await deleteScheduledPost(postId)
     return NextResponse.json({ success: true })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
