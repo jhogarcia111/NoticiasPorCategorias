@@ -38,7 +38,7 @@ export function NewsManager() {
   const filteredNews = useMemo(() => {
     let items = news
     if (showUnprocessed) {
-      items = items.filter((item: any) => !item.is_processed)
+      items = items.filter((item: any) => !item.isProcessed)
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim()
@@ -47,7 +47,7 @@ export function NewsManager() {
           item.title?.toLowerCase().includes(q) ||
           item.summary?.toLowerCase().includes(q) ||
           item.content?.toLowerCase().includes(q) ||
-          item.source_name?.toLowerCase().includes(q)
+          item.sourceName?.toLowerCase().includes(q)
       )
     }
     return items
@@ -119,8 +119,8 @@ export function NewsManager() {
   }
 
   const totalCount = filteredNews.length
-  const unprocessedCount = filteredNews.filter((item: any) => !item.is_processed).length
-  const processedCount = filteredNews.filter((item: any) => item.is_processed).length
+  const unprocessedCount = filteredNews.filter((item: any) => !item.isProcessed).length
+  const processedCount = filteredNews.filter((item: any) => item.isProcessed).length
 
   return (
     <div className="space-y-6">

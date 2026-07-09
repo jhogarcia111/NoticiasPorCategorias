@@ -67,10 +67,10 @@ export function NewsCard({
         </div>
       </CardHeader>
       <CardContent className="pt-0">
-        {news.image_url && !imageError ? (
+        {news.imageUrl && !imageError ? (
           <div className="mb-4">
             <img
-              src={news.image_url}
+              src={news.imageUrl}
               alt={news.title}
               className="w-full h-48 object-cover rounded-lg"
               onError={() => setImageError(true)}
@@ -84,11 +84,11 @@ export function NewsCard({
         <div className="space-y-2 mb-4">
           <div className="flex items-center text-sm text-gray-600">
             <User className="h-4 w-4 mr-2" />
-            <span>{news.source_name}</span>
+            <span>{news.sourceName}</span>
           </div>
           <div className="flex items-center text-sm text-gray-600">
             <Calendar className="h-4 w-4 mr-2" />
-            <span>{formatDateShort(news.published_at)}</span>
+            <span>{news.publishedAt ? formatDateShort(news.publishedAt) : "—"}</span>
           </div>
           {news.category && (
             <div className="flex items-center text-sm text-gray-600">
@@ -101,17 +101,17 @@ export function NewsCard({
           <span
             className={cn(
               "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium",
-              news.is_processed
+              news.isProcessed
                 ? "bg-green-100 text-green-800"
                 : "bg-yellow-100 text-yellow-800"
             )}
           >
-            {news.is_processed ? (
+            {news.isProcessed ? (
               <CheckCircle className="h-3 w-3 mr-1" />
             ) : (
               <Circle className="h-3 w-3 mr-1" />
             )}
-            {news.is_processed ? "Procesada" : "Pendiente"}
+            {news.isProcessed ? "Procesada" : "Pendiente"}
           </span>
         </div>
         <div className="flex space-x-2">
@@ -121,7 +121,7 @@ export function NewsCard({
             className="flex-1"
             onClick={(e) => {
               e.stopPropagation()
-              window.open(news.source_url, "_blank")
+              window.open(news.sourceUrl, "_blank")
             }}
           >
             <ExternalLink className="h-4 w-4 mr-2" />

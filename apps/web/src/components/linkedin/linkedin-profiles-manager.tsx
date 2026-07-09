@@ -41,7 +41,8 @@ export function LinkedInProfilesManager() {
     }
   }
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | Date | null | undefined) => {
+    if (!dateString) return "—"
     try {
       return format(new Date(dateString), "dd/MM/yyyy HH:mm", { locale: es })
     } catch {
@@ -49,9 +50,13 @@ export function LinkedInProfilesManager() {
     }
   }
 
-  const isTokenExpired = (expiresAt: string) => {
+  const isTokenExpired = (expiresAt: string | Date | null | undefined) => {
     if (!expiresAt) return false
-    return new Date(expiresAt) < new Date()
+    try {
+      return new Date(expiresAt) < new Date()
+    } catch {
+      return true
+    }
   }
 
   if (isLoading) {
@@ -129,10 +134,10 @@ export function LinkedInProfilesManager() {
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-4">
                     <div className="flex-shrink-0">
-                      {profile.profile_picture_url ? (
+                      {profile.profilePictureUrl ? (
                         <img
-                          src={profile.profile_picture_url}
-                          alt={`${profile.first_name} ${profile.last_name}`}
+                          src={profile.profilePictureUrl}
+                          alt={`${profile.firstName} ${profile.lastName}`}
                           className="h-12 w-12 rounded-full object-cover"
                         />
                       ) : (
@@ -144,11 +149,11 @@ export function LinkedInProfilesManager() {
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center space-x-2">
                         <h3 className="font-medium text-gray-900">
-                          {profile.first_name} {profile.last_name}
+                          {profile.firstName} {profile.lastName}
                         </h3>
-                        {profile.is_primary && <Badge variant="default">Principal</Badge>}
-                        {!profile.is_active && <Badge variant="secondary">Inactivo</Badge>}
-                        {isTokenExpired(profile.token_expires_at) && (
+                        {profile.isPrimary && <Badge variant="default">Principal</Badge>}
+                        {!profile.isActive && <Badge variant="secondary">Inactivo</Badge>}
+                        {isTokenExpired(profile.tokenExpiresAt) && (
                           <Badge variant="warning">Token Expirado</Badge>
                         )}
                       </div>
@@ -160,12 +165,12 @@ export function LinkedInProfilesManager() {
                       )}
                       <div className="flex items-center space-x-1 text-sm text-muted-foreground">
                         <Calendar className="h-3 w-3" />
-                        <span>Conectado: {formatDate(profile.created_at)}</span>
+                        <span>Conectado: {formatDate(profile.createdAt)}</span>
                       </div>
-                      {profile.token_expires_at && (
+                      {profile.tokenExpiresAt && (
                         <div className="flex items-center space-x-1 text-sm text-muted-foreground">
                           <Calendar className="h-3 w-3" />
-                          <span>Token expira: {formatDate(profile.token_expires_at)}</span>
+                          <span>Token expira: {formatDate(profile.tokenExpiresAt)}</span>
                         </div>
                       )}
                     </div>

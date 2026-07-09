@@ -59,8 +59,8 @@ export function NewsList({ news, onNewsSelect, selectedNews = [] }: NewsListProp
                 )}
               </div>
               <div className="ml-4 flex flex-col items-end space-y-2">
-                <Badge variant={article.is_processed ? "success" : "warning"} className="text-xs">
-                  {article.is_processed ? "Procesada" : "No procesada"}
+                <Badge variant={article.isProcessed ? "success" : "warning"} className="text-xs">
+                  {article.isProcessed ? "Procesada" : "No procesada"}
                 </Badge>
                 {article.category && (
                   <Badge variant="outline" className="text-xs">
@@ -75,11 +75,11 @@ export function NewsList({ news, onNewsSelect, selectedNews = [] }: NewsListProp
               <div className="flex items-center space-x-4">
                 <div className="flex items-center">
                   <User className="h-4 w-4 mr-1" />
-                  {article.source_name}
+                  {article.sourceName}
                 </div>
                 <div className="flex items-center">
                   <Calendar className="h-4 w-4 mr-1" />
-                  {formatDistanceToNow(new Date(article.published_at), {
+                  {article.publishedAt && formatDistanceToNow(new Date(article.publishedAt), {
                     addSuffix: true,
                     locale: es,
                   })}
@@ -105,7 +105,7 @@ export function NewsList({ news, onNewsSelect, selectedNews = [] }: NewsListProp
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => window.open(article.source_url, "_blank")}
+                  onClick={() => window.open(article.sourceUrl, "_blank")}
                   className="text-xs"
                 >
                   <ExternalLink className="h-3 w-3 mr-1" />
@@ -122,11 +122,11 @@ export function NewsList({ news, onNewsSelect, selectedNews = [] }: NewsListProp
                       <p className="text-sm text-gray-700 leading-relaxed">{article.content}</p>
                     </div>
                   )}
-                  {article.image_url && (
+                  {article.imageUrl && (
                     <div>
                       <h4 className="font-medium text-sm mb-2">Imagen:</h4>
                       <img
-                        src={article.image_url}
+                        src={article.imageUrl}
                         alt={article.title}
                         className="max-w-full h-auto rounded-lg shadow-sm"
                         onError={(e) => {
@@ -138,7 +138,7 @@ export function NewsList({ news, onNewsSelect, selectedNews = [] }: NewsListProp
                   <div className="flex items-center justify-between pt-2 border-t">
                     <div className="text-xs text-gray-500">
                       ID: {article.id} | Creado:{" "}
-                      {new Date(article.created_at).toLocaleString("es-ES")}
+                      {article.createdAt && new Date(article.createdAt).toLocaleString("es-ES")}
                     </div>
                     <Button
                       variant={isSelected(article.id) ? "default" : "outline"}

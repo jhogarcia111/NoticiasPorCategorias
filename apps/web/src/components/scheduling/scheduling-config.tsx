@@ -75,7 +75,7 @@ export function SchedulingConfig() {
   useEffect(() => {
     if (selectedProfile && configs) {
       const existingConfig = configs.find(
-        (c: any) => c.linkedin_profile_id === selectedProfile.id
+        (c: any) => c.linkedinProfileId === selectedProfile.id
       )
       if (existingConfig) {
         Object.keys(existingConfig).forEach((key) => {
@@ -169,7 +169,7 @@ export function SchedulingConfig() {
                 <option value="">Selecciona un perfil</option>
                 {profiles.map((profile: any) => (
                   <option key={profile.id} value={profile.id}>
-                    {profile.first_name} {profile.last_name}
+                    {profile.firstName} {profile.lastName}
                   </option>
                 ))}
               </select>
@@ -178,7 +178,7 @@ export function SchedulingConfig() {
               <div className="flex items-center space-x-2">
                 <Badge variant="default">Perfil seleccionado</Badge>
                 <span className="text-sm text-muted-foreground">
-                  {selectedProfile.first_name} {selectedProfile.last_name}
+                  {selectedProfile.firstName} {selectedProfile.lastName}
                 </span>
               </div>
             )}

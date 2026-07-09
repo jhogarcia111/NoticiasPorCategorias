@@ -48,7 +48,7 @@ export function ScheduledPostsManager() {
 
   const filteredPosts = (scheduledPosts || []).filter((post: any) => {
     if (filters.status && post.status !== filters.status) return false
-    if (filters.profile && post.linkedin_profile_id !== Number(filters.profile)) return false
+    if (filters.profile && post.linkedinProfileId !== Number(filters.profile)) return false
     if (filters.search) {
       const searchLower = filters.search.toLowerCase()
       return (
@@ -86,10 +86,11 @@ export function ScheduledPostsManager() {
 
   const getProfileName = (profileId: number) => {
     const profile = profiles.find((p: any) => p.id === profileId)
-    return profile ? `${profile.first_name} ${profile.last_name}` : "Perfil desconocido"
+    return profile ? `${profile.firstName} ${profile.lastName}` : "Perfil desconocido"
   }
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | Date | null | undefined) => {
+    if (!dateString) return "—"
     try {
       return format(new Date(dateString), "dd/MM/yyyy HH:mm", { locale: es })
     } catch {
@@ -172,7 +173,7 @@ export function ScheduledPostsManager() {
                 <option value="">Todos los perfiles</option>
                 {profiles.map((profile: any) => (
                   <option key={profile.id} value={profile.id}>
-                    {profile.first_name} {profile.last_name}
+                    {profile.firstName} {profile.lastName}
                   </option>
                 ))}
               </select>
@@ -222,20 +223,20 @@ export function ScheduledPostsManager() {
                     <div className="flex items-center space-x-4 text-xs text-muted-foreground">
                       <div className="flex items-center space-x-1">
                         <Calendar className="h-3 w-3" />
-                        <span>Programado: {formatDate(post.scheduled_at)}</span>
+                        <span>Programado: {formatDate(post.scheduledAt)}</span>
                       </div>
-                      {post.published_at && (
+                      {post.postedAt && (
                         <div className="flex items-center space-x-1">
                           <CheckCircle className="h-3 w-3" />
-                          <span>Publicado: {formatDate(post.published_at)}</span>
+                          <span>Publicado: {formatDate(post.postedAt)}</span>
                         </div>
                       )}
-                      <span>Perfil: {getProfileName(post.linkedin_profile_id)}</span>
+                      <span>Perfil: {getProfileName(post.linkedinProfileId)}</span>
                     </div>
-                    {post.error_message && (
+                    {post.errorMessage && (
                       <div className="flex items-center space-x-1 text-xs text-red-600 mt-1">
                         <AlertCircle className="h-3 w-3" />
-                        <span>{post.error_message}</span>
+                        <span>{post.errorMessage}</span>
                       </div>
                     )}
                     {post.hashtags && post.hashtags.length > 0 && (
@@ -252,7 +253,7 @@ export function ScheduledPostsManager() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => window.open(post.news?.source_url, "_blank")}
+                      onClick={() => window.open(post.news?.sourceUrl, "_blank")}
                       title="Ver noticia original"
                     >
                       <ExternalLink className="h-3 w-3" />

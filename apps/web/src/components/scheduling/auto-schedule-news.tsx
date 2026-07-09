@@ -32,12 +32,12 @@ export function AutoScheduleNews() {
   const [showError, setShowError] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
 
-  const unprocessedNews = news.filter((item: any) => !item.is_processed)
+  const unprocessedNews = news.filter((item: any) => !item.isProcessed)
 
   const handleProfileChange = (profileId: number) => {
     const profile = profiles.find((p: any) => p.id === profileId)
     setSelectedProfile(profile)
-    const config = configs.find((c: any) => c.linkedin_profile_id === profileId)
+    const config = configs.find((c: any) => c.linkedinProfileId === profileId)
     setSelectedConfig(config)
   }
 
@@ -167,7 +167,7 @@ export function AutoScheduleNews() {
               <option value="">Selecciona un perfil</option>
               {profiles.map((profile: any) => (
                 <option key={profile.id} value={profile.id}>
-                  {profile.first_name} {profile.last_name}
+                  {profile.firstName} {profile.lastName}
                 </option>
               ))}
             </select>
@@ -177,7 +177,7 @@ export function AutoScheduleNews() {
               <div className="flex items-center space-x-2">
                 <Badge variant="default">Perfil seleccionado</Badge>
                 <span className="text-sm text-muted-foreground">
-                  {selectedProfile.first_name} {selectedProfile.last_name}
+                  {selectedProfile.firstName} {selectedProfile.lastName}
                 </span>
               </div>
               {selectedConfig ? (
@@ -273,9 +273,9 @@ export function AutoScheduleNews() {
                         {newsItem.summary || newsItem.description}
                       </p>
                       <div className="flex items-center space-x-2 mt-2">
-                        <Badge variant="outline" className="text-xs">{newsItem.source_name}</Badge>
+                        <Badge variant="outline" className="text-xs">{newsItem.sourceName}</Badge>
                         <span className="text-xs text-muted-foreground">
-                          {new Date(newsItem.published_at).toLocaleDateString()}
+                          {newsItem.publishedAt ? new Date(newsItem.publishedAt).toLocaleDateString() : "—"}
                         </span>
                       </div>
                     </div>
