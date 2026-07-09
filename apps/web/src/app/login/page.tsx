@@ -34,14 +34,7 @@ export default function LoginPage() {
 
   const handleLinkedInLogin = async () => {
     setLinkedinLoading(true)
-    try {
-      const res = await fetch("/api/linkedin/auth-url")
-      const { url } = await res.json()
-      if (url) window.location.href = url
-    } catch {
-      setError("Error al conectar con LinkedIn")
-      setLinkedinLoading(false)
-    }
+    await signIn("linkedin", { redirect: true, callbackUrl: "/dashboard" })
   }
 
   return (

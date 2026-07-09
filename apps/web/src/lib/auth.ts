@@ -1,10 +1,20 @@
 import NextAuth from "next-auth"
 import type { NextAuthConfig } from "next-auth"
-import { getDb, profiles } from "@noticias/database"
+import LinkedIn from "next-auth/providers/linkedin"
+import { getDb, profiles, linkedinProfiles } from "@noticias/database"
 import { eq } from "drizzle-orm"
 
 export const authConfig: NextAuthConfig = {
   providers: [
+    LinkedIn({
+      clientId: process.env.VITE_LINKEDIN_CLIENT_ID || process.env.NEXT_PUBLIC_LINKEDIN_CLIENT_ID || "",
+      clientSecret: process.env.VITE_LINKEDIN_CLIENT_SECRET || process.env.LINKEDIN_CLIENT_SECRET || "",
+      authorization: {
+        params: {
+          scope: "openid profile email w_member_social",
+        },
+      },
+    }),
     {
       id: "credentials",
       name: "Credentials",
@@ -33,6 +43,56 @@ export const authConfig: NextAuthConfig = {
     },
   ],
   callbacks: {
+    async signIn({ user, account }) {
+      if (account?.provider === "linkedin" && user.email && user.id) {
+        const db = getDb()
+        const [existing] = await db
+          .select()
+          .from(profiles)
+          .where(eq(profiles.id, user.id))
+          .limit(1)
+
+        if (!existing) {
+          await db.insert(profiles).values({
+            id: user.id,
+            username: user.name || user.email.split("@")[0],
+            role: "user",
+          })
+        }
+
+        if (account.access_token) {
+          const [existingLinkedIn] = await db
+            .select()
+            .from(linkedinProfiles)
+            .where(eq(linkedinProfiles.userId, user.id))
+            .limit(1)
+
+          if (existingLinkedIn) {
+            await db
+              .update(linkedinProfiles)
+              .set({
+                accessToken: account.access_token,
+                refreshToken: account.refresh_token,
+                tokenExpiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null,
+                linkedinId: account.providerAccountId || user.id,
+              })
+              .where(eq(linkedinProfiles.id, existingLinkedIn.id))
+          } else {
+            await db.insert(linkedinProfiles).values({
+              userId: user.id,
+              linkedinId: account.providerAccountId || user.id,
+              firstName: user.name,
+              accessToken: account.access_token,
+              refreshToken: account.refresh_token,
+              tokenExpiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null,
+              isActive: true,
+              isPrimary: true,
+            })
+          }
+        }
+      }
+      return true
+    },
     async session({ session, token }) {
       if (token.sub && session.user) {
         session.user.id = token.sub
