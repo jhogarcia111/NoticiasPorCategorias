@@ -1,30 +1,34 @@
 "use client"
 
-import { signOut } from "next-auth/react"
 import type { Session } from "next-auth"
 import { useState } from "react"
+import { UserDropdown } from "@/components/user-dropdown"
 import { NewsManager } from "@/components/news/news-manager"
 import { LinkedInProfilesManager } from "@/components/linkedin/linkedin-profiles-manager"
 import { SchedulingConfig } from "@/components/scheduling/scheduling-config"
 import { ScheduledPostsManager } from "@/components/scheduling/scheduled-posts-manager"
 import { AutoScheduleNews } from "@/components/scheduling/auto-schedule-news"
 import { AIManager } from "@/components/ai/ai-manager"
+import { EditProfileDialog } from "@/components/edit-profile-dialog"
+import { SourcesManager } from "@/components/sources/sources-manager"
 
 interface DashboardClientProps {
   user: Session["user"]
 }
 
-type Tab = "news" | "linkedin" | "scheduling" | "ai"
+type Tab = "news" | "linkedin" | "scheduling" | "ai" | "sources"
 
 export default function DashboardClient({ user }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<Tab>("news")
   const [schedulingSubTab, setSchedulingSubTab] = useState<"config" | "posts" | "auto">("config")
+  const [showEditProfile, setShowEditProfile] = useState(false)
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "news", label: "Noticias" },
     { id: "linkedin", label: "LinkedIn" },
     { id: "scheduling", label: "Programación" },
     { id: "ai", label: "IA" },
+    { id: "sources", label: "Fuentes" },
   ]
 
   const schedulingTabs = [
@@ -39,13 +43,11 @@ export default function DashboardClient({ user }: DashboardClientProps) {
         <div className="flex h-16 items-center justify-between px-8">
           <h1 className="text-xl font-semibold">Panel de Control</h1>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">{user.email}</span>
-            <button
-              onClick={() => signOut()}
-              className="rounded-md bg-destructive/10 px-4 py-2 text-sm text-destructive hover:bg-destructive/20"
-            >
-              Cerrar Sesión
-            </button>
+            <UserDropdown
+              userName={user.name}
+              userEmail={user.email}
+              onEditProfile={() => setShowEditProfile(true)}
+            />
           </div>
         </div>
       </header>
@@ -99,7 +101,11 @@ export default function DashboardClient({ user }: DashboardClientProps) {
         )}
 
         {activeTab === "ai" && <AIManager />}
+
+        {activeTab === "sources" && <SourcesManager />}
       </main>
+
+      <EditProfileDialog isOpen={showEditProfile} onClose={() => setShowEditProfile(false)} />
     </div>
   )
 }
