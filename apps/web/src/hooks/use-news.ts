@@ -37,11 +37,11 @@ export function useNews(options: {
 export function useCollectNews() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (opts?: { categoryId?: number; query?: string }) =>
+    mutationFn: (params?: { categoryId?: number; categoryIds?: number[]; query?: string }) =>
       fetchJson("/api/news/collect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ categoryId: opts?.categoryId, query: opts?.query || undefined }),
+        body: JSON.stringify(params || {}),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["news"] })
