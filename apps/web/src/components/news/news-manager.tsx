@@ -24,6 +24,8 @@ export function NewsManager() {
   const [newCatName, setNewCatName] = useState("")
   const [newCatQuery, setNewCatQuery] = useState("")
   const [newCatDesc, setNewCatDesc] = useState("")
+  const [deleteCatId, setDeleteCatId] = useState<number | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const { data: categoriesData, isLoading: catsLoading } = useCategories()
   const toggleCategory = useToggleCategory()
@@ -119,6 +121,30 @@ export function NewsManager() {
 
   const toggleNewsSelection = (newsId: number) => {
     setSelectedNewsIds((prev) => prev.includes(newsId) ? prev.filter((id) => id !== newsId) : [...prev, newsId])
+  }
+
+  const handleDeleteAll = async () => {
+    if (!confirm("¿Eliminar TODAS las noticias? Esta acción no se puede deshacer.")) return
+    setDeleting(true)
+    try {
+      const res = await fetch("/api/news?all=true", { method: "DELETE" })
+      if (!res.ok) throw new Error((await res.json()).error)
+      showAlert("success", "Todas las noticias eliminadas", "")
+    } catch (e: any) { showAlert("error", "Error", e.message) }
+    finally { setDeleting(false) }
+  }
+
+  const handleDeleteByCategory = async () => {
+    if (!deleteCatId) return
+    if (!confirm(`¿Eliminar todas las noticias de esta categoría?`)) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/news?categoryId=${deleteCatId}`, { method: "DELETE" })
+      if (!res.ok) throw new Error((await res.json()).error)
+      showAlert("success", "Noticias eliminadas de la categoría", "")
+      setDeleteCatId(null)
+    } catch (e: any) { showAlert("error", "Error", e.message) }
+    finally { setDeleting(false) }
   }
 
   const totalCount = filteredNews.length
@@ -281,6 +307,41 @@ export function NewsManager() {
           ) : (
             <NewsList news={filteredNews} onNewsSelect={toggleNewsSelection} selectedNews={selectedNewsIds} />
           )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-red-200">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm text-red-700">Zona de peligro — limpieza de datos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-3">
+            <div>
+              <p className="text-xs text-muted-foreground mb-1.5">Eliminar noticias de una categoría específica</p>
+              <div className="flex gap-2">
+                <select value={deleteCatId ?? ""} onChange={(e) => setDeleteCatId(e.target.value ? Number(e.target.value) : null)}
+                  className="px-3 py-1.5 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                  <option value="">Seleccionar categoría...</option>
+                  {categories.filter((c: any) => c.isActive).map((cat: any) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+                <Button variant="outline" size="sm" onClick={handleDeleteByCategory}
+                  disabled={!deleteCatId || deleting} className="text-red-600 border-red-200 hover:bg-red-50">
+                  {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Trash2 className="h-3.5 w-3.5 mr-1" />}
+                  Eliminar
+                </Button>
+              </div>
+            </div>
+            <div className="border-l pl-3">
+              <p className="text-xs text-muted-foreground mb-1.5">Eliminar TODAS las noticias</p>
+              <Button variant="destructive" size="sm" onClick={handleDeleteAll}
+                disabled={deleting}>
+                {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Trash2 className="h-3.5 w-3.5 mr-1" />}
+                Limpiar todo
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

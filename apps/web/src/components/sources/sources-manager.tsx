@@ -130,28 +130,56 @@ export function SourcesManager() {
     }
   }
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("¿Eliminar esta fuente?")) return
+  const handleDelete = async (id: number, withNews = false) => {
+    const msg = withNews ? "¿Eliminar fuente y TODAS las noticias asociadas?" : "¿Eliminar esta fuente? (las noticias se conservan)"
+    if (!confirm(msg)) return
     try {
-      const res = await fetch(`/api/sources?id=${id}`, { method: "DELETE" })
+      const res = await fetch(`/api/sources?id=${id}&cleanup=${withNews}`, { method: "DELETE" })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       setSources((prev) => prev.filter((s) => s.id !== id))
-      showAlert("success", "Fuente eliminada")
+      if (data.newsDeleted) showAlert("success", "Fuente eliminada + noticias asociadas limpiadas")
+      else showAlert("success", "Fuente eliminada")
     } catch (e: any) {
       showAlert("error", e.message || "Error al eliminar")
     }
   }
 
   const suggestedFeeds = [
-    { name: "BBC Mundo", url: "https://feeds.bbci.co.uk/mundo/rss.xml", categoryId: 1 },
-    { name: "El País Tecnología", url: "https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada/tecnologia", categoryId: 1 },
-    { name: "CNBC Finance", url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664", categoryId: 3 },
-    { name: "National Geographic Science", url: "https://www.nationalgeographic.com/content/natgeo/en_us/science/rss.xml", categoryId: 5 },
-    { name: "WHO News", url: "https://www.who.int/rss-feeds/news-english.xml", categoryId: 4 },
+    // === Inteligencia Artificial ===
+    { name: "MIT AI News", url: "https://news.mit.edu/topic/artificial-intelligence/rss.xml", categoryId: 1, group: "IA" },
+    { name: "OpenAI Blog", url: "https://openai.com/blog/rss.xml", categoryId: 1, group: "IA" },
+    { name: "Google AI Blog", url: "https://blog.research.google/atom.xml", categoryId: 1, group: "IA" },
+    { name: "DeepMind Blog", url: "https://deepmind.google/discover/blog/feed.xml", categoryId: 1, group: "IA" },
+    { name: "AI News", url: "https://www.artificialintelligence-news.com/feed/", categoryId: 1, group: "IA" },
+    { name: "VentureBeat AI", url: "https://venturebeat.com/category/ai/feed/", categoryId: 1, group: "IA" },
+    // === Robótica ===
+    { name: "IEEE Spectrum Robotics", url: "https://spectrum.ieee.org/topic/robotics/rss", categoryId: 1, group: "Robótica" },
+    { name: "Robotics Tomorrow", url: "https://www.roboticstomorrow.com/rss.php", categoryId: 1, group: "Robótica" },
+    // === Tecnología General ===
+    { name: "TechCrunch", url: "https://techcrunch.com/feed/", categoryId: 1, group: "Tech" },
+    { name: "The Verge", url: "https://www.theverge.com/rss/index.xml", categoryId: 1, group: "Tech" },
+    { name: "Ars Technica", url: "https://feeds.arstechnica.com/arstechnica/index", categoryId: 1, group: "Tech" },
+    { name: "Wired", url: "https://www.wired.com/feed/rss", categoryId: 1, group: "Tech" },
+    { name: "Hacker News", url: "https://hnrss.org/frontpage", categoryId: 1, group: "Tech" },
+    { name: "CNBC Tech", url: "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=19854910", categoryId: 1, group: "Tech" },
+    // === Español ===
+    { name: "Xataka", url: "https://www.xataka.com/feed.xml", categoryId: 1, group: "Español" },
+    { name: "El Español Tecnología", url: "https://www.elespanol.com/feed/tecnologia.xml", categoryId: 1, group: "Español" },
+    { name: "Genbeta", url: "https://www.genbeta.com/feed.xml", categoryId: 1, group: "Español" },
+    // === Negocios/Finanzas ===
+    { name: "BBC Mundo", url: "https://feeds.bbci.co.uk/mundo/rss.xml", categoryId: 1, group: "General" },
+    { name: "El País Tecnología", url: "https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada/tecnologia", categoryId: 1, group: "Español" },
   ]
 
+  const feedGroups = [...new Set(suggestedFeeds.map((f) => f.group))]
+
   const handleAddSuggested = async (feed: typeof suggestedFeeds[0]) => {
+    // Check if already exists
+    if (sources.some((s) => s.url === feed.url)) {
+      showAlert("error", `"${feed.name}" ya está agregada`)
+      return
+    }
     setForm({ name: feed.name, url: feed.url, type: "rss", categoryId: String(feed.categoryId), language: "es" })
     setShowForm(true)
   }
@@ -262,22 +290,25 @@ export function SourcesManager() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Fuentes sugeridas</CardTitle>
+          <CardTitle className="text-sm">Fuentes sugeridas — haz click para agregar</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {suggestedFeeds.map((feed, i) => (
-              <button
-                key={i}
-                onClick={() => handleAddSuggested(feed)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-muted/80 rounded-full text-xs font-medium transition-colors"
-              >
-                <Rss className="h-3 w-3 text-orange-500" />
-                {feed.name}
-                <Plus className="h-3 w-3 ml-0.5" />
-              </button>
-            ))}
-          </div>
+        <CardContent className="space-y-3">
+          {feedGroups.map((group) => (
+            <div key={group}>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">{group}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {suggestedFeeds.filter((f) => f.group === group).map((feed, i) => (
+                  <button key={i} onClick={() => handleAddSuggested(feed)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-muted hover:bg-muted/80 rounded-full text-xs font-medium transition-colors"
+                  >
+                    <Rss className="h-3 w-3 text-orange-500 flex-shrink-0" />
+                    <span className="truncate max-w-[140px]">{feed.name}</span>
+                    <Plus className="h-3 w-3 text-green-600 flex-shrink-0" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
         </CardContent>
       </Card>
 
@@ -360,13 +391,18 @@ export function SourcesManager() {
                     >
                       <ExternalLink className="h-4 w-4" />
                     </button>
-                    <button
-                      onClick={() => handleDelete(source.id)}
-                      className="p-2 rounded-md text-destructive hover:bg-destructive/10 transition-colors"
-                      title="Eliminar"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <div className="flex items-center">
+                      <button onClick={() => handleDelete(source.id, false)}
+                        className="p-2 rounded-md text-destructive hover:bg-destructive/10 transition-colors"
+                        title="Eliminar fuente (conserva noticias)">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                      <button onClick={() => handleDelete(source.id, true)}
+                        className="p-2 rounded-md text-red-700 hover:bg-red-100 transition-colors"
+                        title="Eliminar fuente + noticias asociadas">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </CardContent>
