@@ -1,6 +1,6 @@
 import { getDb } from "@/lib/db"
 import { news, categories } from "@noticias/database"
-import { eq, desc, and, sql } from "drizzle-orm"
+import { eq, desc, and, sql, inArray } from "drizzle-orm"
 
 const NEWSAPI_BASE_URL = "https://newsapi.org/v2"
 const NEWSAPI_KEY = process.env.VITE_NEWSAPI_KEY || process.env.NEXT_PUBLIC_NEWSAPI_KEY
@@ -97,7 +97,7 @@ export async function markNewsAsProcessed(newsIds: number[]) {
   await db
     .update(news)
     .set({ isProcessed: true })
-    .where(sql`${news.id} = ANY(ARRAY[${newsIds}])`)
+    .where(inArray(news.id, newsIds))
 }
 
 export async function deleteAllNews() {
