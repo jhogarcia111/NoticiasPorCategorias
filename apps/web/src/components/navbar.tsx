@@ -28,11 +28,8 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-50 h-16 border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
       <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 md:px-8">
-        <Link href={session ? "/dashboard" : "/"} className="flex items-center gap-3 shrink-0">
-          <Logo variant="icon" size={32} />
-          <span className="hidden text-lg font-bold text-[#0A66C2] sm:inline">
-            NoticiasPorCategorías
-          </span>
+        <Link href={session ? "/dashboard" : "/"} className="flex shrink-0 items-center">
+          <Logo size={42} />
         </Link>
 
         {session ? (

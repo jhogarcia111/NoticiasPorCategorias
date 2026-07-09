@@ -84,14 +84,14 @@ async function fetchRSSFeed(url: string) {
 
 export async function POST(request: Request) {
   try {
-    const { categoryId, query, discover, pageSize: reqPageSize } = await request.json().catch(() => ({}))
+    const { categoryId, query, discover, pageSize: reqPageSize, language: collectLanguage } = await request.json().catch(() => ({}))
     const db = getDb()
 
     if (discover) {
       if (!query) {
         return NextResponse.json({ error: "Query is required for discovery" }, { status: 400 })
       }
-      const articles = await searchNewsEverything(query, reqPageSize || 20)
+      const articles = await searchNewsEverything(query, reqPageSize || 20, collectLanguage || "es")
       const sourceMap = new Map<string, { name: string; url: string }>()
       for (const article of articles) {
         const sourceName = article.source?.name || "Unknown"
@@ -144,22 +144,32 @@ export async function POST(request: Request) {
       }
 
       try {
-        if (cat.newsapiCategory && NEWSAPI_KEY) {
-          const articles = await fetchNewsFromAPI({
-            category: cat.newsapiCategory || "technology",
-            pageSize: 10,
-          }).catch((e) => {
-            catResult.errors.push(`NewsAPI: ${e.message}`)
-            return []
-          })
-
-          if (articles.length > 0) {
-            const processed = await processAndSaveNews(articles, cat.id, "en")
-            catResult.collected += processed.length
-            catResult.total += articles.length
-            catResult.sources.push("NewsAPI")
+          if (cat.newsapiCategory && NEWSAPI_KEY) {
+            // Try English first, then Spanish
+            const langConfigs = [
+              { language: "en", country: "us" },
+              { language: "es", country: "" },
+            ]
+            for (const config of langConfigs) {
+              try {
+                const articles = await fetchNewsFromAPI({
+                  category: cat.newsapiCategory || "technology",
+                  pageSize: 10,
+                  language: config.language,
+                  country: config.country,
+                })
+                if (articles.length > 0) {
+                  const processed = await processAndSaveNews(articles, cat.id, config.language)
+                  catResult.collected += processed.length
+                  catResult.total += articles.length
+                  catResult.sources.push(`NewsAPI (${config.language})`)
+                  break // Found articles, stop trying
+                }
+              } catch (e: any) {
+                catResult.errors.push(`NewsAPI (${config.language}): ${e.message}`)
+              }
+            }
           }
-        }
 
         if (cat.rssFeedUrl) {
           try {

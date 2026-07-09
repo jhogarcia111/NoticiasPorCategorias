@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: "NoticiasPorCategorías — Publicador de Noticias LinkedIn",
   description:
     "Organiza, categoriza y publica noticias profesionales en LinkedIn de forma automática con inteligencia artificial.",
-  icons: [{ rel: "icon", url: "/logo-icon.svg" }],
+  icons: [{ rel: "icon", url: "/favicon.png" }],
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -42,6 +42,7 @@ export function SourcesManager() {
   const [discoverQuery, setDiscoverQuery] = useState("")
   const [discovering, setDiscovering] = useState(false)
   const [discoveredFeeds, setDiscoveredFeeds] = useState<any[]>([])
+  const [sourceLangFilter, setSourceLangFilter] = useState<string>("all")
 
   const fetchSources = async () => {
     try {
@@ -185,12 +186,13 @@ export function SourcesManager() {
   }
 
   const feedGroups = [...new Set(suggestedFeeds.map((f) => f.group))]
-  const filteredSuggestedFeeds = feedSearch.trim()
+  const filteredSuggestedFeeds = (feedSearch.trim()
     ? suggestedFeeds.filter(f =>
         f.name.toLowerCase().includes(feedSearch.toLowerCase()) ||
         f.group.toLowerCase().includes(feedSearch.toLowerCase()) ||
         f.url.toLowerCase().includes(feedSearch.toLowerCase()))
     : suggestedFeeds
+  ).filter(f => !sources.some(s => s.url === f.url)) // hide already added
   const filteredFeedGroups = feedSearch.trim()
     ? [...new Set(filteredSuggestedFeeds.map((f) => f.group))]
     : feedGroups
@@ -404,6 +406,9 @@ export function SourcesManager() {
         <div className="flex justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
+      ) : null}
+      {loading ? (
+        <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
       ) : sources.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
@@ -413,8 +418,26 @@ export function SourcesManager() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-2">
-          {sources.map((source) => (
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xs text-muted-foreground">🌐 Filtro:</span>
+            {[
+              { value: "all", label: "Todo" },
+              { value: "es", label: "🇨🇴" },
+              { value: "en", label: "🇺🇸" },
+            ].map((opt) => (
+              <button key={opt.value} onClick={() => setSourceLangFilter(opt.value)}
+                className={cn("px-2.5 py-1 rounded-full text-xs font-medium transition-colors border",
+                  sourceLangFilter === opt.value ? "bg-primary/10 text-primary border-primary/20" : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80")}>
+                {opt.label}
+              </button>
+            ))}
+            <span className="text-xs text-muted-foreground ml-auto">
+              {(sourceLangFilter === "all" ? sources : sources.filter(s => s.language === sourceLangFilter)).length} fuentes
+            </span>
+          </div>
+          <div className="space-y-2 max-h-[500px] overflow-y-auto">
+          {(sourceLangFilter === "all" ? sources : sources.filter(s => s.language === sourceLangFilter)).map((source: any) => (
             <Card key={source.id} className={cn(!source.isActive && "opacity-60")}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
@@ -435,7 +458,7 @@ export function SourcesManager() {
                           </Badge>
                         )}
                         <Badge variant="outline" className="text-xs text-muted-foreground">
-                          {source.language === "es" ? "🇪🇸" : source.language === "en" ? "🇬🇧" : "🌐"} {source.language?.toUpperCase()}
+                          {source.language === "es" ? "🇨🇴" : source.language === "en" ? "🇺🇸" : "🌐"} {source.language?.toUpperCase()}
                         </Badge>
                         {source.lastFetchedAt && (
                           <span className="text-xs text-muted-foreground">
@@ -497,6 +520,7 @@ export function SourcesManager() {
             </Card>
           ))}
         </div>
+      </div>
       )}
     </div>
   )

@@ -11,20 +11,26 @@ export async function fetchNewsFromAPI(options: {
   pageSize?: number
   page?: number
   query?: string
+  language?: string
 } = {}) {
-  const { category = "technology", country = "us", pageSize = 20, page = 1, query = "" } = options
+  const { category = "technology", country = "", pageSize = 20, page = 1, query = "", language = "" } = options
 
+  // Use /everything if query provided, otherwise /top-headlines
+  const isTopHeadlines = !query
   const params = new URLSearchParams({
     apiKey: NEWSAPI_KEY || "",
-    category,
-    country,
     pageSize: pageSize.toString(),
     page: page.toString(),
   })
 
-  if (query) params.append("q", query)
+  if (category && isTopHeadlines) params.set("category", category)
+  if (country) params.set("country", country)
+  if (query) params.set("q", query)
+  if (language) params.set("language", language)
 
-  const response = await fetch(`${NEWSAPI_BASE_URL}/top-headlines?${params}`)
+  const endpoint = isTopHeadlines ? `${NEWSAPI_BASE_URL}/top-headlines` : `${NEWSAPI_BASE_URL}/everything`
+
+  const response = await fetch(`${endpoint}?${params}`)
   if (!response.ok) throw new Error(`NewsAPI error: ${response.status}`)
 
   const data = await response.json()
@@ -33,12 +39,12 @@ export async function fetchNewsFromAPI(options: {
   return data.articles || []
 }
 
-export async function searchNewsEverything(query: string, pageSize: number = 20) {
+export async function searchNewsEverything(query: string, pageSize: number = 20, language: string = "es") {
   const params = new URLSearchParams({
     apiKey: NEWSAPI_KEY || "",
     q: query,
     pageSize: pageSize.toString(),
-    language: "en",
+    language,
     sortBy: "relevancy",
   })
 

@@ -138,10 +138,9 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
     } catch (e: any) { showAlert("error", "Error", e.message) }
   }
 
-  const handleMarkAsProcessed = async () => {
+  const handleGoToAI = () => {
     if (selectedNewsIds.length === 0) return
-    try { await markProcessedMutation.mutateAsync(selectedNewsIds); setSelectedNewsIds([]); onNavigate?.("ai") }
-    catch (error) { console.error("Error marking news as processed:", error) }
+    onNavigate?.("ai")
   }
 
   const handleSelectAll = () => {
@@ -206,9 +205,9 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
             Recolectar
           </Button>
           {selectedNewsIds.length > 0 && (
-            <Button onClick={handleMarkAsProcessed} disabled={markProcessedMutation.isPending} variant="outline">
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Procesar ({selectedNewsIds.length})
+            <Button onClick={handleGoToAI} variant="outline">
+              <Sparkles className="h-4 w-4 mr-2" />
+              🤖 IA ({selectedNewsIds.length})
             </Button>
           )}
         </div>

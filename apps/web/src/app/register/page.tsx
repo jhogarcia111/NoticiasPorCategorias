@@ -44,7 +44,7 @@ export default function RegisterPage() {
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-8">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <Logo variant="icon" size={56} className="mx-auto mb-5" />
+          <Logo size={80} className="mx-auto mb-6" />
           <h1 className="text-3xl font-bold tracking-tight">Crear Cuenta</h1>
           <p className="mt-2 text-muted-foreground">
             Regístrate para empezar a publicar

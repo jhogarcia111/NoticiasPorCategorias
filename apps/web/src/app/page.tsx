@@ -5,7 +5,7 @@ export default function HomePage() {
   return (
     <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center p-8">
       <div className="max-w-2xl text-center space-y-8">
-        <Logo variant="icon" size={72} className="mx-auto" />
+        <Logo size={96} className="mx-auto" />
 
         <div className="space-y-4">
           <h1 className="text-4xl font-bold tracking-tight text-[#0A66C2] md:text-5xl">
