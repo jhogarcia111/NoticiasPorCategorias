@@ -25,16 +25,20 @@ export const promptTemplates: PromptTemplate[] = [
    - Cierre: Una invitación abierta a comentar o debatir.
 
 ### TU TAREA:
-Cada vez que te proporcione una noticia o enlace, debes devolverme la información en este formato:
+Devuelve tu respuesta en EXACTAMENTE este formato, sin desviaciones:
 
-1. RESUMEN EJECUTIVO (3 puntos): Una síntesis técnica y concisa de la noticia.
-2. TEMAS CLAVE: Identifica las 3 implicaciones más importantes (ej. ética, productividad, ciberseguridad, futuro laboral).
-3. POST PARA REDES (Facebook/LinkedIn): 
-   - Un gancho inicial potente (Curiosidad/Reflexión).
-   - El contexto (Explicación breve).
-   - La reflexión (Conectando el hecho con el impacto futuro o la autonomía).
-   - Llamado a la acción (Pregunta abierta para generar debate).
-   - Sugerencia de hashtag (máximo 2).`,
+---ANALISIS---
+1. RESUMEN EJECUTIVO (3 puntos):
+[3 bullet points with key facts]
+
+2. TEMAS CLAVE:
+[3 implications with brief explanation each]
+
+---POST---
+[SOLO el texto del post para LinkedIn. Debe verse como un post escrito por un humano.
+NO incluyas "Gancho:", "Hook:", "Contexto:", "Reflexión:", "Llamado:", "Post para redes:" ni ningún otro label.
+Incluye emojis relevantes, saltos de línea, y fluidez natural.
+Termina con máximo 3 hashtags relevantes.]`,
   },
   {
     id: "educativo-divulgativo",
@@ -56,7 +60,18 @@ Cada vez que te proporcione una noticia o enlace, debes devolverme la informaci�
 1. Traducción sencilla: Explica la noticia como si se la contaras a un amigo.
 2. Por qué importa: Conexión con la vida cotidiana.
 3. Dato clave: Un dato numérico o fecha relevante.
-4. Post para redes: Texto amigable y curioso que invite a aprender algo nuevo.`,
+4. Post para redes: Texto amigable y curioso que invite a aprender algo nuevo.
+
+### FORMATO DE SALIDA:
+Devuelve tu respuesta en el siguiente formato dividido:
+
+---ANALISIS---
+1. Traducción sencilla: [explicación]
+2. Por qué importa: [conexión con la vida cotidiana]
+3. Dato clave: [dato numérico o fecha relevante]
+
+---POST---
+[SOLO el texto del post. Sin "Post para redes:" ni ningún label. Escrito como un post humano natural con emojis, saltos de línea y fluidez. Máximo 3 hashtags.]`,
   },
   {
     id: "satirico-humoristico",
@@ -78,7 +93,18 @@ Cada vez que te proporcione una noticia o enlace, debes devolverme la informaci�
 1. El titular que te gustaría ver: Versión divertida del titular real.
 2. Análisis rápido en 3 chistes: Datos clave contados con humor.
 3. Post para redes: Texto que haga reír y pensar al mismo tiempo.
-4. Hashtags: Creativity, humorísticos pero relevantes (máximo 3).`,
+4. Hashtags: Creativity, humorísticos pero relevantes (máximo 3).
+
+### FORMATO DE SALIDA:
+Devuelve tu respuesta en el siguiente formato dividido:
+
+---ANALISIS---
+1. El titular que te gustaría ver: [versión divertida del titular]
+2. Análisis rápido en 3 chistes: [datos clave con humor]
+3. Hashtags: [creativos y relevantes]
+
+---POST---
+[SOLO el texto del post. Sin "Post para redes:" ni ningún label. Escrito como post humano con humor, emojis y fluidez natural.]`,
   },
   {
     id: "ejecutivo-negocios",
@@ -99,6 +125,17 @@ Cada vez que te proporcione una noticia o enlace, debes devolverme la informaci�
 1. Resumen ejecutivo: 3 líneas con lo esencial.
 2. Impacto de mercado: Cómo afecta a la industria.
 3. Players involucrados: Quién gana, quién pierde.
-4. Post para LinkedIn: Texto profesional con llamado a la acción para colegas del sector.`,
+4. Post para LinkedIn: Texto profesional con llamado a la acción para colegas del sector.
+
+### FORMATO DE SALIDA:
+Devuelve tu respuesta en el siguiente formato dividido:
+
+---ANALISIS---
+1. Resumen ejecutivo: [3 líneas esenciales]
+2. Impacto de mercado: [cómo afecta a la industria]
+3. Players involucrados: [quién gana, quién pierde]
+
+---POST---
+[SOLO el texto del post. Sin "Post para LinkedIn:" ni ningún label. Escrito como post profesional con tono ejecutivo y fluidez natural. Máximo 3 hashtags.]`,
   },
 ]

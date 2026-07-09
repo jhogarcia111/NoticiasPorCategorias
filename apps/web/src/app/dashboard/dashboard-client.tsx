@@ -8,12 +8,13 @@ import { AIManager } from "@/components/ai/ai-manager"
 import { LinkedInProfilesManager } from "@/components/linkedin/linkedin-profiles-manager"
 import { SourcesManager } from "@/components/sources/sources-manager"
 import { EditProfileDialog } from "@/components/edit-profile-dialog"
+import { CalendarView } from "@/components/scheduling/calendar-view"
 
 interface DashboardClientProps {
   user: Session["user"]
 }
 
-type Tab = "news" | "ai" | "config"
+type Tab = "news" | "ai" | "config" | "calendar"
 
 export default function DashboardClient({ user }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<Tab>("news")
@@ -24,14 +25,15 @@ export default function DashboardClient({ user }: DashboardClientProps) {
   const [cachedNews, setCachedNews] = useState<any[]>([])
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: "news", label: "Noticias" },
-    { id: "ai", label: "Procesar con IA" },
-    { id: "config", label: "Configuración" },
+    { id: "news", label: "📰 Noticias" },
+    { id: "ai", label: "🤖 Procesar con IA" },
+    { id: "config", label: "⚙️ Configuración" },
+    { id: "calendar", label: "📅 Calendario" },
   ]
 
   const configTabs = [
-    { id: "linkedin" as const, label: "Perfiles LinkedIn" },
-    { id: "sources" as const, label: "Fuentes de Noticias" },
+    { id: "linkedin" as const, label: "👤 Perfiles LinkedIn" },
+    { id: "sources" as const, label: "📡 Fuentes de Noticias" },
   ]
 
   return (
@@ -55,7 +57,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                 onClick={() => setActiveTab(tab.id)}
                 className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === tab.id
-                    ? "border-[#0A66C2] text-[#0A66C2]"
+                    ? "border-primary text-primary"
                     : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -63,24 +65,6 @@ export default function DashboardClient({ user }: DashboardClientProps) {
               </button>
             ))}
           </div>
-        </div>
-      </div>
-
-      <div className="border-b">
-        <div className="flex gap-0 px-8">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === tab.id
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
         </div>
       </div>
 
@@ -120,6 +104,8 @@ export default function DashboardClient({ user }: DashboardClientProps) {
             {configSubTab === "sources" && <SourcesManager />}
           </div>
         )}
+
+        {activeTab === "calendar" && <CalendarView />}
       </main>
 
       <EditProfileDialog isOpen={showEditProfile} onClose={() => setShowEditProfile(false)} />
