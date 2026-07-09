@@ -16,7 +16,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
   const tabs: { id: Tab; label: string }[] = [
     { id: "news", label: "Noticias" },
     { id: "linkedin", label: "LinkedIn" },
-    { id: "scheduling", label: "Programaci\u00f3n" },
+    { id: "scheduling", label: "Programación" },
     { id: "ai", label: "IA" },
   ]
 
@@ -33,7 +33,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
               onClick={() => signOut()}
               className="rounded-md bg-destructive/10 px-4 py-2 text-sm text-destructive hover:bg-destructive/20"
             >
-              Cerrar Sesi\u00f3n
+              Cerrar Sesión
             </button>
           </div>
         </div>
@@ -70,9 +70,9 @@ export default function DashboardClient({ user }: DashboardClientProps) {
 function NewsTab() {
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Gesti\u00f3n de Noticias</h2>
+      <h2 className="text-2xl font-bold">Gestión de Noticias</h2>
       <p className="text-muted-foreground">
-        Administra las noticias recolectadas, organiza por categor\u00edas y procesa con IA.
+        Administra las noticias recolectadas, organiza por categorías y procesa con IA.
       </p>
     </div>
   )
@@ -98,9 +98,9 @@ function LinkedInTab() {
 function SchedulingTab() {
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Programaci\u00f3n de Publicaciones</h2>
+      <h2 className="text-2xl font-bold">Programación de Publicaciones</h2>
       <p className="text-muted-foreground">
-        Configura horarios y frecuencia de publicaciones autom\u00e1ticas en LinkedIn.
+        Configura horarios y frecuencia de publicaciones automáticas en LinkedIn.
       </p>
     </div>
   )
@@ -111,7 +111,7 @@ function AITab() {
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Contenido con IA</h2>
       <p className="text-muted-foreground">
-        Genera res\u00famenes, hashtags y contenido optimizado para LinkedIn usando inteligencia artificial.
+        Genera resúmenes, hashtags y contenido optimizado para LinkedIn usando inteligencia artificial.
       </p>
     </div>
   )

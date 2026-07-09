@@ -76,7 +76,7 @@ export async function processAndSaveNews(articles: any[], categoryId: number) {
       .insert(news)
       .values({
         categoryId,
-        title: article.title || "Sin t\u00edtulo",
+        title: article.title || "Sin título",
         sourceUrl: article.url,
         imageUrl: article.urlToImage,
         sourceName: article.source?.name || "Fuente desconocida",

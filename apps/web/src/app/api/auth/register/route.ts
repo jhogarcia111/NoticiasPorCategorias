@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     const { email, password, username } = await request.json()
 
     if (!email || !password) {
-      return NextResponse.json({ error: "Email y contrase\u00f1a requeridos" }, { status: 400 })
+      return NextResponse.json({ error: "Email y contraseña requeridos" }, { status: 400 })
     }
 
     const response = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {

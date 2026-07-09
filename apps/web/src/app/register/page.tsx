@@ -34,7 +34,7 @@ export default function RegisterPage() {
 
       router.push("/login?registered=true")
     } catch (err) {
-      setError("Error de conexi\u00f3n")
+      setError("Error de conexión")
       setLoading(false)
     }
   }
@@ -45,7 +45,7 @@ export default function RegisterPage() {
         <div className="text-center">
           <h1 className="text-3xl font-bold">Crear Cuenta</h1>
           <p className="text-muted-foreground mt-2">
-            Reg\u00edstrate para empezar
+            Regístrate para empezar
           </p>
         </div>
 
@@ -82,7 +82,7 @@ export default function RegisterPage() {
 
           <div className="space-y-2">
             <label htmlFor="password" className="text-sm font-medium">
-              Contrase\u00f1a
+              Contraseña
             </label>
             <input
               id="password"
@@ -111,9 +111,9 @@ export default function RegisterPage() {
         </form>
 
         <p className="text-center text-sm text-muted-foreground">
-          {"\u00bf"}Ya tienes cuenta?{" "}
+          ¿Ya tienes cuenta?{" "}
           <Link href="/login" className="font-medium text-primary hover:underline">
-            Inicia sesi\u00f3n
+            Inicia sesión
           </Link>
         </p>
       </div>
