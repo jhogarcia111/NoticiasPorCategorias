@@ -4,37 +4,35 @@ import type { Session } from "next-auth"
 import { useState } from "react"
 import { UserDropdown } from "@/components/user-dropdown"
 import { NewsManager } from "@/components/news/news-manager"
-import { LinkedInProfilesManager } from "@/components/linkedin/linkedin-profiles-manager"
-import { SchedulingConfig } from "@/components/scheduling/scheduling-config"
-import { ScheduledPostsManager } from "@/components/scheduling/scheduled-posts-manager"
-import { AutoScheduleNews } from "@/components/scheduling/auto-schedule-news"
 import { AIManager } from "@/components/ai/ai-manager"
-import { EditProfileDialog } from "@/components/edit-profile-dialog"
+import { LinkedInProfilesManager } from "@/components/linkedin/linkedin-profiles-manager"
 import { SourcesManager } from "@/components/sources/sources-manager"
+import { EditProfileDialog } from "@/components/edit-profile-dialog"
 
 interface DashboardClientProps {
   user: Session["user"]
 }
 
-type Tab = "news" | "linkedin" | "scheduling" | "ai" | "sources"
+type Tab = "news" | "ai" | "config"
 
 export default function DashboardClient({ user }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState<Tab>("news")
-  const [schedulingSubTab, setSchedulingSubTab] = useState<"config" | "posts" | "auto">("config")
   const [showEditProfile, setShowEditProfile] = useState(false)
+  const [configSubTab, setConfigSubTab] = useState<"linkedin" | "sources">("linkedin")
+
+  // Lifted state for selected news (shared between NewsManager and AIManager)
+  const [selectedNewsIds, setSelectedNewsIds] = useState<number[]>([])
+  const [cachedNews, setCachedNews] = useState<any[]>([])
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "news", label: "Noticias" },
-    { id: "linkedin", label: "LinkedIn" },
-    { id: "scheduling", label: "Programación" },
-    { id: "ai", label: "IA" },
-    { id: "sources", label: "Fuentes" },
+    { id: "ai", label: "Procesar con IA" },
+    { id: "config", label: "Configuración" },
   ]
 
-  const schedulingTabs = [
-    { id: "config" as const, label: "Configuración" },
-    { id: "posts" as const, label: "Posts Programados" },
-    { id: "auto" as const, label: "Auto Programar" },
+  const configTabs = [
+    { id: "linkedin" as const, label: "Perfiles LinkedIn" },
+    { id: "sources" as const, label: "Fuentes de Noticias" },
   ]
 
   return (
@@ -71,20 +69,28 @@ export default function DashboardClient({ user }: DashboardClientProps) {
       </div>
 
       <main className="p-8">
-        {activeTab === "news" && <NewsManager />}
+        {activeTab === "news" && (
+          <NewsManager
+            selectedNewsIds={selectedNewsIds}
+            onSelectionChange={setSelectedNewsIds}
+            onNewsDataChange={setCachedNews}
+          />
+        )}
 
-        {activeTab === "linkedin" && <LinkedInProfilesManager />}
+        {activeTab === "ai" && (
+          <AIManager selectedNewsIds={selectedNewsIds} news={cachedNews} />
+        )}
 
-        {activeTab === "scheduling" && (
+        {activeTab === "config" && (
           <div className="space-y-6">
             <div className="border-b">
               <div className="flex gap-0">
-                {schedulingTabs.map((st) => (
+                {configTabs.map((st) => (
                   <button
                     key={st.id}
-                    onClick={() => setSchedulingSubTab(st.id)}
+                    onClick={() => setConfigSubTab(st.id)}
                     className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                      schedulingSubTab === st.id
+                      configSubTab === st.id
                         ? "border-primary text-primary"
                         : "border-transparent text-muted-foreground hover:text-foreground"
                     }`}
@@ -94,15 +100,10 @@ export default function DashboardClient({ user }: DashboardClientProps) {
                 ))}
               </div>
             </div>
-            {schedulingSubTab === "config" && <SchedulingConfig />}
-            {schedulingSubTab === "posts" && <ScheduledPostsManager />}
-            {schedulingSubTab === "auto" && <AutoScheduleNews />}
+            {configSubTab === "linkedin" && <LinkedInProfilesManager />}
+            {configSubTab === "sources" && <SourcesManager />}
           </div>
         )}
-
-        {activeTab === "ai" && <AIManager />}
-
-        {activeTab === "sources" && <SourcesManager />}
       </main>
 
       <EditProfileDialog isOpen={showEditProfile} onClose={() => setShowEditProfile(false)} />

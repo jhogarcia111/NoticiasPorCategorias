@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,11 +13,28 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-export function NewsManager() {
+interface NewsManagerProps {
+  selectedNewsIds?: number[]
+  onSelectionChange?: (ids: number[]) => void
+  onNewsDataChange?: (news: any[]) => void
+}
+
+export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, onNewsDataChange }: NewsManagerProps = {}) {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
   const [showUnprocessed, setShowUnprocessed] = useState(false)
-  const [selectedNewsIds, setSelectedNewsIds] = useState<number[]>([])
+  const [internalSelectedIds, setInternalSelectedIds] = useState<number[]>([])
+
+  // Use external ids if provided, otherwise use internal
+  const selectedNewsIds = externalIds ?? internalSelectedIds
+  const setSelectedNewsIds = (ids: number[] | ((prev: number[]) => number[])) => {
+    const resolved = typeof ids === "function" ? ids(externalIds ?? internalSelectedIds) : ids
+    if (onSelectionChange) {
+      onSelectionChange(resolved)
+    } else {
+      setInternalSelectedIds(resolved)
+    }
+  }
   const [alert, setAlert] = useState<{ variant: string; title: string; message: string } | null>(null)
   const [customQuery, setCustomQuery] = useState("")
   const [showNewCat, setShowNewCat] = useState(false)
@@ -33,6 +50,14 @@ export function NewsManager() {
   const categories = categoriesData || []
 
   const { data: newsData, isLoading } = useNews({ categoryId: selectedCategory, limit: 50, processed: null })
+
+  // Sync news data to parent for AI tab
+  useEffect(() => {
+    const items = newsData?.data || []
+    if (onNewsDataChange && items.length > 0) {
+      onNewsDataChange(items)
+    }
+  }, [newsData, onNewsDataChange])
   const collectMutation = useCollectNews()
   const markProcessedMutation = useMarkNewsAsProcessed()
 

@@ -43,19 +43,26 @@ Resumen:`
 }
 
 export async function generateLinkedInPost(
-  newsItems: { title: string; summary?: string }[],
-  options: { language?: string; style?: string; maxLength?: number } = {},
+  newsItems: { title: string; summary?: string; source_url?: string }[],
+  options: { language?: string; style?: string; maxLength?: number; systemPrompt?: string; customPrompt?: string } = {},
 ) {
-  const { language = "es", style = "professional", maxLength = 1300 } = options
+  const { language = "es", style = "professional", maxLength = 1300, systemPrompt, customPrompt } = options
 
   const newsText = newsItems
-    .map((item, i) => `${i + 1}. ${item.title}\n   ${item.summary}`)
+    .map((item, i) => `${i + 1}. ${item.title}\n   ${item.summary || ""}\n   Fuente: ${item.source_url || ""}`)
     .join("\n\n")
 
   const langInstruction =
     language === "es"
       ? "IMPORTANTE: Escribe el post completamente en español."
       : "IMPORTANTE: Write the post in English."
+
+  // Use custom system prompt if provided, otherwise use default
+  if (systemPrompt) {
+    const extra = customPrompt ? `\n\nInstrucciones adicionales del usuario:\n${customPrompt}` : ""
+    const prompt = `${systemPrompt}\n\n### NOTICIAS A PROCESAR:\n${newsText}\n${extra}\n\n${langInstruction}`
+    return callDeepSeek(prompt, 1000)
+  }
 
   const prompt = `Eres un experto en marketing de contenido para LinkedIn. 
 Crea un post profesional y atractivo basado en estas noticias:
