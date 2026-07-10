@@ -3,13 +3,15 @@
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import { useState, useRef, useEffect } from "react"
-import { Settings, LogOut, ChevronDown, Menu, X } from "lucide-react"
+import { Settings, LogOut, ChevronDown, Menu, X, User } from "lucide-react"
 import { Logo } from "./logo"
+import { EditProfileDialog } from "./edit-profile-dialog"
 
 export function Navbar() {
   const { data: session } = useSession()
   const [isOpen, setIsOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [showEditProfile, setShowEditProfile] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -33,6 +35,11 @@ export function Navbar() {
         </Link>
 
         {session ? (
+          <>
+            <div className="hidden md:flex items-center gap-2">
+              <span className="text-sm font-semibold">📰 NoticiasPorCategorias</span>
+              <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">v1.1.0</span>
+            </div>
           <div ref={ref} className="relative">
             <button
               onClick={() => setIsOpen(!isOpen)}
@@ -53,6 +60,13 @@ export function Navbar() {
                   <p className="truncate text-sm font-medium">{user?.name || "Usuario"}</p>
                   <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
                 </div>
+                <button
+                  onClick={() => { setIsOpen(false); setShowEditProfile(true) }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-muted"
+                >
+                  <User className="h-4 w-4" />
+                  Editar Perfil
+                </button>
                 <Link
                   href="/dashboard"
                   onClick={() => setIsOpen(false)}
@@ -72,6 +86,7 @@ export function Navbar() {
               </div>
             )}
           </div>
+          </>
         ) : (
           <div className="flex items-center gap-2">
             {/* Mobile menu toggle */}
@@ -122,6 +137,7 @@ export function Navbar() {
           </div>
         </div>
       )}
+      <EditProfileDialog isOpen={showEditProfile} onClose={() => setShowEditProfile(false)} />
     </nav>
   )
 }
