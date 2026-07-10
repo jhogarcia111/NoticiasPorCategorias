@@ -286,8 +286,8 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
 
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">🤖 Procesar con IA</h2>
-          <p className="text-muted-foreground text-sm">Selecciona noticias, elige un estilo y genera contenido optimizado para LinkedIn</p>
+          <h2 className="text-base font-bold text-gray-900">🤖 Procesar con IA</h2>
+          <p className="text-muted-foreground text-xs">Selecciona noticias, elige un estilo y genera contenido optimizado para LinkedIn</p>
         </div>
         <div className="flex items-center gap-2">
           <Brain className="h-5 w-5 text-blue-500" />

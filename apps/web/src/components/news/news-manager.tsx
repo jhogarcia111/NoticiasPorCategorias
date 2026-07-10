@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -45,6 +46,8 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
   const [newCatDesc, setNewCatDesc] = useState("")
   const [deleteCatId, setDeleteCatId] = useState<number | null>(null)
   const [deleting, setDeleting] = useState(false)
+
+  const queryClient = useQueryClient()
 
   const { data: categoriesData, isLoading: catsLoading } = useCategories()
   const toggleCategory = useToggleCategory()
@@ -159,6 +162,7 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
       const res = await fetch("/api/news?all=true", { method: "DELETE" })
       if (!res.ok) throw new Error((await res.json()).error)
       showAlert("success", "Todas las noticias eliminadas", "")
+      queryClient.invalidateQueries({ queryKey: ["news"] })
     } catch (e: any) { showAlert("error", "Error", e.message) }
     finally { setDeleting(false) }
   }
@@ -172,6 +176,7 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
       if (!res.ok) throw new Error((await res.json()).error)
       showAlert("success", "Noticias eliminadas de la categoría", "")
       setDeleteCatId(null)
+      queryClient.invalidateQueries({ queryKey: ["news"] })
     } catch (e: any) { showAlert("error", "Error", e.message) }
     finally { setDeleting(false) }
   }
@@ -193,29 +198,6 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
           {alert.message && <p className="mt-0.5 text-xs">{alert.message}</p>}
         </div>
       )}
-
-      {/* Action bar */}
-      <div className="flex justify-between items-center gap-2">
-        <div className="flex gap-2">
-          <Button size="sm" onClick={handleCollectNews} disabled={collectMutation.isPending}>
-            <RefreshCw className={cn("h-3.5 w-3.5 mr-1.5", collectMutation.isPending && "animate-spin")} />
-            Recolectar
-          </Button>
-          {selectedNewsIds.length > 0 && (
-            <Button size="sm" onClick={handleGoToAI} variant="outline">
-              <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-              🤖 IA ({selectedNewsIds.length})
-            </Button>
-          )}
-        </div>
-        <div className="flex gap-2">
-          {filteredNews.length > 0 && (
-            <Button variant="ghost" size="sm" onClick={handleSelectAll}>
-              {selectedNewsIds.length === filteredNews.length ? "Deseleccionar" : "Todo"}
-            </Button>
-          )}
-        </div>
-      </div>
 
       {/* Three columns: Categories + Custom Search + Filters */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -323,12 +305,27 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
       <Card>
         <CardHeader className="pb-3">
           <div className="flex justify-between items-center">
-            <div><CardTitle className="text-base">Noticias</CardTitle><CardDescription>{filteredNews.length} encontradas</CardDescription></div>
-            {filteredNews.length > 0 && (
-              <Button variant="outline" onClick={handleSelectAll} size="sm">
-                {selectedNewsIds.length === filteredNews.length ? "Deseleccionar" : "Seleccionar Todo"}
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-sm font-semibold">Noticias</CardTitle>
+              <CardDescription className="text-xs">{filteredNews.length} encontradas</CardDescription>
+              <Button size="sm" onClick={handleCollectNews} disabled={collectMutation.isPending} className="h-7 text-[11px] px-2.5">
+                <RefreshCw className={cn("h-3 w-3 mr-1", collectMutation.isPending && "animate-spin")} />
+                Recolectar
               </Button>
-            )}
+              {selectedNewsIds.length > 0 && (
+                <Button size="sm" onClick={handleGoToAI} variant="outline" className="h-7 text-[11px] px-2.5">
+                  <Sparkles className="h-3.5 w-3.5 mr-1" />
+                  🤖 IA ({selectedNewsIds.length})
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              {filteredNews.length > 0 && (
+                <Button variant="ghost" size="sm" onClick={handleSelectAll} className="h-7 text-[11px]">
+                  {selectedNewsIds.length === filteredNews.length ? "Deseleccionar" : "Todo"}
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent>

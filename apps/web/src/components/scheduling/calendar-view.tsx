@@ -109,8 +109,8 @@ export function CalendarView() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">📅 Calendario de Publicaciones</h2>
-          <p className="text-muted-foreground">Visualiza y edita tus publicaciones programadas</p>
+          <h2 className="text-base font-bold text-gray-900">📅 Calendario de Publicaciones</h2>
+          <p className="text-muted-foreground text-xs">Visualiza y edita tus publicaciones programadas</p>
         </div>
       </div>
 

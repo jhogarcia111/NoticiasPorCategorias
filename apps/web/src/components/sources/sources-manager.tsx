@@ -233,8 +233,8 @@ export function SourcesManager() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Fuentes de Noticias</h2>
-          <p className="text-muted-foreground">Administra fuentes RSS y APIs para recolectar noticias</p>
+          <h2 className="text-base font-bold text-gray-900">📡 Fuentes de Noticias</h2>
+          <p className="text-muted-foreground text-xs">Administra fuentes RSS y APIs para recolectar noticias</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={fetchSources} disabled={loading}>
