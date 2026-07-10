@@ -175,12 +175,20 @@ Plataforma SaaS de automatización de contenido para LinkedIn. Recolecta noticia
 6. Programa publicaciones → `scheduling_configs` + `scheduled_posts`
 7. El sistema publica automáticamente en LinkedIn según el calendario
 
-## Plan de Monetización (SaaS)
+## Planes de Precio
 
-- **Freemium**: 1 perfil LinkedIn, 10 noticias/mes, 1 categoría
-- **Pro ($29/mes)**: 3 perfiles, 300 noticias/mes, 10 categorías, scheduling completo
-- **Business ($79/mes)**: 10 perfiles, noticias ilimitadas, categorías ilimitadas, equipo hasta 3
-- **Enterprise ($199/mes)**: Perfiles ilimitados, white-label, API access, soporte prioritario
+| Característica | Gratis ($0) | Pro ($29/mes) | Business ($79/mes) |
+|---|---|---|---|
+| Publicaciones | 1/mes | Ilimitadas | Ilimitadas |
+| Texto AI | 200 caracteres máx | Completo | Completo |
+| Perfiles LinkedIn | 1 | 3 | Ilimitados |
+| Categorías | 1 | 10 | Ilimitadas |
+| Calendario | ✗ | ✓ | ✓ |
+| Prog. automática | ✗ | ✓ | ✓ |
+| Estilos escritura | 1 | 4 | 4 |
+| Equipo | — | — | Hasta 3 miembros |
+| API | ✗ | ✗ | ✓ |
+| Soporte | Email | Prioritario | Dedicado 24/7 |
 
 ## Conceptos Clave para el Agente
 
@@ -197,18 +205,56 @@ Plataforma SaaS de automatización de contenido para LinkedIn. Recolecta noticia
 ```
 apps/web/src/
 ├── app/
-│   ├── layout.tsx                # Layout raíz
-│   ├── page.tsx                  # Landing actual (REEMPLAZAR)
+│   ├── layout.tsx                # Layout raíz (Navbar público + Footer)
+│   ├── page.tsx                  # Landing SaaS (hero, beneficios, planes, FOMO, FAQ)
 │   ├── login/page.tsx
 │   ├── register/page.tsx
 │   └── dashboard/
+│       ├── page.tsx              # Auth guard + renderiza DashboardClient
+│       ├── layout.tsx            # Sidebar fija + header superior + DashboardProvider
+│       ├── dashboard-client.tsx  # Orquesta tabs: home, news, ai, calendar, config
+│       └── dashboard-context.tsx # Context: activeTab, selectedNewsIds, cachedNews
 ├── components/
-│   ├── navbar.tsx                # Navbar (ya incluye login/register links)
+│   ├── navbar.tsx                # Navbar público (login/register links)
 │   ├── logo.tsx                  # Componente Logo
 │   ├── providers.tsx             # SessionProvider + QueryClient
 │   ├── footer-wrapper.tsx
-│   └── ui/
-├── hooks/
-├── lib/
-└── services/
+│   ├── news/
+│   │   ├── news-manager.tsx      # Toolbar + filtros + lista de noticias
+│   │   ├── news-list.tsx         # Lista expandible con badges de fecha/status
+│   │   └── news-card.tsx         # (en desuso, reemplazado por news-list)
+│   ├── ai/
+│   │   └── ai-manager.tsx        # Panel dividido: noticias + templates | preview LinkedIn
+│   ├── scheduling/
+│   │   └── calendar-view.tsx     # Calendario grid con dots + detalle del día
+│   ├── linkedin/
+│   │   └── linkedin-profiles-manager.tsx  # Grid de perfiles conectados
+│   ├── sources/
+│   │   └── sources-manager.tsx   # Grid de fuentes RSS/API
+│   └── ui/                       # Button, Card, Input, Badge (shadcn/ui style)
+├── hooks/                        # use-news, use-ai, use-categories, use-linkedin, use-scheduling
+├── lib/                          # auth.ts, supabase-auth.ts, db.ts, utils.ts
+└── services/                     # ai-service, news-service, linkedin-service, scheduling-service
 ```
+
+## Landing Page — Mensaje Clave
+
+- **Copy principal**: "Importa noticias. Publica. Posiciónate."
+- **Propuesta de valor**: La IA escribe con tu misma forma de hablar. Comparte contenido de calidad, reciente y potente para tu nicho.
+- **Sin mentiras**: No hay testimonios falsos, ni stats inflados. Solo beneficios reales y FOMO basado en verdades del mercado.
+- **Imágenes**: Generadas con pollinations.ai, refuerzan el mensaje visual.
+- **Planes**:
+  - Gratis ($0): 1 publicación/mes, 200 caracteres máx, 1 perfil, 1 categoría, sin calendario
+  - Pro ($29/mes): Publicaciones ilimitadas, texto completo, 3 perfiles, 10 categorías, calendario
+  - Business ($79/mes): Todo Pro + perfiles ilimitados, equipo, API
+
+## Dashboard — Arquitectura
+
+- **Sidebar fija** (w-60) con iconos Lucide: Inicio, Noticias, IA, Calendario, Configuración
+- **Header superior** con título del tab activo + botón Salir
+- **DashboardProvider** (Context) comparte: activeTab, selectedNewsIds, cachedNews entre tabs
+- **Tab Home**: Tarjeta de bienvenida, stats rápidos, accesos directos a acciones principales
+- **Tab Noticias**: Toolbar compacto (búsqueda, categorías pills, filtros, recolectar) + lista expandible
+- **Tab IA**: Panel izquierdo (noticias seleccionadas + templates), panel derecho (preview LinkedIn realista + acordeones de análisis)
+- **Tab Calendario**: Grid mensual con dots de color por estado + detalle del día seleccionado
+- **Tab Configuración**: Segmented toggle entre Perfiles LinkedIn y Fuentes de Noticias

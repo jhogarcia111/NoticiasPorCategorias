@@ -1,111 +1,103 @@
 "use client"
 
 import Link from "next/link"
-import { useState, useEffect, useCallback } from "react"
+import { useState } from "react"
 import {
-  TrendingUp, Sparkles, Calendar, Zap, Users, Globe, ChevronRight,
-  Star, CheckCircle2, ArrowRight, Clock, BarChart3, Shield,
-  Linkedin, Newspaper, Brain, Image, ChevronLeft
+  TrendingUp, Sparkles, Calendar, Zap, Globe, ChevronRight,
+  Star, CheckCircle2, ArrowRight, Clock, BarChart3,
+  Linkedin, Newspaper, Brain, MessageCircle, Quote, Target
 } from "lucide-react"
-
-const stats = [
-  { value: "10K+", label: "Publicaciones realizadas" },
-  { value: "98%", label: "Tasa de publicaci\u00f3n exitosa" },
-  { value: "500+", label: "Usuarios activos" },
-  { value: "4.9", label: "Calificaci\u00f3n promedio" },
-]
 
 const benefits = [
   {
     icon: Newspaper,
-    title: "Noticias curadas al instante",
-    desc: "Recolectamos las noticias m\u00e1s relevantes de tu industria desde m\u00faltiples fuentes y las organizamos por categor\u00edas.",
+    title: "Importa noticias de tu nicho",
+    desc: "Conecta tus fuentes favoritas o elige entre 10+ categorías. La plataforma recolecta las noticias más relevantes para tu industria automáticamente.",
     color: "text-blue-600",
     bg: "bg-blue-100",
+    img: "https://image.pollinations.ai/prompt/professional_news_dashboard_curated_headlines_technology_business_health_modern_design?width=600&height=400&nofeed=true",
   },
   {
-    icon: Brain,
-    title: "IA que escribe por ti",
-    desc: "DeepSeek AI genera res\u00famenes, publicaciones optimizadas, hashtags y prompts de imagen en segundos.",
+    icon: MessageCircle,
+    title: "Publica con tu misma forma de hablar",
+    desc: "La IA aprende tu tono y estilo. No sonarás a robot. Elige entre 4 estilos: crítico, educativo, satírico o ejecutivo. Tu voz, aumentada.",
     color: "text-purple-600",
     bg: "bg-purple-100",
+    img: "https://image.pollinations.ai/prompt/writer_ai_assistant_drafting_linkedin_post_professional_tone_clean_interface?width=600&height=400&nofeed=true",
   },
   {
     icon: Linkedin,
-    title: "Publicaci\u00f3n directa a LinkedIn",
-    desc: "Conecta tus perfiles y publica automaticamente sin salir de la plataforma. Soporte para multiples cuentas.",
+    title: "Comparte contenido de calidad",
+    desc: "No más publicar por publicar. Cada noticia se transforma en un post optimizado para LinkedIn con resumen, hashtags e imagen generada por IA.",
     color: "text-[#0A66C2]",
     bg: "bg-[#0A66C2]/10",
+    img: "https://image.pollinations.ai/prompt/linkedin_profile_publishing_news_article_professional_growth_career_opportunity?width=600&height=400&nofeed=true",
   },
   {
     icon: Calendar,
-    title: "Calendario inteligente",
-    desc: "Programa tus publicaciones con horarios optimizados. El sistema publica por ti en el mejor momento.",
+    title: "Programa y olvídate",
+    desc: "Define tu calendario de publicaciones una vez. El sistema se encarga de mantener tu presencia activa mientras tú trabajas en lo importante.",
     color: "text-green-600",
     bg: "bg-green-100",
+    img: "https://image.pollinations.ai/prompt/calendar_schedule_automation_linkedin_posts_weekly_planning_clean_ux?width=600&height=400&nofeed=true",
   },
   {
-    icon: BarChart3,
-    title: "4 estilos de escritura",
-    desc: "Elige entre cr\u00edtico, educativo, sat\u00edrico o ejecutivo. La IA se adapta a tu voz y audiencia.",
+    icon: Target,
+    title: "Posiciónate como experto",
+    desc: "Publica contenido fresco y relevante de forma consistente. Tu audiencia te reconocerá como una autoridad en tu campo.",
     color: "text-orange-600",
     bg: "bg-orange-100",
+    img: "https://image.pollinations.ai/prompt/professional_growing_career_expert_status_linkedin_success_network?width=600&height=400&nofeed=true",
   },
   {
     icon: Globe,
-    title: "Multi-idioma",
-    desc: "Soporte completo para Espa\u00f1ol e Ingl\u00e9s. Ideal para profesionales bilinguales y audiencias globales.",
+    title: "Alcance multilingüe",
+    desc: "Crea contenido en español e inglés. Ideal para llegar a audiencias globales sin perder la autenticidad de tu mensaje.",
     color: "text-teal-600",
     bg: "bg-teal-100",
+    img: "https://image.pollinations.ai/prompt/global_audience_multilingual_content_spanish_english_connected_world?width=600&height=400&nofeed=true",
   },
 ]
 
-const testimonials = [
+const steps = [
   {
-    name: "Carlos Mendoza",
-    role: "Consultor de Innovaci\u00f3n",
-    avatar: "CM",
-    text: "Antes pasaba 3 horas diarias creando contenido. Ahora lo hace la IA y yo solo reviso. Mi engagement subi\u00f3 4x.",
-    rating: 5,
+    icon: Newspaper,
+    title: "Importa noticias",
+    desc: "Conecta tus fuentes o elige categorías. La plataforma busca lo más relevante para tu nicho.",
   },
   {
-    name: "Ana Luc\u00eda Ram\u00edrez",
-    role: "Directora de Marketing",
-    avatar: "AL",
-    text: "Conectar LinkedIn fue instant\u00e1neo. En mi primera semana ya ten\u00eda 5 publicaciones programadas y listas.",
-    rating: 5,
+    icon: Brain,
+    title: "La IA escribe contigo",
+    desc: "Selecciona tu estilo y la IA genera un post con tu voz. Tú apruebas, ajustas o regeneras.",
   },
   {
-    name: "Roberto Jim\u00e9nez",
-    role: "CEO en TechStartup",
-    avatar: "RJ",
-    text: "La funcionalidad de calendario me salv\u00f3. Programa un mes en 10 minutos y olv\u00eddese. Resultados incre\u00edbles.",
-    rating: 5,
+    icon: Linkedin,
+    title: "Publica en LinkedIn",
+    desc: "Un clic y el post está en tu perfil. O programa varios para que se publiquen automáticamente.",
   },
   {
-    name: "Mar\u00eda Fernanda D\u00edaz",
-    role: "Estratega de Marca Personal",
-    avatar: "MF",
-    text: "Los 4 estilos de escritura son brutales. Uso el ejecutivo para clientes y el sat\u00edrico para mi marca personal.",
-    rating: 5,
+    icon: MessageCircle,
+    title: "Interactúa y crece",
+    desc: "Contenido consistente y de calidad atrae a las personas correctas. Las oportunidades llegan solas.",
   },
 ]
 
 const plans = [
   {
-    name: "Freemium",
+    name: "Gratis",
     price: "$0",
-    period: "siempre gratis",
-    desc: "Perfecto para probar la plataforma",
+    period: "siempre",
+    desc: "Para probar el poder de la plataforma",
     features: [
+      "1 publicación por mes",
+      "Texto limitado a 200 caracteres",
       "1 perfil de LinkedIn",
-      "10 noticias/mes",
-      "1 categor\u00eda",
-      "Estilo de escritura \u00fanico",
-      "Soporte por email",
+      "1 categoría de noticias",
+      "Publicación manual (sin calendario)",
     ],
     cta: "Comenzar gratis",
     popular: false,
+    highlight: "Ideal para conocer la plataforma",
   },
   {
     name: "Pro",
@@ -113,16 +105,18 @@ const plans = [
     period: "/mes",
     desc: "Para profesionales que crecen en LinkedIn",
     features: [
+      "Publicaciones ilimitadas",
+      "Texto completo sin límites",
       "3 perfiles de LinkedIn",
-      "300 noticias/mes",
-      "10 categor\u00edas",
+      "10 categorías de noticias",
+      "Calendario inteligente",
+      "Programación automática",
       "4 estilos de escritura",
-      "Calendario completo",
-      "Publicaci\u00f3n autom\u00e1tica",
       "Soporte prioritario",
     ],
     cta: "Empezar prueba gratis",
     popular: true,
+    highlight: "La opción más elegida",
   },
   {
     name: "Business",
@@ -130,94 +124,51 @@ const plans = [
     period: "/mes",
     desc: "Para agencias y equipos",
     features: [
-      "10 perfiles de LinkedIn",
-      "Noticias ilimitadas",
-      "Categor\u00edas ilimitadas",
-      "4 estilos de escritura",
-      "Calendario completo",
+      "Todo lo de Pro",
+      "Perfiles ilimitados de LinkedIn",
+      "Categorías ilimitadas",
       "Hasta 3 miembros de equipo",
       "API access",
       "Soporte dedicado 24/7",
     ],
     cta: "Contactar ventas",
     popular: false,
+    highlight: "Para escalar",
   },
 ]
 
-const metrics = [
-  { icon: Clock, value: "10 min", label: "de configuraci\u00f3n inicial" },
-  { icon: TrendingUp, value: "3.5x", label: "m\u00e1s engagement en LinkedIn" },
-  { icon: Zap, value: "90%", label: "menos tiempo creando contenido" },
-  { icon: Users, value: "500+", label: "profesionales conf\u00edan en nosotros" },
+const faqs = [
+  {
+    q: "¿Necesito experiencia en LinkedIn para usar la plataforma?",
+    a: "No. La plataforma está diseñada para cualquier profesional. Conectas tu perfil, eliges tus temas y la IA se encarga del contenido. Tú solo revisas y publicas.",
+  },
+  {
+    q: "¿Puedo cancelar en cualquier momento?",
+    a: "Sí. No hay contratos anuales ni permanencias. Cancela cuando quieras desde tu panel de control. Sin multas ni penalizaciones.",
+  },
+  {
+    q: "¿Qué tipo de noticias puedo importar?",
+    a: "Puedes elegir entre más de 10 categorías predefinidas como tecnología, negocios, salud, ciencia y entretenimiento. También puedes agregar tus propias fuentes RSS.",
+  },
+  {
+    q: "¿Cómo funciona el límite del plan Gratis?",
+    a: "En el plan Gratis puedes publicar 1 post por mes con un máximo de 200 caracteres. Es suficiente para probar la calidad del contenido generado por IA y decidir si el plan Pro es para ti.",
+  },
+  {
+    q: "¿La IA realmente escribe con mi estilo?",
+    a: "Sí. Puedes elegir entre 4 estilos de escritura: crítico, educativo, satírico y ejecutivo. Cada uno ajusta el tono, la estructura y el lenguaje para que suene a ti, no a un bot.",
+  },
 ]
 
-const logos = [
-  "Consultor\u00edas", "Startups", "Agencias", "Freelancers",
-  "Directivos", "Creadores", "Acad\u00e9micos", "CEO's",
-]
-
-function TestimonialCarousel() {
-  const [current, setCurrent] = useState(0)
-  const [isAuto, setIsAuto] = useState(true)
-
-  const next = useCallback(() => {
-    setCurrent((prev) => (prev + 1) % testimonials.length)
-  }, [])
-
-  const prev = useCallback(() => {
-    setCurrent((prev) => (prev - 1 + testimonials.length) % testimonials.length)
-  }, [])
-
-  useEffect(() => {
-    if (!isAuto) return
-    const timer = setInterval(next, 4000)
-    return () => clearInterval(timer)
-  }, [isAuto, next])
-
-  const t = testimonials[current]
-
+function ImageCard({ src, alt, className = "" }: { src: string; alt: string; className?: string }) {
   return (
-    <div
-      className="relative mx-auto max-w-2xl"
-      onMouseEnter={() => setIsAuto(false)}
-      onMouseLeave={() => setIsAuto(true)}
-    >
-      <div className="rounded-2xl border bg-white p-8 shadow-lg md:p-12">
-        <div className="mb-6 flex gap-1">
-          {Array.from({ length: t.rating }).map((_, i) => (
-            <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-          ))}
-        </div>
-        <p className="mb-6 text-lg leading-relaxed text-gray-700">&ldquo;{t.text}&rdquo;</p>
-        <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#0A66C2] text-sm font-bold text-white">
-            {t.avatar}
-          </div>
-          <div>
-            <p className="font-semibold">{t.name}</p>
-            <p className="text-sm text-muted-foreground">{t.role}</p>
-          </div>
-        </div>
-        <div className="mt-6 flex items-center justify-center gap-3">
-          <button onClick={prev} className="rounded-full border p-2 transition-colors hover:bg-muted">
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <div className="flex gap-2">
-            {testimonials.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrent(i)}
-                className={`h-2 w-2 rounded-full transition-all ${
-                  i === current ? "bg-[#0A66C2] w-6" : "bg-gray-300"
-                }`}
-              />
-            ))}
-          </div>
-          <button onClick={next} className="rounded-full border p-2 transition-colors hover:bg-muted">
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
+    <div className={`relative overflow-hidden rounded-xl bg-gray-100 shadow-sm ${className}`}>
+      <img
+        src={src}
+        alt={alt}
+        className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+        loading="lazy"
+      />
     </div>
   )
 }
@@ -236,68 +187,59 @@ export default function HomePage() {
             <Sparkles className="h-4 w-4 text-[#0A66C2]" />
             <span className="font-medium">Nuevo: Asistente IA con 4 estilos de escritura</span>
           </div>
-          <div className="mx-auto max-w-4xl text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900 md:text-6xl lg:text-7xl">
-              De la noticia a la{" "}
-              <span className="bg-gradient-to-r from-[#0A66C2] to-[#1DB954] bg-clip-text text-transparent">
-                oportunidad
-              </span>
-            </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl">
-              Automatiza tu presencia en LinkedIn con IA. Recolecta noticias, genera contenido viral y
-              publica autom\u00e1ticamente. Todo desde un solo lugar.
-            </p>
-            <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link
-                href="/register"
-                className="group inline-flex items-center gap-2 rounded-lg bg-[#0A66C2] px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-[#0A66C2]/25 transition-all hover:bg-[#0055A4] hover:shadow-xl hover:shadow-[#0A66C2]/30 hover:-translate-y-0.5"
-              >
-                Comenzar gratis
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </Link>
-              <Link
-                href="/login"
-                className="inline-flex items-center gap-2 rounded-lg border bg-white px-8 py-3.5 text-base font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:-translate-y-0.5"
-              >
-                Iniciar sesi\u00f3n
-              </Link>
+          <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
+            <div>
+              <h1 className="text-4xl font-bold tracking-tight text-gray-900 md:text-5xl lg:text-6xl">
+                Importa noticias.{" "}
+                <span className="text-[#0A66C2]">Publica.</span>{" "}
+                <span className="bg-gradient-to-r from-[#0A66C2] to-[#1DB954] bg-clip-text text-transparent">
+                  Posiciónate.
+                </span>
+              </h1>
+              <p className="mt-6 text-lg leading-relaxed text-muted-foreground md:text-xl">
+                Comparte contenido de calidad, reciente y potente para tu nicho. La IA escribe con tu
+                misma forma de hablar. Tú solo elige las noticias que importan.
+              </p>
+              <div className="mt-10 flex flex-col items-start gap-4 sm:flex-row">
+                <Link
+                  href="/register"
+                  className="group inline-flex items-center gap-2 rounded-lg bg-[#0A66C2] px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-[#0A66C2]/25 transition-all hover:bg-[#0055A4] hover:shadow-xl hover:shadow-[#0A66C2]/30 hover:-translate-y-0.5"
+                >
+                  Comenzar gratis
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+                <Link
+                  href="/login"
+                  className="inline-flex items-center gap-2 rounded-lg border bg-white px-8 py-3.5 text-base font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:-translate-y-0.5"
+                >
+                  Iniciar sesión
+                </Link>
+              </div>
             </div>
-          </div>
-          <div className="mt-16 grid grid-cols-2 gap-4 md:grid-cols-4">
-            {stats.map((s) => (
-              <div key={s.label} className="rounded-xl border bg-white/80 p-4 text-center backdrop-blur-sm">
-                <p className="text-2xl font-bold text-[#0A66C2] md:text-3xl">{s.value}</p>
-                <p className="mt-1 text-xs text-muted-foreground md:text-sm">{s.label}</p>
-              </div>
-            ))}
+            <ImageCard
+              src="https://image.pollinations.ai/prompt/professional_dashboard_news_curation_ai_writing_linkedin_publishing_modern_clean_tech?width=800&height=600&nofeed=true"
+              alt="Dashboard profesional de noticias e IA"
+              className="h-80 md:h-96 lg:h-[28rem]"
+            />
           </div>
         </div>
       </section>
 
-      {/* METRICS BANNER */}
-      <section className="border-y bg-gradient-to-r from-[#0A66C2]/5 via-white to-[#1DB954]/5 py-12">
-        <div className="mx-auto max-w-7xl px-4">
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-            {metrics.map((m) => (
-              <div key={m.label} className="text-center">
-                <m.icon className="mx-auto mb-2 h-6 w-6 text-[#0A66C2]" />
-                <p className="text-xl font-bold text-gray-900 md:text-2xl">{m.value}</p>
-                <p className="text-sm text-muted-foreground">{m.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* TRUST BAR */}
-      <section className="border-b bg-white py-8">
+      {/* TRUST BAR - Tipos de profesionales */}
+      <section className="border-y bg-white py-10">
         <div className="mx-auto max-w-7xl px-4">
           <p className="mb-6 text-center text-sm font-medium uppercase tracking-wider text-muted-foreground">
-            Usado por profesionales de todo tipo
+            Creado para profesionales como tú
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
-            {logos.map((l) => (
-              <span key={l} className="rounded-lg border bg-muted/50 px-4 py-2 text-sm font-semibold text-muted-foreground">
+            {[
+              "Consultores", "Emprendedores", "Ejecutivos", "Freelancers",
+              "Marketers", "Ingenieros", "Creadores", "CEO's",
+            ].map((l) => (
+              <span
+                key={l}
+                className="rounded-lg border bg-muted/50 px-4 py-2 text-sm font-semibold text-muted-foreground"
+              >
                 {l}
               </span>
             ))}
@@ -305,57 +247,69 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* BENEFITS */}
+      {/* BENEFITS - con imágenes */}
       <section id="beneficios" className="py-20 md:py-28">
         <div className="mx-auto max-w-7xl px-4">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight text-gray-900 md:text-4xl">
-              Todo lo que necesitas para dominar LinkedIn
+              Todo lo que necesitas para destacar en LinkedIn
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Una plataforma completa que automatiza todo tu flujo de contenido.
+              De la noticia a tu perfil. Sin esfuerzo manual.
             </p>
           </div>
-          <div className="mt-16 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {benefits.map((b) => (
+          <div className="mt-16 grid gap-8 md:grid-cols-2">
+            {benefits.map((b, i) => (
               <div
                 key={b.title}
-                className="group rounded-xl border bg-white p-6 shadow-sm transition-all hover:shadow-lg hover:-translate-y-1"
+                className={`group flex flex-col overflow-hidden rounded-xl border bg-white shadow-sm transition-all hover:shadow-lg hover:-translate-y-1 sm:flex-row ${
+                  i % 2 === 0 ? "" : "sm:flex-row-reverse"
+                }`}
               >
-                <div className={`mb-4 inline-flex rounded-lg ${b.bg} p-3`}>
-                  <b.icon className={`h-6 w-6 ${b.color}`} />
+                <div className="flex-1 p-6 md:p-8">
+                  <div className={`mb-4 inline-flex rounded-lg ${b.bg} p-3`}>
+                    <b.icon className={`h-6 w-6 ${b.color}`} />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900">{b.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{b.desc}</p>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">{b.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{b.desc}</p>
+                <div className="relative min-h-[200px] w-full sm:w-56 md:w-64 shrink-0 overflow-hidden">
+                  <img
+                    src={b.img}
+                    alt={b.title}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
+      {/* STEPS - Cómo funciona */}
       <section className="bg-gradient-to-b from-white to-blue-50/50 py-20 md:py-28">
         <div className="mx-auto max-w-7xl px-4">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight text-gray-900 md:text-4xl">
-              C\u00f3mo funciona
+              Así de fácil funciona
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              En 4 pasos empiezas a publicar contenido generado por IA en LinkedIn.
+              En 4 pasos transformas noticias en presencia de autoridad.
             </p>
           </div>
           <div className="mt-16 grid gap-8 md:grid-cols-4">
-            {[
-              { step: "1", title: "Conecta tu LinkedIn", desc: "Autenticaci\u00f3n OAuth segura con un clic. Nunca compartimos tus credenciales.", icon: Linkedin },
-              { step: "2", title: "Elige tus categor\u00edas", desc: "Selecciona los temas que te interesan. La IA busca noticias relevantes para ti.", icon: Newspaper },
-              { step: "3", title: "Revisa y personaliza", desc: "La IA genera la publicaci\u00f3n perfecta. T\u00fa solo apruebas o ajustas el tono.", icon: Sparkles },
-              { step: "4", title: "Programa y olv\u00eddate", desc: "Define horarios y frecuencia. El sistema publica por ti autom\u00e1ticamente.", icon: Calendar },
-            ].map((s) => (
-              <div key={s.step} className="relative text-center">
+            {steps.map((s, i) => (
+              <div key={s.title} className="relative text-center">
                 <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#0A66C2] text-2xl font-bold text-white shadow-lg shadow-[#0A66C2]/20">
                   <s.icon className="h-7 w-7" />
                 </div>
-                <div className="absolute left-[calc(50%+3rem)] top-8 hidden h-0.5 w-[calc(100%-5rem)] bg-gradient-to-r from-[#0A66C2]/30 to-transparent md:block" />
+                {i < steps.length - 1 && (
+                  <div className="absolute left-[calc(50%+3rem)] top-8 hidden h-0.5 w-[calc(100%-5rem)] bg-gradient-to-r from-[#0A66C2]/30 to-transparent md:block" />
+                )}
+                <div className="mb-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#0A66C2]/10 text-xs font-bold text-[#0A66C2]">
+                  {i + 1}
+                </div>
                 <h3 className="text-lg font-semibold text-gray-900">{s.title}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">{s.desc}</p>
               </div>
@@ -364,34 +318,62 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* FOMO SOCIAL PROOF CAROUSEL */}
+      {/* FOMO SECTION - Sin testimonios falsos */}
       <section className="py-20 md:py-28">
         <div className="mx-auto max-w-7xl px-4">
-          <div className="mx-auto max-w-2xl text-center">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#0A66C2]/10 px-4 py-1.5 text-sm font-medium text-[#0A66C2]">
-              <Users className="h-4 w-4" />
-              Lo que dicen nuestros usuarios
+          <div className="mx-auto max-w-3xl text-center">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-orange-50 px-4 py-1.5 text-sm font-medium text-orange-600">
+              <Zap className="h-4 w-4" />
+              La ventaja de actuar ahora
             </div>
             <h2 className="text-3xl font-bold tracking-tight text-gray-900 md:text-4xl">
-              \u00danete a los profesionales que ya transformaron su presencia en LinkedIn
+              Cada día que esperas, alguien más ocupa tu lugar
             </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              En LinkedIn el algoritmo favorece la consistencia. Quien publica contenido relevante
+              de forma regular, crece. Quien espera el momento perfecto, se queda atrás.
+            </p>
           </div>
-          <div className="mt-12">
-            <TestimonialCarousel />
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            <div className="rounded-xl border bg-white p-6 shadow-sm">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-red-100">
+                <TrendingUp className="h-6 w-6 text-red-500" />
+              </div>
+              <h3 className="font-semibold text-gray-900">El algoritmo premia la frecuencia</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Publicar 1 vez al día durante un mes genera más alcance que 30 publicaciones en un día.
+                La consistencia es la clave.
+              </p>
+            </div>
+            <div className="rounded-xl border bg-white p-6 shadow-sm">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-yellow-100">
+                <Clock className="h-6 w-6 text-yellow-500" />
+              </div>
+              <h3 className="font-semibold text-gray-900">El tiempo no se recupera</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Crear contenido de calidad toma horas. Horas que podrías estar cerrando negocios.
+                La IA hace el trabajo pesado en segundos.
+              </p>
+            </div>
+            <div className="rounded-xl border bg-white p-6 shadow-sm">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
+                <Quote className="h-6 w-6 text-blue-500" />
+              </div>
+              <h3 className="font-semibold text-gray-900">Tu competencia ya usa IA</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Mientras tú piensas qué publicar, ellos ya están programando su contenido del mes.
+                La pregunta no es si usar IA, sino cuándo empezar.
+              </p>
+            </div>
           </div>
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-8 text-center">
-            <div className="flex items-center gap-2 text-sm">
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
-              <span className="text-muted-foreground">Resultados comprobados</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Shield className="h-5 w-5 text-green-500" />
-              <span className="text-muted-foreground">Datos seguros</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <CheckCircle2 className="h-5 w-5 text-green-500" />
-              <span className="text-muted-foreground">Soporte en Espa\u00f1ol</span>
-            </div>
+          <div className="mt-10 text-center">
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-2 rounded-lg bg-[#0A66C2] px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-[#0A66C2]/25 transition-all hover:bg-[#0055A4] hover:-translate-y-0.5"
+            >
+              Empieza hoy, no mañana
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>
@@ -401,10 +383,10 @@ export default function HomePage() {
         <div className="mx-auto max-w-7xl px-4">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight text-gray-900 md:text-4xl">
-              Planes para cada etapa
+              Elige el plan que te lleve al siguiente nivel
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Empieza gratis, escala cuando lo necesites. Sin sorpresas.
+              Empieza gratis. Cuando sientas el poder de la IA, querrás más.
             </p>
           </div>
           <div className="mt-16 grid gap-8 md:grid-cols-3">
@@ -419,10 +401,13 @@ export default function HomePage() {
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                     <span className="inline-flex items-center gap-1 rounded-full bg-[#0A66C2] px-4 py-1 text-xs font-semibold text-white">
                       <Star className="h-3 w-3 fill-white" />
-                      M\u00e1s popular
+                      Más popular
                     </span>
                   </div>
                 )}
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-[#0A66C2]">
+                  {p.highlight}
+                </p>
                 <h3 className="text-lg font-semibold text-gray-900">{p.name}</h3>
                 <div className="mt-4 flex items-baseline gap-1">
                   <span className="text-4xl font-bold text-gray-900">{p.price}</span>
@@ -452,7 +437,7 @@ export default function HomePage() {
             ))}
           </div>
           <p className="mt-8 text-center text-sm text-muted-foreground">
-            Todos los planes incluyen 14 d\u00edas de prueba gratuita. Sin tarjeta de cr\u00e9dito.
+            Todos los planes incluyen 14 días de prueba gratuita. Sin tarjeta de crédito.
           </p>
         </div>
       </section>
@@ -466,13 +451,7 @@ export default function HomePage() {
             </h2>
           </div>
           <div className="mt-12 space-y-4">
-            {[
-              { q: "\u00bfNecesito tener experiencia en LinkedIn?", a: "No. La plataforma est\u00e1 dise\u00f1ada para cualquier profesional, desde principiantes hasta expertos. La IA se encarga del contenido t\u00fa solo conectas tu perfil." },
-              { q: "\u00bfPuedo cancelar en cualquier momento?", a: "S\u00ed. No hay contratos anuales ni permanencias. Cancela cuando quieras desde tu panel de control sin penalizaciones." },
-              { q: "\u00bfQu\u00e9 tipo de noticias puedo publicar?", a: "Puedes elegir entre m\u00e1s de 10 categor\u00edas (tecnolog\u00eda, negocios, salud, ciencia, entretenimiento, etc.) o crear categor\u00edas personalizadas con tus propias fuentes RSS." },
-              { q: "\u00bfLa IA genera im\u00e1genes?", a: "S\u00ed. DeepSeek AI genera prompts optimizados para crear im\u00e1genes llamativas que acompa\u00f1en tus publicaciones en LinkedIn." },
-              { q: "\u00bfPuedo tener m\u00faltiples perfiles de LinkedIn?", a: "S\u00ed. Los planes Pro y Business permiten conectar hasta 3 y 10 perfiles respectivamente, ideal para agencias y consultores." },
-            ].map((faq, i) => (
+            {faqs.map((faq, i) => (
               <div key={i} className="rounded-xl border bg-white">
                 <button
                   onClick={() => setActiveFaq(activeFaq === i ? null : i)}
@@ -498,27 +477,37 @@ export default function HomePage() {
 
       {/* FINAL CTA */}
       <section className="bg-gradient-to-r from-[#0A66C2] to-blue-700 py-20">
-        <div className="mx-auto max-w-4xl px-4 text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
-            Tu pr\u00f3xima gran oportunidad empieza con una noticia
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-blue-100">
-            \u00danete a cientos de profesionales que ya est\u00e1n publicando contenido consistente en LinkedIn sin esfuerzo.
-          </p>
-          <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-2 rounded-lg bg-white px-8 py-3.5 text-base font-semibold text-[#0A66C2] shadow-lg transition-all hover:bg-blue-50 hover:-translate-y-0.5"
-            >
-              Empieza gratis ahora
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-2 rounded-lg border border-white/30 px-8 py-3.5 text-base font-semibold text-white transition-all hover:bg-white/10"
-            >
-              Ya tengo cuenta
-            </Link>
+        <div className="mx-auto max-w-7xl px-4">
+          <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight text-white md:text-4xl">
+                Tu próxima oportunidad empieza con una noticia
+              </h2>
+              <p className="mt-4 text-lg text-blue-100">
+                No necesitas ser escritor, ni tener horas libres. Solo necesitas las noticias
+                correctas y la IA que las convierte en tu voz.
+              </p>
+              <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+                <Link
+                  href="/register"
+                  className="inline-flex items-center gap-2 rounded-lg bg-white px-8 py-3.5 text-base font-semibold text-[#0A66C2] shadow-lg transition-all hover:bg-blue-50 hover:-translate-y-0.5"
+                >
+                  Empieza gratis ahora
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  href="/login"
+                  className="inline-flex items-center gap-2 rounded-lg border border-white/30 px-8 py-3.5 text-base font-semibold text-white transition-all hover:bg-white/10"
+                >
+                  Ya tengo cuenta
+                </Link>
+              </div>
+            </div>
+            <ImageCard
+              src="https://image.pollinations.ai/prompt/professional_success_career_growth_linkedin_network_opportunity_modern?width=800&height=600&nofeed=true"
+              alt="Crecimiento profesional con LinkedIn"
+              className="h-72 md:h-80"
+            />
           </div>
         </div>
       </section>

@@ -15,6 +15,9 @@ import {
   User,
   Mail,
   Calendar,
+  ShieldCheck,
+  ShieldAlert,
+  Loader2,
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -30,7 +33,7 @@ export function LinkedInProfilesManager() {
   const queryError = error as Error | null
 
   const handleDisconnect = async (profileId: number) => {
-    if (window.confirm("¿Estás seguro de que quieres desconectar este perfil de LinkedIn?")) {
+    if (window.confirm("¿Estas seguro de que quieres desconectar este perfil de LinkedIn?")) {
       try {
         await disconnectMutation.mutateAsync(profileId)
         setShowSuccess(true)
@@ -46,7 +49,7 @@ export function LinkedInProfilesManager() {
     try {
       return format(new Date(dateString), "dd/MM/yyyy HH:mm", { locale: es })
     } catch {
-      return "Fecha inválida"
+      return "Fecha invalida"
     }
   }
 
@@ -61,50 +64,43 @@ export function LinkedInProfilesManager() {
 
   if (isLoading) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-            <p className="mt-2 text-muted-foreground">Cargando perfiles...</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
     )
   }
 
   return (
     <div className="space-y-6">
       {showSuccess && (
-        <div className="p-4 rounded-md text-sm bg-green-50 text-green-800 border border-green-200">
-          <div className="flex items-center">
-            <CheckCircle className="h-4 w-4 mr-2" />
+        <div className="p-4 rounded-lg text-sm bg-green-50 text-green-800 border border-green-200">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4" />
             Perfil desconectado exitosamente
           </div>
         </div>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Linkedin className="h-5 w-5 text-blue-600" />
-              <span>Perfiles de LinkedIn</span>
-            </div>
-            <Button onClick={connectProfile} disabled={isConnecting}>
-              <Plus className="h-4 w-4 mr-2" />
-              {isConnecting ? "Conectando..." : "Conectar Perfil"}
-            </Button>
-          </CardTitle>
-          <CardDescription>
-            Conecta tus perfiles de LinkedIn para programar publicaciones automáticas
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-lg bg-[#0A66C2]/10">
+            <Linkedin className="h-5 w-5 text-[#0A66C2]" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold">Perfiles de LinkedIn</h3>
+            <p className="text-xs text-muted-foreground">Conecta tus perfiles para programar publicaciones</p>
+          </div>
+        </div>
+        <Button onClick={connectProfile} disabled={isConnecting} className="h-9 text-xs">
+          {isConnecting ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Plus className="h-4 w-4 mr-1.5" />}
+          {isConnecting ? "Conectando..." : "Conectar Perfil"}
+        </Button>
+      </div>
 
       {queryError && (
-        <div className="p-4 rounded-md text-sm bg-red-50 text-red-800 border border-red-200">
-          <div className="flex items-center">
-            <AlertCircle className="h-4 w-4 mr-2" />
+        <div className="p-4 rounded-lg text-sm bg-red-50 text-red-800 border border-red-200">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4" />
             Error al cargar los perfiles: {queryError.message}
           </div>
         </div>
@@ -112,106 +108,114 @@ export function LinkedInProfilesManager() {
 
       {!profiles || profiles.length === 0 ? (
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="py-12">
             <div className="text-center text-muted-foreground">
-              <Linkedin className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <p className="text-lg font-medium mb-2">No tienes perfiles conectados</p>
-              <p className="text-sm mb-4">
-                Conecta tu perfil de LinkedIn para comenzar a programar publicaciones automáticas
-              </p>
-              <Button onClick={connectProfile} disabled={isConnecting}>
-                <Plus className="h-4 w-4 mr-2" />
+              <div className="p-3 rounded-full bg-muted w-fit mx-auto mb-4">
+                <Linkedin className="h-8 w-8 text-muted-foreground/50" />
+              </div>
+              <p className="text-sm font-medium mb-1">No tienes perfiles conectados</p>
+              <p className="text-xs mb-4">Conecta tu perfil de LinkedIn para comenzar a programar publicaciones</p>
+              <Button onClick={connectProfile} disabled={isConnecting} size="sm">
+                <Plus className="h-4 w-4 mr-1.5" />
                 Conectar Primer Perfil
               </Button>
             </div>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
-          {profiles.map((profile: any) => (
-            <Card key={profile.id}>
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          {profiles.map((profile: any) => {
+            const expired = isTokenExpired(profile.tokenExpiresAt)
+            return (
+              <Card key={profile.id} className={cn(!profile.isActive && "opacity-70")}>
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-4">
                     <div className="flex-shrink-0">
                       {profile.profilePictureUrl ? (
                         <img
                           src={profile.profilePictureUrl}
                           alt={`${profile.firstName} ${profile.lastName}`}
-                          className="h-12 w-12 rounded-full object-cover"
+                          className="h-12 w-12 rounded-full object-cover ring-2 ring-offset-1 ring-muted"
                         />
                       ) : (
-                        <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                          <User className="h-6 w-6 text-blue-600" />
+                        <div className="h-12 w-12 rounded-full bg-[#0A66C2]/10 flex items-center justify-center ring-2 ring-offset-1 ring-muted">
+                          <User className="h-6 w-6 text-[#0A66C2]" />
                         </div>
                       )}
                     </div>
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <h3 className="font-medium text-gray-900">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-sm font-semibold text-foreground">
                           {profile.firstName} {profile.lastName}
-                        </h3>
-                        {profile.isPrimary && <Badge variant="default">Principal</Badge>}
-                        {!profile.isActive && <Badge variant="secondary">Inactivo</Badge>}
-                        {isTokenExpired(profile.tokenExpiresAt) && (
-                          <Badge variant="warning">Token Expirado</Badge>
-                        )}
+                        </h4>
+                        {profile.isPrimary && <Badge variant="default" className="text-[10px] h-5">Principal</Badge>}
+                        {!profile.isActive && <Badge variant="secondary" className="text-[10px] h-5">Inactivo</Badge>}
                       </div>
                       {profile.email && (
-                        <div className="flex items-center space-x-1 text-sm text-muted-foreground">
+                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                           <Mail className="h-3 w-3" />
-                          <span>{profile.email}</span>
-                        </div>
+                          {profile.email}
+                        </p>
                       )}
-                      <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-                        <Calendar className="h-3 w-3" />
-                        <span>Conectado: {formatDate(profile.createdAt)}</span>
-                      </div>
-                      {profile.tokenExpiresAt && (
-                        <div className="flex items-center space-x-1 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          <span>Token expira: {formatDate(profile.tokenExpiresAt)}</span>
-                        </div>
-                      )}
+                          {formatDate(profile.createdAt)}
+                        </span>
+                        {expired ? (
+                          <span className="flex items-center gap-1 text-red-600">
+                            <ShieldAlert className="h-3 w-3" />
+                            Token expirado
+                          </span>
+                        ) : profile.tokenExpiresAt ? (
+                          <span className="flex items-center gap-1 text-green-600">
+                            <ShieldCheck className="h-3 w-3" />
+                            Token vigente
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-3">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(`https://linkedin.com/in/${profile.linkedin_id}`, "_blank")}
+                          className="h-7 text-xs"
+                        >
+                          <ExternalLink className="h-3 w-3 mr-1" />
+                          Ver perfil
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDisconnect(profile.id)}
+                          disabled={disconnectMutation.isPending}
+                          className="h-7 text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
+                        >
+                          {disconnectMutation.isPending ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3 w-3" />
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        window.open(`https://linkedin.com/in/${profile.linkedin_id}`, "_blank")
-                      }
-                      title="Ver perfil en LinkedIn"
-                    >
-                      <ExternalLink className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDisconnect(profile.id)}
-                      disabled={disconnectMutation.isPending}
-                      className="text-red-600 border-red-200 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       )}
 
-      <Card>
+      <Card className="bg-muted/30">
         <CardContent className="p-4">
-          <div className="text-sm text-muted-foreground space-y-2">
-            <h4 className="font-medium text-gray-900">Información importante:</h4>
-            <ul className="list-disc list-inside space-y-1">
-              <li>Puedes conectar múltiples perfiles de LinkedIn</li>
-              <li>Cada perfil puede tener su propia configuración de programación</li>
-              <li>Los tokens de acceso expiran periódicamente y necesitan renovación</li>
-              <li>Al desconectar un perfil, se cancelarán todas las publicaciones programadas</li>
+          <div className="text-xs text-muted-foreground space-y-1.5">
+            <p className="font-medium text-foreground">Informacion importante:</p>
+            <ul className="list-disc list-inside space-y-0.5">
+              <li>Puedes conectar multiples perfiles de LinkedIn</li>
+              <li>Cada perfil puede tener su propia configuracion de programacion</li>
+              <li>Los tokens de acceso expiran periodicamente y necesitan renovacion</li>
+              <li>Al desconectar un perfil, se cancelaran todas las publicaciones programadas</li>
             </ul>
           </div>
         </CardContent>
