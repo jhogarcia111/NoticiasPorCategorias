@@ -157,10 +157,9 @@ export async function POST(request: Request) {
 
       try {
           if (cat.newsapiCategory && NEWSAPI_KEY) {
-            // Try English first, then Spanish
             const langConfigs = [
-              { language: "en", country: "us" },
               { language: "es", country: "" },
+              { language: "en", country: "us" },
             ]
             for (const config of langConfigs) {
               try {
@@ -175,7 +174,6 @@ export async function POST(request: Request) {
                   catResult.collected += processed.length
                   catResult.total += articles.length
                   catResult.sources.push(`NewsAPI (${config.language})`)
-                  break // Found articles, stop trying
                 }
               } catch (e: any) {
                 catResult.errors.push(`NewsAPI (${config.language}): ${e.message}`)

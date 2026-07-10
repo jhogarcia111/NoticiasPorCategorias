@@ -8,13 +8,11 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { Plus, Trash2, Globe, Rss, ExternalLink, RefreshCw, X, Check, Loader2, Search } from "lucide-react"
 
-const CATEGORIES = [
-  { id: 1, name: "Tecnologia" },
-  { id: 2, name: "Negocios" },
-  { id: 3, name: "Finanzas" },
-  { id: 4, name: "Salud" },
-  { id: 5, name: "Ciencia" },
-]
+interface Category {
+  id: number
+  name: string
+  isActive: boolean | null
+}
 
 interface NewsSource {
   id: number
@@ -31,6 +29,7 @@ interface NewsSource {
 
 export function SourcesManager() {
   const [sources, setSources] = useState<NewsSource[]>([])
+  const [apiCategories, setApiCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: "", url: "", type: "rss", categoryId: "", language: "es" })
@@ -57,8 +56,17 @@ export function SourcesManager() {
     }
   }
 
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch("/api/categories")
+      const data = await res.json()
+      setApiCategories(data.data || [])
+    } catch { }
+  }
+
   useEffect(() => {
     fetchSources()
+    fetchCategories()
   }, [])
 
   const showAlert = (type: "success" | "error", message: string) => {
@@ -293,7 +301,7 @@ export function SourcesManager() {
                 <select value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
                   className="w-full h-9 px-3 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring">
                   <option value="">Sin categoria</option>
-                  {CATEGORIES.map((cat) => (
+                  {apiCategories.filter((c) => c.isActive !== false).map((cat) => (
                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                   ))}
                 </select>
@@ -441,7 +449,7 @@ export function SourcesManager() {
                           </Badge>
                           {source.categoryId && (
                             <Badge variant="secondary" className="text-[10px] font-normal h-5">
-                              {CATEGORIES.find((c) => c.id === source.categoryId)?.name || "—"}
+                              {apiCategories.find((c) => c.id === source.categoryId)?.name || "—"}
                             </Badge>
                           )}
                           <Badge variant="outline" className="text-[10px] font-normal h-5">
