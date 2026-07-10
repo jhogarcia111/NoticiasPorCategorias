@@ -181,156 +181,137 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
   const processedCount = filteredNews.filter((item: any) => item.isProcessed).length
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {alert && (
         <div className={cn(
-          "p-4 rounded-md text-sm whitespace-pre-line",
+          "p-3 rounded-md text-xs whitespace-pre-line",
           alert.variant === "success" && "bg-green-50 text-green-800 border border-green-200",
           alert.variant === "info" && "bg-blue-50 text-blue-800 border border-blue-200",
           alert.variant === "error" && "bg-red-50 text-red-800 border border-red-200"
         )}>
-          <p className="font-medium">{alert.title}</p>
-          {alert.message && <p className="mt-1 text-xs">{alert.message}</p>}
+          <p className="font-medium text-sm">{alert.title}</p>
+          {alert.message && <p className="mt-0.5 text-xs">{alert.message}</p>}
         </div>
       )}
 
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Noticias</h2>
-          <p className="text-muted-foreground">Recolecta, selecciona y procesa noticias</p>
-        </div>
+      {/* Action bar */}
+      <div className="flex justify-between items-center gap-2">
         <div className="flex gap-2">
-          <Button onClick={handleCollectNews} disabled={collectMutation.isPending}>
-            <RefreshCw className={cn("h-4 w-4 mr-2", collectMutation.isPending && "animate-spin")} />
+          <Button size="sm" onClick={handleCollectNews} disabled={collectMutation.isPending}>
+            <RefreshCw className={cn("h-3.5 w-3.5 mr-1.5", collectMutation.isPending && "animate-spin")} />
             Recolectar
           </Button>
           {selectedNewsIds.length > 0 && (
-            <Button onClick={handleGoToAI} variant="outline">
-              <Sparkles className="h-4 w-4 mr-2" />
+            <Button size="sm" onClick={handleGoToAI} variant="outline">
+              <Sparkles className="h-3.5 w-3.5 mr-1.5" />
               🤖 IA ({selectedNewsIds.length})
+            </Button>
+          )}
+        </div>
+        <div className="flex gap-2">
+          {filteredNews.length > 0 && (
+            <Button variant="ghost" size="sm" onClick={handleSelectAll}>
+              {selectedNewsIds.length === filteredNews.length ? "Deseleccionar" : "Todo"}
             </Button>
           )}
         </div>
       </div>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-base">Categorias</CardTitle>
-            <Button variant="outline" size="sm" onClick={() => setShowNewCat(!showNewCat)}>
-              <Plus className="h-3.5 w-3.5 mr-1" /> Nueva
-            </Button>
+      {/* Three columns: Categories + Custom Search + Filters */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {/* Col 1: Categorías */}
+        <div className="border rounded-lg p-3 bg-card">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Categorías</span>
+            <button onClick={() => setShowNewCat(!showNewCat)} className="text-xs text-primary hover:underline">+ Nueva</button>
           </div>
-        </CardHeader>
-        <CardContent>
           {showNewCat && (
-            <div className="mb-4 p-4 border rounded-lg bg-muted/30 space-y-3">
-              <p className="text-sm font-medium">Nueva categoria personalizada</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <Input value={newCatName} onChange={(e) => setNewCatName(e.target.value)} placeholder="Nombre (ej: Seguridad Informatica)" />
-                <Input value={newCatQuery} onChange={(e) => setNewCatQuery(e.target.value)} placeholder="Query (ej: cybersecurity OR hacking)" />
-                <Input value={newCatDesc} onChange={(e) => setNewCatDesc(e.target.value)} placeholder="Descripcion" />
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="ghost" size="sm" onClick={() => setShowNewCat(false)}>Cancelar</Button>
-                <Button size="sm" onClick={handleCreateCategory} disabled={!newCatName.trim() || createCategory.isPending}>
-                  {createCategory.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
-                  Crear
+            <div className="mb-3 p-3 border rounded-lg bg-muted/30 space-y-2">
+              <Input size={20} value={newCatName} onChange={(e) => setNewCatName(e.target.value)} placeholder="Nombre" className="h-8 text-xs" />
+              <Input size={20} value={newCatQuery} onChange={(e) => setNewCatQuery(e.target.value)} placeholder="Query (opcional)" className="h-8 text-xs" />
+              <div className="flex gap-2">
+                <Button size="sm" onClick={handleCreateCategory} disabled={!newCatName.trim() || createCategory.isPending} className="text-xs h-7">
+                  {createCategory.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Plus className="h-3 w-3 mr-1" />} Crear
                 </Button>
+                <Button size="sm" variant="ghost" onClick={() => setShowNewCat(false)} className="text-xs h-7">Cancelar</Button>
               </div>
             </div>
           )}
           {catsLoading ? (
-            <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+            <div className="flex justify-center py-2"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
           ) : (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {categories.map((cat: any) => (
                 <button key={cat.id} onClick={() => handleToggleCat(cat)}
-                  className={cn("inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
-                    cat.isActive ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
-                      : "bg-muted text-muted-foreground border-transparent hover:bg-muted/80")}
-                  title={cat.isActive ? "Desactivar" : "Activar"}>
-                  {cat.isActive ? <ToggleRight className="h-3.5 w-3.5" /> : <ToggleLeft className="h-3.5 w-3.5" />}
+                  className={cn("inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all border",
+                    cat.isActive ? "bg-primary/10 text-primary border-primary/20" : "bg-muted text-muted-foreground border-transparent")}>
+                  {cat.isActive ? <ToggleRight className="h-3 w-3" /> : <ToggleLeft className="h-3 w-3" />}
                   {cat.name}
                 </button>
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Busqueda personalizada</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-3">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input placeholder="Ej: OpenClaw, ciberseguridad, IA..." value={customQuery}
-                onChange={(e) => setCustomQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleCustomSearch()} className="pl-10" />
-            </div>
-            <Button onClick={handleCustomSearch} disabled={!customQuery.trim() || collectMutation.isPending}>
-              {collectMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Sparkles className="h-4 w-4 mr-2" />}
-              Buscar
-            </Button>
+        {/* Col 2: Búsqueda personalizada */}
+      <div className="border rounded-lg p-3 bg-card">
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block mb-2">Búsqueda personalizada</span>
+        <div className="flex gap-2">
+          <div className="flex-1 relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+            <Input placeholder="Ej: OpenClaw, IA, ciberseguridad..." value={customQuery}
+              onChange={(e) => setCustomQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleCustomSearch()} className="pl-8 h-8 text-xs" />
           </div>
-          <div className="flex flex-wrap gap-1.5 mt-3">
-            {["OpenClaw", "ciberseguridad", "inteligencia artificial", "programacion", "robotizacion", "Linux", "cloud computing", "blockchain"].map((s) => (
-              <button key={s} onClick={() => { setCustomQuery(s); doCustomSearch(s) }}
-                className="px-2.5 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-full text-xs font-medium transition-colors">
-                {s}
+          <Button size="sm" onClick={handleCustomSearch} disabled={!customQuery.trim() || collectMutation.isPending} className="text-xs h-8">
+            {collectMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1" />} Buscar
+          </Button>
+        </div>
+        <div className="flex flex-wrap gap-1 mt-2">
+          {["OpenClaw", "ciberseguridad", "IA", "robots", "programación", "Linux", "cloud", "blockchain"].map((s) => (
+            <button key={s} onClick={() => { setCustomQuery(s); doCustomSearch(s) }}
+              className="px-2 py-0.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-full text-[10px] font-medium">{s}</button>
+          ))}
+        </div>
+      </div>
+
+      {/* Col 3: Filtros */}
+      <div className="border rounded-lg p-3 bg-card">
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide block mb-2">Filtros</span>
+        <div className="space-y-2">
+          <div className="flex gap-1">
+            {[
+              { value: "all", label: "🌐 Todo" },
+              { value: "es", label: "🇨🇴" },
+              { value: "en", label: "🇺🇸" },
+            ].map((opt) => (
+              <button key={opt.value} onClick={() => setLanguageFilter(opt.value)}
+                className={cn("px-2.5 py-1 rounded text-xs font-medium border transition-colors",
+                  languageFilter === opt.value ? "bg-primary/10 text-primary border-primary/30" : "bg-background text-muted-foreground border-input hover:bg-muted")}>
+                {opt.label}
               </button>
             ))}
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Filtros</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Idioma</label>
-            <div className="flex gap-1">
-              {[
-                { value: "all", label: "Todos", flag: "🌐" },
-                { value: "es", label: "Español", flag: "🇨🇴" },
-                { value: "en", label: "English", flag: "🇺🇸" },
-              ].map((opt) => (
-                <button key={opt.value}
-                  onClick={() => setLanguageFilter(opt.value)}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium border transition-colors ${
-                    languageFilter === opt.value
-                      ? "bg-primary/10 text-primary border-primary/30"
-                      : "bg-background text-muted-foreground border-input hover:bg-muted"
-                  }`}>
-                  {opt.flag} {opt.label}
-                </button>
-              ))}
-            </div>
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+            <Input placeholder="Filtrar resultados..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-8 h-8 text-xs" />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input placeholder="Filtrar resultados..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" />
-            </div>
+          <div className="flex gap-2">
             <select value={selectedCategory ?? ""} onChange={(e) => setSelectedCategory(e.target.value ? Number(e.target.value) : null)}
-              className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring">
-              <option value="">Todas las categorias</option>
+              className="flex-1 h-8 px-2 text-xs border border-input bg-background rounded-md">
+              <option value="">Todas</option>
               {categories.filter((c: any) => c.isActive).map((cat: any) => (
                 <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
             </select>
-            <label className="flex items-center gap-2 cursor-pointer text-sm">
-              <input type="checkbox" checked={showUnprocessed} onChange={(e) => setShowUnprocessed(e.target.checked)} className="rounded border-gray-300" />
-              Solo no procesadas
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer whitespace-nowrap">
+              <input type="checkbox" checked={showUnprocessed} onChange={(e) => setShowUnprocessed(e.target.checked)} className="rounded" />
+              No proc.
             </label>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+      </div> {/* close 3-column grid */}
 
       <div className="grid grid-cols-4 gap-4">
         <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Total</p><p className="text-2xl font-bold">{totalCount}</p></CardContent></Card>
