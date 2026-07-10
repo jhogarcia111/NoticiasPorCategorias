@@ -2,7 +2,7 @@
 
 import type { Session } from "next-auth"
 import { useState } from "react"
-import { Settings } from "lucide-react"
+import { UserDropdown } from "@/components/user-dropdown"
 import { NewsManager } from "@/components/news/news-manager"
 import { AIManager } from "@/components/ai/ai-manager"
 import { LinkedInProfilesManager } from "@/components/linkedin/linkedin-profiles-manager"
@@ -38,29 +38,27 @@ export default function DashboardClient({ user }: DashboardClientProps) {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-background">
-      <div className="border-b bg-white">
+      {/* Compact header with title + user dropdown + tabs */}
+      <div className="border-b bg-white sticky top-0 z-40">
         <div className="mx-auto max-w-7xl px-4 md:px-8">
-          <div className="flex items-center justify-between py-4">
-            <h1 className="text-xl font-semibold tracking-tight">Panel de Control</h1>
-            <button
-              onClick={() => setShowEditProfile(true)}
-              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">Editar Perfil</span>
-            </button>
+          <div className="flex items-center justify-between h-12">
+            <div className="flex items-center gap-3">
+              <h1 className="text-base font-semibold">📰 NoticiasPorCategorias</h1>
+              <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">v1.1.0</span>
+            </div>
+            <div className="flex items-center">
+              <UserDropdown
+                userName={user.name}
+                userEmail={user.email}
+                onEditProfile={() => setShowEditProfile(true)}
+              />
+            </div>
           </div>
-          <div className="flex gap-0">
+          <div className="flex gap-0 -mx-1">
             {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
-                  activeTab === tab.id
-                    ? "border-primary text-primary"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-              >
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+                className={`px-4 py-2 text-xs font-medium border-b-2 transition-colors ${
+                  activeTab === tab.id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
                 {tab.label}
               </button>
             ))}
@@ -68,7 +66,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
         </div>
       </div>
 
-      <main className="mx-auto max-w-7xl px-4 py-8 md:px-8">
+      <main className="mx-auto max-w-7xl px-4 py-4 md:px-8">
         {activeTab === "news" && (
           <NewsManager
             selectedNewsIds={selectedNewsIds}

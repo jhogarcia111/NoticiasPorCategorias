@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ExternalLink, Calendar, User, Eye, EyeOff, CheckCircle, Circle } from "lucide-react"
-import { formatDistanceToNow } from "date-fns"
+import { formatDistanceToNow, format, differenceInDays, isToday, isYesterday } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 
@@ -13,6 +13,27 @@ interface NewsListProps {
   news: any[]
   onNewsSelect?: (newsId: number) => void
   selectedNews?: number[]
+}
+
+function daysSince(date: Date): number {
+  return differenceInDays(new Date(), date)
+}
+
+function dateColorClass(pubDate: string | Date | null | undefined): string {
+  if (!pubDate) return "text-gray-400"
+  const days = daysSince(new Date(pubDate))
+  if (days === 0) return "text-green-600 bg-green-50 border-green-200"
+  if (days <= 2) return "text-blue-600 bg-blue-50 border-blue-200"
+  if (days <= 5) return "text-orange-600 bg-orange-50 border-orange-200"
+  return "text-red-600 bg-red-50 border-red-200"
+}
+
+function dateLabel(pubDate: string | Date | null | undefined): string {
+  if (!pubDate) return "—"
+  const d = new Date(pubDate)
+  if (isToday(d)) return "Hoy"
+  if (isYesterday(d)) return "Ayer"
+  return `${differenceInDays(new Date(), d)}d`
 }
 
 export function NewsList({ news, onNewsSelect, selectedNews = [] }: NewsListProps) {
@@ -88,9 +109,9 @@ export function NewsList({ news, onNewsSelect, selectedNews = [] }: NewsListProp
                   <div className="flex items-center gap-3">
                     <span className="flex items-center gap-1"><User className="h-3.5 w-3.5" />{article.sourceName}</span>
                     {article.publishedAt && (
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true, locale: es })}
+                      <span className={cn("flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium border", dateColorClass(article.publishedAt))}>
+                        <Calendar className="h-3 w-3" />
+                        {dateLabel(article.publishedAt)}
                       </span>
                     )}
                   </div>
@@ -120,7 +141,7 @@ export function NewsList({ news, onNewsSelect, selectedNews = [] }: NewsListProp
                 )}
                 <div className="flex items-center justify-between pt-2">
                   <div className="text-xs text-gray-500">
-                    ID: {article.id} | Creado: {article.createdAt && new Date(article.createdAt).toLocaleString("es-ES")}
+                    #{article.id} | Pub: {article.publishedAt ? format(new Date(article.publishedAt), "dd/MM/yyyy") : "—"}
                   </div>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={() => window.open(article.sourceUrl, "_blank")} className="text-xs">

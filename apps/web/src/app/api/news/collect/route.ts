@@ -20,7 +20,7 @@ function extractTagContent(xml: string, tagName: string): string[] {
   return results
 }
 
-async function fetchRSSFeed(url: string) {
+async function fetchRSSFeed(url: string, limit: number = 10) {
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(15000) })
     const raw = await res.text()
@@ -75,7 +75,19 @@ async function fetchRSSFeed(url: string) {
       })
     }
 
-    return articles
+    // Sort by date descending (newest first)
+    articles.sort((a, b) => {
+      const dateA = new Date(a.publishedAt).getTime()
+      const dateB = new Date(b.publishedAt).getTime()
+      return dateB - dateA
+    })
+
+    // Filter out articles older than 7 days
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
+    const recentArticles = articles.filter(a => new Date(a.publishedAt).getTime() > sevenDaysAgo)
+
+    // Return at most `limit` articles
+    return recentArticles.slice(0, limit)
   } catch (e: any) {
     console.error(`RSS fetch error for ${url}:`, e.message)
     return []
