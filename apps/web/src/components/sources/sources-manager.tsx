@@ -220,6 +220,7 @@ export function SourcesManager() {
           query: discoverQuery.trim(),
           discover: true,
           pageSize: 20,
+          language: "es",
         }),
       })
       const data = await res.json()

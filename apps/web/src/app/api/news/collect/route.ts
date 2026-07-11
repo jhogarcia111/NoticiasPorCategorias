@@ -21,77 +21,89 @@ function extractTagContent(xml: string, tagName: string): string[] {
 }
 
 async function fetchRSSFeed(url: string, limit: number = 10) {
-  try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(15000) })
-    const raw = await res.text()
-    const text = stripCDATA(raw)
-    const articles: any[] = []
+  const res = await fetch(url, { signal: AbortSignal.timeout(15000) })
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+  const raw = await res.text()
+  const text = stripCDATA(raw)
+  const articles: any[] = []
 
-    const titles = extractTagContent(text, "title")
-    const links = extractTagContent(text, "link")
-    const descriptions = extractTagContent(text, "description")
-    const pubDates = extractTagContent(text, "pubDate")
+  const titles = extractTagContent(text, "title")
+  const allLinks = extractTagContent(text, "link")
+  const descriptions = extractTagContent(text, "description")
+  const pubDates = extractTagContent(text, "pubDate")
 
-    // Channel title is at index 0, items start at index 1
-    for (let i = 1; i < titles.length; i++) {
-      const title = titles[i]
-        .replace(/<\/?[^>]+>/g, "")
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'")
-        .replace(/&apos;/g, "'")
-        .trim()
-
-      if (!title || title.length < 3) continue
-
-      let link = links?.[i]?.replace(/<\/?[^>]+>/g, "").trim() || ""
-      // Some feeds use <link> without inner text but with href attribute
-      if (!link) {
-        const linkMatch = links?.[i]?.match(/href\s*=\s*["']([^"']+)["']/)
-        if (linkMatch) link = linkMatch[1]
-      }
-
-      const description = (descriptions?.[i] || "")
-        .replace(/<\/?[^>]+>/g, "")
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">")
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'")
-        .replace(/&apos;/g, "'")
-        .trim()
-
-      const pubDate = pubDates?.[i - 1]?.trim() || ""
-
-      articles.push({
-        title,
-        url: link,
-        description: description.substring(0, 500),
-        source: { name: new URL(url).hostname.replace(/^www\./, "") },
-        publishedAt: pubDate || new Date().toISOString(),
-        urlToImage: null,
-      })
-    }
-
-    // Sort by date descending (newest first)
-    articles.sort((a, b) => {
-      const dateA = new Date(a.publishedAt).getTime()
-      const dateB = new Date(b.publishedAt).getTime()
-      return dateB - dateA
-    })
-
-    // Filter out articles older than 7 days
-    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
-    const recentArticles = articles.filter(a => new Date(a.publishedAt).getTime() > sevenDaysAgo)
-
-    // Return at most `limit` articles
-    return recentArticles.slice(0, limit)
-  } catch (e: any) {
-    console.error(`RSS fetch error for ${url}:`, e.message)
-    return []
+  // Also extract href from self-closing <link href="..."/> tags
+  const hrefLinks: string[] = []
+  const linkRegex = /<link[^>]*href\s*=\s*["']([^"']+)["'][^>]*\/?>/gi
+  let m
+  while ((m = linkRegex.exec(text)) !== null) {
+    hrefLinks.push(m[1])
   }
+
+  const feedUrlBase = (() => { try { return new URL(url).origin } catch { return "" } })()
+
+  // Channel title is at index 0, items start at index 1
+  for (let i = 1; i < titles.length; i++) {
+    const title = titles[i]
+      .replace(/<\/?[^>]+>/g, "")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&apos;/g, "'")
+      .trim()
+
+    if (!title || title.length < 3) continue
+
+    let link = allLinks?.[i]?.replace(/<\/?[^>]+>/g, "").trim() || ""
+    if (!link) {
+      const linkMatch = allLinks?.[i]?.match(/href\s*=\s*["']([^"']+)["']/)
+      if (linkMatch) link = linkMatch[1]
+    }
+    if (!link) {
+      link = hrefLinks?.[i] || ""
+    }
+    if (link && !link.startsWith("http") && feedUrlBase) {
+      link = feedUrlBase + (link.startsWith("/") ? link : "/" + link)
+    }
+    if (!link) continue
+
+    const description = (descriptions?.[i] || "")
+      .replace(/<\/?[^>]+>/g, "")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&apos;/g, "'")
+      .trim()
+
+    const pubDate = pubDates?.[i - 1]?.trim() || ""
+
+    let sourceName = ""
+    try { sourceName = new URL(link).hostname.replace(/^www\./, "") } catch { sourceName = feedUrlBase ? new URL(feedUrlBase).hostname.replace(/^www\./, "") : "" }
+
+    articles.push({
+      title,
+      url: link,
+      description: description.substring(0, 500),
+      source: { name: sourceName },
+      publishedAt: pubDate || new Date().toISOString(),
+      urlToImage: null,
+    })
+  }
+
+  articles.sort((a, b) => {
+    const dateA = new Date(a.publishedAt).getTime()
+    const dateB = new Date(b.publishedAt).getTime()
+    return dateB - dateA
+  })
+
+  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
+  const recentArticles = articles.filter(a => new Date(a.publishedAt).getTime() > sevenDaysAgo)
+
+  return recentArticles.slice(0, limit)
 }
 
 export async function POST(request: Request) {
@@ -105,12 +117,27 @@ export async function POST(request: Request) {
       }
       const articles = await searchNewsEverything(query, reqPageSize || 20, collectLanguage || "es")
       const sourceMap = new Map<string, { name: string; url: string }>()
+
+      const rssPaths = ["/feed", "/rss", "/feed.xml", "/rss.xml", "/atom.xml", "/feeds", "/feeds/posts/default", "/feed/", "/rss/"]
       for (const article of articles) {
         const sourceName = article.source?.name || "Unknown"
         if (!sourceMap.has(sourceName)) {
           try {
-            const url = new URL(article.url)
-            sourceMap.set(sourceName, { name: sourceName, url: `${url.protocol}//${url.hostname}` })
+            const parsed = new URL(article.url)
+            const baseUrl = `${parsed.protocol}//${parsed.hostname}`
+            let foundFeed = ""
+            for (const path of rssPaths) {
+              try {
+                const testUrl = baseUrl + path
+                const testRes = await fetch(testUrl, { method: "HEAD", signal: AbortSignal.timeout(3000) })
+                const ct = testRes.headers.get("content-type") || ""
+                if (testRes.ok && (ct.includes("xml") || ct.includes("rss") || ct.includes("atom") || ct.includes("text/plain"))) {
+                  foundFeed = testUrl
+                  break
+                }
+              } catch { }
+            }
+            sourceMap.set(sourceName, { name: sourceName, url: foundFeed || baseUrl })
           } catch {
             sourceMap.set(sourceName, { name: sourceName, url: article.url })
           }

@@ -18,7 +18,7 @@ async function testRSSFeed(url: string) {
   const res = await fetch(url, { signal: AbortSignal.timeout(15000) })
   if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`)
   const contentType = res.headers.get("content-type") || ""
-  if (!contentType.includes("xml") && !contentType.includes("rss") && !contentType.includes("text/plain") && !contentType.includes("application/octet-stream")) {
+  if (!contentType.includes("xml") && !contentType.includes("rss") && !contentType.includes("atom") && !contentType.includes("text/plain") && !contentType.includes("application/octet-stream") && !contentType.includes("text/html")) {
     throw new Error(`Tipo de contenido inesperado: ${contentType}`)
   }
   const raw = await res.text()
