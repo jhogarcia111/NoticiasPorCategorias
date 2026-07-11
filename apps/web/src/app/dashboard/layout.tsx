@@ -6,7 +6,7 @@ import { DashboardProvider, useDashboard, type Tab } from "./dashboard-context"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard, Newspaper, Brain, Calendar, Settings,
-  Menu, X, LogOut,
+  Menu, X, LogOut, Linkedin,
 } from "lucide-react"
 
 const navItems: { id: Tab; label: string; icon: any }[] = [
@@ -14,6 +14,7 @@ const navItems: { id: Tab; label: string; icon: any }[] = [
   { id: "news", label: "Noticias", icon: Newspaper },
   { id: "ai", label: "IA", icon: Brain },
   { id: "calendar", label: "Calendario", icon: Calendar },
+  { id: "published", label: "Publicadas", icon: Linkedin },
   { id: "config", label: "Configuración", icon: Settings },
 ]
 

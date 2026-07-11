@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, type Dispatch, type SetStateAction } from "react"
 
-export type Tab = "home" | "news" | "ai" | "calendar" | "config"
+export type Tab = "home" | "news" | "ai" | "calendar" | "config" | "published"
 export type ConfigSubTab = "linkedin" | "sources"
 
 interface DashboardState {

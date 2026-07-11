@@ -1,20 +1,18 @@
 "use client"
 
 import type { Session } from "next-auth"
-import { useState, useMemo } from "react"
-import { useDashboard, type Tab, type ConfigSubTab } from "./dashboard-context"
+import { useDashboard, type Tab } from "./dashboard-context"
 import { NewsManager } from "@/components/news/news-manager"
 import { AIManager } from "@/components/ai/ai-manager"
 import { LinkedInProfilesManager } from "@/components/linkedin/linkedin-profiles-manager"
 import { SourcesManager } from "@/components/sources/sources-manager"
 import { CalendarView } from "@/components/scheduling/calendar-view"
+import { PublishedView } from "@/components/news/published-view"
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { useNews } from "@/hooks/use-news"
 import { cn } from "@/lib/utils"
 import {
-  Newspaper, Brain, Calendar, Settings, Sparkles,
+  Newspaper, Brain, Calendar,
   RefreshCw, CheckCircle2, Clock, ArrowRight,
 } from "lucide-react"
 
@@ -50,16 +48,10 @@ function StatsCard({ icon: Icon, label, value, color, bg }: {
 
 export default function DashboardClient({ user }: DashboardClientProps) {
   const { activeTab, setActiveTab, selectedNewsIds, setSelectedNewsIds, cachedNews, setCachedNews } = useDashboard()
-  const [configSubTab, setConfigSubTab] = useState<ConfigSubTab>("linkedin")
 
   const { data: allNewsData } = useNews({ limit: 1 })
 
   const totalNews = allNewsData?.total ?? allNewsData?.data?.length ?? "—"
-
-  const configTabs: { id: ConfigSubTab; label: string }[] = [
-    { id: "linkedin", label: "Perfiles LinkedIn" },
-    { id: "sources", label: "Fuentes de Noticias" },
-  ]
 
   return (
     <>
@@ -143,6 +135,8 @@ export default function DashboardClient({ user }: DashboardClientProps) {
       )}
 
       {activeTab === "calendar" && <CalendarView />}
+
+      {activeTab === "published" && <PublishedView />}
     </>
   )
 }

@@ -157,27 +157,20 @@ export async function POST(request: Request) {
 
       try {
           if (cat.newsapiCategory && NEWSAPI_KEY) {
-            const langConfigs = [
-              { language: "es", country: "" },
-              { language: "en", country: "us" },
-            ]
-            for (const config of langConfigs) {
-              try {
-                const articles = await fetchNewsFromAPI({
-                  category: cat.newsapiCategory || "technology",
-                  pageSize: 10,
-                  language: config.language,
-                  country: config.country,
-                })
-                if (articles.length > 0) {
-                  const processed = await processAndSaveNews(articles, cat.id, config.language)
-                  catResult.collected += processed.length
-                  catResult.total += articles.length
-                  catResult.sources.push(`NewsAPI (${config.language})`)
-                }
-              } catch (e: any) {
-                catResult.errors.push(`NewsAPI (${config.language}): ${e.message}`)
+            try {
+              const articles = await fetchNewsFromAPI({
+                category: cat.newsapiCategory || "technology",
+                pageSize: 10,
+                language: "es",
+              })
+              if (articles.length > 0) {
+                const processed = await processAndSaveNews(articles, cat.id, "es")
+                catResult.collected += processed.length
+                catResult.total += articles.length
+                catResult.sources.push("NewsAPI (es)")
               }
+            } catch (e: any) {
+              catResult.errors.push(`NewsAPI: ${e.message}`)
             }
           }
 

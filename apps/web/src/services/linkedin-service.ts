@@ -82,31 +82,27 @@ export async function postToLinkedIn(profileId: number, content: string, title?:
 
   const body: any = {
     author: `urn:li:person:${profile.linkedinId}`,
+    commentary: content,
+    visibility: "PUBLIC",
+    distribution: {
+      feedDistribution: "MAIN_FEED",
+      targetEntities: [],
+      thirdPartyDistributionChannels: [],
+    },
     lifecycleState: "PUBLISHED",
-    specificContent: {
-      "com.linkedin.ugc.ShareContent": {
-        shareCommentary: { text: content },
-        shareMediaCategory: "NONE",
-      },
-    },
-    visibility: {
-      "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
-    },
   }
 
   if (sourceUrl) {
-    body.specificContent["com.linkedin.ugc.ShareContent"].shareMediaCategory = "ARTICLE"
-    body.specificContent["com.linkedin.ugc.ShareContent"].media = [
-      {
-        status: "READY",
-        description: { text: title || content.substring(0, 200) },
-        originalUrl: sourceUrl,
-        title: { text: title || "" },
+    body.content = {
+      article: {
+        source: sourceUrl,
+        title: title || "",
+        description: content.substring(0, 300),
       },
-    ]
+    }
   }
 
-  const response = await fetch("https://api.linkedin.com/v2/ugcPosts", {
+  const response = await fetch("https://api.linkedin.com/v2/posts", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${profile.accessToken}`,
