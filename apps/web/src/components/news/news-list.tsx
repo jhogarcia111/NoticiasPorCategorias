@@ -12,6 +12,7 @@ interface NewsListProps {
   news: any[]
   onNewsSelect?: (newsId: number) => void
   selectedNews?: number[]
+  publishedIds?: number[]
 }
 
 function daysSince(date: Date): number {
@@ -35,7 +36,7 @@ function dateLabel(pubDate: string | Date | null | undefined): string {
   return `${differenceInDays(new Date(), d)}d`
 }
 
-export function NewsList({ news, onNewsSelect, selectedNews = [] }: NewsListProps) {
+export function NewsList({ news, onNewsSelect, selectedNews = [], publishedIds = [] }: NewsListProps) {
   const [expandedNews, setExpandedNews] = useState<Record<number, boolean>>({})
 
   const toggleExpanded = (newsId: number) => {
@@ -98,6 +99,11 @@ export function NewsList({ news, onNewsSelect, selectedNews = [] }: NewsListProp
                     {article.category && (
                       <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 font-normal">
                         {article.category.name || article.category}
+                      </Badge>
+                    )}
+                    {publishedIds.includes(article.id) && (
+                      <Badge className="text-[10px] px-1.5 py-0 h-5 font-normal whitespace-nowrap bg-green-100 text-green-800 border-green-200">
+                        Publicada
                       </Badge>
                     )}
                     <Badge variant={article.isProcessed ? "success" : "warning"} className="text-[10px] px-1.5 py-0 h-5 font-normal whitespace-nowrap">

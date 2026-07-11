@@ -71,7 +71,7 @@ export async function saveLinkedInProfile(profileData: any, tokens: any, userId:
   return profile
 }
 
-export async function postToLinkedIn(profileId: number, content: string, title?: string) {
+export async function postToLinkedIn(profileId: number, content: string, title?: string, sourceUrl?: string) {
   const db = getDb()
   const [profile] = await db
     .select()
@@ -80,6 +80,32 @@ export async function postToLinkedIn(profileId: number, content: string, title?:
     .limit(1)
   if (!profile) throw new Error("LinkedIn profile not found")
 
+  const body: any = {
+    author: `urn:li:person:${profile.linkedinId}`,
+    lifecycleState: "PUBLISHED",
+    specificContent: {
+      "com.linkedin.ugc.ShareContent": {
+        shareCommentary: { text: content },
+        shareMediaCategory: "NONE",
+      },
+    },
+    visibility: {
+      "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
+    },
+  }
+
+  if (sourceUrl) {
+    body.specificContent["com.linkedin.ugc.ShareContent"].shareMediaCategory = "ARTICLE"
+    body.specificContent["com.linkedin.ugc.ShareContent"].media = [
+      {
+        status: "READY",
+        description: { text: title || content.substring(0, 200) },
+        originalUrl: sourceUrl,
+        title: { text: title || "" },
+      },
+    ]
+  }
+
   const response = await fetch("https://api.linkedin.com/v2/ugcPosts", {
     method: "POST",
     headers: {
@@ -87,19 +113,7 @@ export async function postToLinkedIn(profileId: number, content: string, title?:
       "Content-Type": "application/json",
       "X-Restli-Protocol-Version": "2.0.0",
     },
-    body: JSON.stringify({
-      author: `urn:li:person:${profile.linkedinId}`,
-      lifecycleState: "PUBLISHED",
-      specificContent: {
-        "com.linkedin.ugc.ShareContent": {
-          shareCommentary: { text: content },
-          shareMediaCategory: "NONE",
-        },
-      },
-      visibility: {
-        "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
-      },
-    }),
+    body: JSON.stringify(body),
   })
 
   if (!response.ok) {

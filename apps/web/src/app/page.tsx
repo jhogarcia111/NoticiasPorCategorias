@@ -15,7 +15,7 @@ const benefits = [
     desc: "Conecta tus fuentes favoritas o elige entre 10+ categorías. La plataforma recolecta las noticias más relevantes para tu industria automáticamente.",
     color: "text-blue-600",
     bg: "bg-blue-100",
-    img: "https://image.pollinations.ai/prompt/professional_news_dashboard_curated_headlines_technology_business_health_modern_design?width=600&height=400&nofeed=true",
+    img: "https://image.pollinations.ai/prompt/clean_professional_dashboard_dark_mode_news_feed_technology_headlines_modern_UI_flat_design_no_people?width=600&height=400&nofeed=true",
   },
   {
     icon: MessageCircle,
@@ -23,7 +23,7 @@ const benefits = [
     desc: "La IA aprende tu tono y estilo. No sonarás a robot. Elige entre 4 estilos: crítico, educativo, satírico o ejecutivo. Tu voz, aumentada.",
     color: "text-purple-600",
     bg: "bg-purple-100",
-    img: "https://image.pollinations.ai/prompt/writer_ai_assistant_drafting_linkedin_post_professional_tone_clean_interface?width=600&height=400&nofeed=true",
+    img: "https://image.pollinations.ai/prompt/clean_minimalist_writing_interface_laptop_screen_showing_text_editor_AI_assistant_sidebar_no_people_flat_design?width=600&height=400&nofeed=true",
   },
   {
     icon: Linkedin,
@@ -31,7 +31,7 @@ const benefits = [
     desc: "No más publicar por publicar. Cada noticia se transforma en un post optimizado para LinkedIn con resumen, hashtags e imagen generada por IA.",
     color: "text-[#0A66C2]",
     bg: "bg-[#0A66C2]/10",
-    img: "https://image.pollinations.ai/prompt/linkedin_profile_publishing_news_article_professional_growth_career_opportunity?width=600&height=400&nofeed=true",
+    img: "https://image.pollinations.ai/prompt/linkedin_profile_page_clean_modern_dark_blue_theme_news_article_card_UI_no_people_flat_design?width=600&height=400&nofeed=true",
   },
   {
     icon: Calendar,
@@ -39,7 +39,7 @@ const benefits = [
     desc: "Define tu calendario de publicaciones una vez. El sistema se encarga de mantener tu presencia activa mientras tú trabajas en lo importante.",
     color: "text-green-600",
     bg: "bg-green-100",
-    img: "https://image.pollinations.ai/prompt/calendar_schedule_automation_linkedin_posts_weekly_planning_clean_ux?width=600&height=400&nofeed=true",
+    img: "https://image.pollinations.ai/prompt/calendar_interface_mockup_clean_grid_weekly_schedule_appointment_blocks_no_people_flat_minimalist_design?width=600&height=400&nofeed=true",
   },
   {
     icon: Target,
@@ -47,7 +47,7 @@ const benefits = [
     desc: "Publica contenido fresco y relevante de forma consistente. Tu audiencia te reconocerá como una autoridad en tu campo.",
     color: "text-orange-600",
     bg: "bg-orange-100",
-    img: "https://image.pollinations.ai/prompt/professional_growing_career_expert_status_linkedin_success_network?width=600&height=400&nofeed=true",
+    img: "https://image.pollinations.ai/prompt/professional_growth_chart_upward_trend_dashboard_analytics_metrics_no_people_minimalist_flat_design?width=600&height=400&nofeed=true",
   },
   {
     icon: Globe,
@@ -55,7 +55,7 @@ const benefits = [
     desc: "Crea contenido en español e inglés. Ideal para llegar a audiencias globales sin perder la autenticidad de tu mensaje.",
     color: "text-teal-600",
     bg: "bg-teal-100",
-    img: "https://image.pollinations.ai/prompt/global_audience_multilingual_content_spanish_english_connected_world?width=600&height=400&nofeed=true",
+    img: "https://image.pollinations.ai/prompt/world_map_connected_dots_global_network_clean_minimalist_flat_design_no_people_blue_teal_palette?width=600&height=400&nofeed=true",
   },
 ]
 
@@ -175,9 +175,52 @@ function ImageCard({ src, alt, className = "" }: { src: string; alt: string; cla
 
 export default function HomePage() {
   const [activeFaq, setActiveFaq] = useState<number | null>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  const navLinks = [
+    { href: "#beneficios", label: "Beneficios" },
+    { href: "#como-funciona", label: "Cómo funciona" },
+    { href: "#precios", label: "Precios" },
+    { href: "#faq", label: "FAQ" },
+  ]
 
   return (
     <div className="overflow-hidden">
+      <nav className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
+          <Link href="/" className="flex items-center gap-2 text-lg font-bold text-[#0A66C2]">
+            <Newspaper className="h-5 w-5" />
+            <span>NewsLinked</span>
+          </Link>
+          <div className="hidden md:flex items-center gap-6">
+            {navLinks.map((l) => (
+              <a key={l.href} href={l.href}
+                className="text-sm font-medium text-muted-foreground hover:text-[#0A66C2] transition-colors"
+                onClick={(e) => { e.preventDefault(); document.querySelector(l.href)?.scrollIntoView({ behavior: "smooth" }) }}
+              >{l.label}</a>
+            ))}
+            <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-[#0A66C2] transition-colors">Iniciar sesión</Link>
+            <Link href="/register" className="rounded-lg bg-[#0A66C2] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0055A4] transition-colors">Comenzar gratis</Link>
+          </div>
+          <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden p-2 rounded-lg hover:bg-muted">
+            <span className="sr-only">Menu</span>
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+          </button>
+        </div>
+        {menuOpen && (
+          <div className="md:hidden border-t bg-white px-4 py-3 space-y-2">
+            {navLinks.map((l) => (
+              <a key={l.href} href={l.href}
+                className="block text-sm font-medium text-muted-foreground hover:text-[#0A66C2] py-1"
+                onClick={(e) => { e.preventDefault(); document.querySelector(l.href)?.scrollIntoView({ behavior: "smooth" }); setMenuOpen(false) }}
+              >{l.label}</a>
+            ))}
+            <Link href="/login" className="block text-sm font-medium text-muted-foreground hover:text-[#0A66C2] py-1">Iniciar sesión</Link>
+            <Link href="/register" className="block text-center rounded-lg bg-[#0A66C2] px-4 py-2 text-sm font-semibold text-white">Comenzar gratis</Link>
+          </div>
+        )}
+      </nav>
+
       {/* HERO */}
       <section className="relative isolate px-4 pt-16 pb-24 md:pt-24 md:pb-32">
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-blue-50/80 via-white to-white" />
@@ -217,7 +260,7 @@ export default function HomePage() {
               </div>
             </div>
             <ImageCard
-              src="https://image.pollinations.ai/prompt/professional_dashboard_news_curation_ai_writing_linkedin_publishing_modern_clean_tech?width=800&height=600&nofeed=true"
+              src="https://image.pollinations.ai/prompt/clean_professional_dashboard_mockup_laptop_analytics_charts_news_feed_social_media_publishing_modern_UI_no_people_flat_illustration?width=800&height=600&nofeed=true"
               alt="Dashboard profesional de noticias e IA"
               className="h-80 md:h-96 lg:h-[28rem]"
             />
@@ -288,7 +331,7 @@ export default function HomePage() {
       </section>
 
       {/* STEPS - Cómo funciona */}
-      <section className="bg-gradient-to-b from-white to-blue-50/50 py-20 md:py-28">
+      <section id="como-funciona" className="bg-gradient-to-b from-white to-blue-50/50 py-20 md:py-28">
         <div className="mx-auto max-w-7xl px-4">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight text-gray-900 md:text-4xl">
@@ -443,7 +486,7 @@ export default function HomePage() {
       </section>
 
       {/* FAQ */}
-      <section className="py-20 md:py-28">
+      <section id="faq" className="py-20 md:py-28">
         <div className="mx-auto max-w-3xl px-4">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-bold tracking-tight text-gray-900 md:text-4xl">
@@ -504,7 +547,7 @@ export default function HomePage() {
               </div>
             </div>
             <ImageCard
-              src="https://image.pollinations.ai/prompt/professional_success_career_growth_linkedin_network_opportunity_modern?width=800&height=600&nofeed=true"
+              src="https://image.pollinations.ai/prompt/stylized_abstract_growth_ladder_stars_rocket_upward_professional_success_career_advancement_minimalist_flat_illustration_no_people?width=800&height=600&nofeed=true"
               alt="Crecimiento profesional con LinkedIn"
               className="h-72 md:h-80"
             />

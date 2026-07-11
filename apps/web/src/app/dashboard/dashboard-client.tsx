@@ -130,24 +130,15 @@ export default function DashboardClient({ user }: DashboardClientProps) {
       )}
 
       {activeTab === "config" && (
-        <div className="space-y-6">
-          <div className="flex gap-1 bg-muted p-1 rounded-lg w-fit">
-            {configTabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setConfigSubTab(tab.id)}
-                className={cn(
-                  "px-4 py-2 rounded-md text-sm font-medium transition-colors",
-                  configSubTab === tab.id
-                    ? "bg-white text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground mb-4">Perfiles LinkedIn</h3>
+            <LinkedInProfilesManager />
           </div>
-          {configSubTab === "linkedin" ? <LinkedInProfilesManager /> : <SourcesManager />}
+          <div>
+            <h3 className="text-sm font-semibold text-foreground mb-4">Fuentes de Noticias</h3>
+            <SourcesManager />
+          </div>
         </div>
       )}
 

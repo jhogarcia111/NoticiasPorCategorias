@@ -1,5 +1,5 @@
 import { getDb } from "@/lib/db"
-import { news, categories } from "@noticias/database"
+import { news, categories, postNews, scheduledPosts } from "@noticias/database"
 import { eq, desc, and, sql, inArray } from "drizzle-orm"
 
 const NEWSAPI_BASE_URL = "https://newsapi.org/v2"
@@ -126,4 +126,14 @@ export async function markNewsAsProcessed(newsIds: number[]) {
 export async function deleteAllNews() {
   const db = getDb()
   await db.delete(news)
+}
+
+export async function getPublishedNewsIds(): Promise<number[]> {
+  const db = getDb()
+  const rows = await db
+    .select({ newsId: postNews.newsId })
+    .from(postNews)
+    .innerJoin(scheduledPosts, eq(postNews.postId, scheduledPosts.id))
+    .where(eq(scheduledPosts.status, "published"))
+  return rows.map((r) => r.newsId)
 }

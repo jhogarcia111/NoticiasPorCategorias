@@ -26,6 +26,8 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
   const [showUnprocessed, setShowUnprocessed] = useState(false)
+  const [showPublished, setShowPublished] = useState(false)
+  const [publishedIds, setPublishedIds] = useState<number[]>([])
   const [languageFilter, setLanguageFilter] = useState<string>("all")
   const [internalSelectedIds, setInternalSelectedIds] = useState<number[]>([])
   const [showFilters, setShowFilters] = useState(false)
@@ -66,6 +68,13 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
     }
   }, [newsData, onNewsDataChange])
 
+  useEffect(() => {
+    fetch("/api/news/published")
+      .then((r) => r.json())
+      .then((d) => setPublishedIds(d.data || []))
+      .catch(() => {})
+  }, [])
+
   const collectMutation = useCollectNews()
   const markProcessedMutation = useMarkNewsAsProcessed()
 
@@ -74,6 +83,7 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
   const filteredNews = useMemo(() => {
     let items = news
     if (showUnprocessed) items = items.filter((item: any) => !item.isProcessed)
+    if (showPublished) items = items.filter((item: any) => publishedIds.includes(item.id))
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim()
       items = items.filter((item: any) =>
@@ -84,7 +94,7 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
       items = items.filter((item: any) => item.language === languageFilter)
     }
     return items
-  }, [news, showUnprocessed, searchQuery, languageFilter])
+  }, [news, showUnprocessed, showPublished, publishedIds, searchQuery, languageFilter])
 
   const showAlert = (variant: string, title: string, message: string) => {
     setAlert({ variant, title, message })
@@ -377,6 +387,15 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
                   />
                   Solo no procesadas
                 </label>
+                <label className="flex items-center gap-2 text-xs cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showPublished}
+                    onChange={(e) => setShowPublished(e.target.checked)}
+                    className="rounded border-input"
+                  />
+                  Publicadas en LinkedIn
+                </label>
               </div>
 
               <div className="flex flex-wrap gap-1.5">
@@ -438,7 +457,7 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <NewsList news={filteredNews} onNewsSelect={toggleNewsSelection} selectedNews={selectedNewsIds} />
+            <NewsList news={filteredNews} onNewsSelect={toggleNewsSelection} selectedNews={selectedNewsIds} publishedIds={publishedIds} />
           )}
         </CardContent>
       </Card>

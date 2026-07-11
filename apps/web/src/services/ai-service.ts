@@ -92,12 +92,21 @@ Hashtags:`
 }
 
 export async function generateImagePrompt(title: string, summary: string) {
-  const prompt = `Eres un experto en marketing visual para LinkedIn. 
-Genera un prompt detallado para crear una imagen profesional que represente esta noticia:
+  const prompt = `Eres un experto en diseño gráfico y marketing visual para LinkedIn.
+Genera un prompt PARA UNA IA DE IMÁGENES (como DALL-E, Midjourney o Stable Diffusion) que cree una imagen profesional, realista y moderna para acompañar esta noticia en LinkedIn.
+
+REGLAS PARA EL PROMPT:
+- Describe la escena de forma realista y detallada (iluminación, colores, composición)
+- Especifica "fotografía realista, alta calidad, 8K, iluminación profesional"
+- NO incluyas personas si el prompt va a generar rostros distorsionados. Mejor usa objetos, entornos, texturas
+- Si incluyes personas, especifica "fotografía realista de persona profesional, manos visibles y proporcionadas, anatomía correcta"
+- Estilo profesional corporativo, colores sobrios, composición limpia
+- NO uses términos abstractos como "innovación" o "futuro" solos - describe elementos visuales concretos
+
 Título: ${title}
 Resumen: ${summary}
-El prompt debe ser específico, estilo profesional y moderno, apropiado para LinkedIn.
-Prompt para imagen:`
 
-  return callDeepSeek(prompt, 200)
+Prompt para generación de imagen:`
+
+  return callDeepSeek(prompt, 300)
 }

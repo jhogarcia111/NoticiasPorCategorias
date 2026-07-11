@@ -145,11 +145,14 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       const res = await fetch("/api/linkedin/publish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          profileId: selectedProfileId,
-          content: parsedResult?.post || result,
-          title: activeNews[0]?.title || "",
-        }),
+          body: JSON.stringify({
+            profileId: selectedProfileId,
+            content: parsedResult?.post || result,
+            title: activeNews[0]?.title || "",
+            sourceUrl: activeNews[0]?.sourceUrl || "",
+            userId: session?.user?.id || "",
+            newsIds: activeNewsIds,
+          }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
@@ -235,7 +238,23 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       if (!res.ok) throw new Error(data.error || "Error al procesar")
       const rawResponse = data.data || "Sin respuesta"
       setResult(rawResponse)
-      setParsedResult(parseAIResponse(rawResponse))
+      const parsed = parseAIResponse(rawResponse)
+      setParsedResult(parsed)
+
+      for (const newsId of activeNewsIds) {
+        await fetch("/api/ai/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            newsId,
+            templateId: selectedTemplateId,
+            templateName: selectedTemplate.name,
+            language: "es",
+            linkedinPost: parsed?.post || rawResponse,
+            fullResponse: rawResponse,
+          }),
+        })
+      }
     } catch (e: any) {
       const errorMsg = `Error: ${e.message}`
       setResult(errorMsg)
