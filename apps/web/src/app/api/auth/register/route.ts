@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getDb } from "@/lib/db"
 import { profiles } from "@noticias/database"
+import { sendTemplateEmail } from "@/lib/email"
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -39,6 +40,13 @@ export async function POST(request: Request) {
         username: username || email.split("@")[0],
         role: "user",
       })
+
+      sendTemplateEmail("welcome", email, {
+        user_name: username || email.split("@")[0],
+        app_name: "NoticiasPorCategorías",
+        app_slogan: "Organiza, categoriza y publica noticias profesionales en LinkedIn",
+        app_url: process.env.VITE_APP_URL || "http://localhost:4017",
+      }).catch(() => {})
     }
 
     return NextResponse.json({ data: { id: data.id, email: data.email } })

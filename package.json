@@ -15,10 +15,14 @@
     "packages/*"
   ],
   "devDependencies": {
+    "@types/nodemailer": "^8.0.1",
     "turbo": "^2.3.0"
   },
   "packageManager": "npm@10.9.2",
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "nodemailer": "^9.0.3"
   }
 }

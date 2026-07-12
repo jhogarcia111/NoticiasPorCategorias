@@ -8,6 +8,7 @@ import { LinkedInProfilesManager } from "@/components/linkedin/linkedin-profiles
 import { SourcesManager } from "@/components/sources/sources-manager"
 import { CalendarView } from "@/components/scheduling/calendar-view"
 import { PublishedView } from "@/components/news/published-view"
+import { EmailTemplatesAdmin } from "./admin/email-templates-admin"
 import { Card, CardContent } from "@/components/ui/card"
 import { useNews } from "@/hooks/use-news"
 import { cn } from "@/lib/utils"
@@ -137,6 +138,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
       {activeTab === "calendar" && <CalendarView />}
 
       {activeTab === "published" && <PublishedView />}
-    </>
-  )
-}
+
+      {activeTab === "admin" && <EmailTemplatesAdmin />}
+    </>)
+  }

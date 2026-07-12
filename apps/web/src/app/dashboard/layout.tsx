@@ -6,22 +6,29 @@ import { DashboardProvider, useDashboard, type Tab } from "./dashboard-context"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard, Newspaper, Brain, Calendar, Settings,
-  Menu, X, LogOut, Linkedin,
+  Menu, X, LogOut, Linkedin, Shield,
 } from "lucide-react"
 
-const navItems: { id: Tab; label: string; icon: any }[] = [
-  { id: "home", label: "Inicio", icon: LayoutDashboard },
-  { id: "news", label: "Noticias", icon: Newspaper },
-  { id: "ai", label: "IA", icon: Brain },
-  { id: "calendar", label: "Calendario", icon: Calendar },
-  { id: "published", label: "Publicadas", icon: Linkedin },
-  { id: "config", label: "Configuración", icon: Settings },
-]
+function getNavItems(role?: string): { id: Tab; label: string; icon: any }[] {
+  const items: { id: Tab; label: string; icon: any }[] = [
+    { id: "home", label: "Inicio", icon: LayoutDashboard },
+    { id: "news", label: "Noticias", icon: Newspaper },
+    { id: "ai", label: "IA", icon: Brain },
+    { id: "calendar", label: "Calendario", icon: Calendar },
+    { id: "published", label: "Publicadas", icon: Linkedin },
+    { id: "config", label: "Configuración", icon: Settings },
+  ]
+  if (role === "admin") {
+    items.push({ id: "admin", label: "Admin", icon: Shield })
+  }
+  return items
+}
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const { activeTab, setActiveTab } = useDashboard()
   const { data: session } = useSession()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const navItems = getNavItems(session?.user?.role)
 
   return (
     <div className="min-h-screen bg-background">

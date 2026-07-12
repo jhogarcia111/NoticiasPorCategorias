@@ -1,11 +1,16 @@
 import NextAuth from "next-auth"
 import type { NextAuthConfig } from "next-auth"
 import LinkedIn from "next-auth/providers/linkedin"
+import Google from "next-auth/providers/google"
 import { getDb, profiles, linkedinProfiles } from "@noticias/database"
 import { eq } from "drizzle-orm"
 
 export const authConfig: NextAuthConfig = {
   providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+    }),
     LinkedIn({
       clientId: process.env.VITE_LINKEDIN_CLIENT_ID || process.env.NEXT_PUBLIC_LINKEDIN_CLIENT_ID || "",
       clientSecret: process.env.VITE_LINKEDIN_CLIENT_SECRET || process.env.LINKEDIN_CLIENT_SECRET || "",
@@ -44,7 +49,7 @@ export const authConfig: NextAuthConfig = {
   ],
   callbacks: {
     async signIn({ user, account }) {
-      if (account?.provider === "linkedin" && user.email && user.id) {
+      if ((account?.provider === "google" || account?.provider === "linkedin") && user.email && user.id) {
         const db = getDb()
         const [existing] = await db
           .select()
@@ -60,7 +65,7 @@ export const authConfig: NextAuthConfig = {
           })
         }
 
-        if (account.access_token) {
+        if (account.provider === "linkedin" && account.access_token) {
           const [existingLinkedIn] = await db
             .select()
             .from(linkedinProfiles)
