@@ -3,14 +3,15 @@ import { getDb, emailTemplates } from "@noticias/database"
 import { eq } from "drizzle-orm"
 import { auth } from "@/lib/auth"
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id: templateId } = await params
   const session = await auth()
   if (!session?.user || session.user.role !== "admin") {
     return NextResponse.json({ error: "No autorizado" }, { status: 403 })
   }
 
   try {
-    const id = Number(params.id)
+    const id = Number(templateId)
     const body = await request.json()
     const db = getDb()
 

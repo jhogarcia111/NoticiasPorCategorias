@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { Suspense, useState, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Logo } from "@/components/logo"
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const searchParams = useSearchParams()
   const token = searchParams.get("token")
   const router = useRouter()
@@ -144,5 +144,17 @@ export default function ResetPasswordPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
+        <p className="text-muted-foreground">Cargando...</p>
+      </div>
+    }>
+      <ResetPasswordForm />
+    </Suspense>
   )
 }
