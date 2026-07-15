@@ -65,7 +65,16 @@ export async function generateLinkedInPost(
   }
 
   const prompt = `Eres un experto en marketing de contenido para LinkedIn. 
-Crea un post profesional y atractivo basado en estas noticias:
+Crea un post profesional y atractivo basado SOLO en la informacion de las noticias proporcionadas.
+
+REGLAS ESTRICTAS (violarlas cancela tu respuesta):
+1. Solo usa datos, cifras, citas y detalles que aparezcan EXPLICITAMENTE en las noticias.
+2. NO inventes citas textuales, estadisticas, fechas, precios ni declaraciones.
+3. NO asumas monedas: si mencionas dinero usa el que aparezca en la noticia.
+4. Si la noticia NO menciona un dato, NO lo agregues.
+5. Incluye la URL de la fuente en el post para que los lectores puedan verificar.
+
+Noticias:
 ${newsText}
 El post debe tener un hook inicial, ser profesional, generar engagement, incluir call-to-action.
 Máximo ${maxLength} caracteres. Estilo: ${style}.

@@ -9,7 +9,7 @@ import { useSession } from "next-auth/react"
 import { promptTemplates } from "@/data/prompt-templates"
 import {
   Brain, RefreshCw, Sparkles, Copy, Check, ChevronDown, ChevronRight,
-  Send, Calendar, Save, Loader2, ImageUp, X, Globe,
+  Send, Calendar, Save, Loader2, ImageUp, X, Globe, ExternalLink,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -210,7 +210,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     setCustomImage(null)
 
     const newsContent = activeNews.map((n: any, i: number) =>
-      `--- NOTICIA ${i + 1} ---\nTitulo: ${n.title}\nFuente: ${n.sourceName}\nFecha: ${n.publishedAt || ""}\nResumen: ${n.summary || ""}\nContenido: ${n.content || n.summary || "No disponible"}\nURL: ${n.sourceUrl || ""}`
+      `--- NOTICIA ${i + 1} ---\nTitulo: ${n.title}\nFuente: ${n.sourceName}\nFecha: ${n.publishedAt || ""}\nResumen: ${n.summary || ""}\nContenido: ${n.content || n.summary || "No disponible"}\nURL (incluye esta URL en el post): ${n.sourceUrl || ""}`
     ).join("\n\n")
 
     const fullPrompt = `${selectedTemplate.systemPrompt}\n\n### NOTICIAS A PROCESAR:\n${newsContent || customText || "(No hay contenido adicional)"}`
@@ -344,15 +344,26 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                           <p className="text-sm font-medium truncate">{n.title}</p>
                           <p className="text-xs text-muted-foreground truncate">{n.sourceName}</p>
                         </div>
-                        {saved && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleRecuperar(saved) }}
-                            className="text-xs text-primary hover:text-primary/80 font-medium flex-shrink-0 px-1.5 py-0.5 rounded hover:bg-primary/5"
-                            title="Recuperar analisis guardado"
-                          >
-                            Cargar
-                          </button>
-                        )}
+                        <div className="flex items-center gap-0.5 flex-shrink-0">
+                          {n.sourceUrl && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); window.open(n.sourceUrl, "_blank") }}
+                              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                              title="Abrir noticia original"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                            </button>
+                          )}
+                          {saved && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleRecuperar(saved) }}
+                              className="text-xs text-primary hover:text-primary/80 font-medium px-1.5 py-0.5 rounded hover:bg-primary/5"
+                              title="Recuperar analisis guardado"
+                            >
+                              Cargar
+                            </button>
+                          )}
+                        </div>
                       </div>
                     )
                   })}

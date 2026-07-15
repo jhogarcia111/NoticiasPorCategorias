@@ -10,7 +10,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "profileId and content are required" }, { status: 400 })
     }
 
-    const result = await postToLinkedIn(profileId, content, title, sourceUrl)
+    const contentWithUrl = sourceUrl && !content.includes(sourceUrl)
+      ? `${content}\n\n${sourceUrl}`
+      : content
+
+    const result = await postToLinkedIn(profileId, contentWithUrl, title, sourceUrl)
 
     if (userId) {
       const db = getDb()
