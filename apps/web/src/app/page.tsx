@@ -87,6 +87,7 @@ const plans = [
   {
     name: "Gratis",
     price: "$0",
+    priceCOP: "$0",
     period: "siempre",
     desc: "Para probar el poder de la plataforma",
     features: [
@@ -102,7 +103,8 @@ const plans = [
   },
   {
     name: "Pro",
-    price: "$29",
+    price: "$29 USD",
+    priceCOP: "$110.000 COP",
     period: "/mes",
     desc: "Para profesionales que crecen en LinkedIn",
     features: [
@@ -121,7 +123,8 @@ const plans = [
   },
   {
     name: "Business",
-    price: "$79",
+    price: "$79 USD",
+    priceCOP: "$300.000 COP",
     period: "/mes",
     desc: "Para agencias y equipos",
     features: [
@@ -415,6 +418,9 @@ export default function HomePage() {
                   <span className="text-4xl font-bold text-gray-900">{p.price}</span>
                   <span className="text-sm text-muted-foreground">{p.period}</span>
                 </div>
+                {p.priceCOP && p.name !== "Gratis" && (
+                  <p className="text-xs text-muted-foreground mt-1">{p.priceCOP}</p>
+                )}
                 <p className="mt-2 text-sm text-muted-foreground">{p.desc}</p>
                 <ul className="mt-6 space-y-3">
                   {p.features.map((f) => (

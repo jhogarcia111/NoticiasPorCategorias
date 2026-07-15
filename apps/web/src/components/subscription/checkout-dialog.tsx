@@ -174,13 +174,22 @@ export function CheckoutDialog({ open, onOpenChange, plans, onSuccess }: Checkou
                       : "hover:border-muted-foreground/30"
                   }`}
                 >
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">{plan.name}</span>
-                    <span className="font-bold">
-                      ${(plan.priceInCents / 100).toLocaleString("es-CO")}/{plan.interval === "month" ? "mes" : plan.interval}
-                    </span>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="font-medium">{plan.name}</span>
+                      {plan.description && <p className="text-sm text-muted-foreground">{plan.description}</p>}
+                    </div>
+                    <div className="text-right">
+                      <span className="font-bold block">
+                        ${(plan.priceInCents / 100).toLocaleString("en-US")} USD/{plan.interval === "month" ? "mes" : plan.interval}
+                      </span>
+                      {plan.currency === "USD" && (
+                        <span className="text-xs text-muted-foreground">
+                          ${(plan.priceInCents * 38).toLocaleString("es-CO")} COP/mes
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  {plan.description && <p className="text-sm text-muted-foreground mt-1">{plan.description}</p>}
                 </button>
               ))}
             </div>
@@ -190,7 +199,12 @@ export function CheckoutDialog({ open, onOpenChange, plans, onSuccess }: Checkou
             <div className="space-y-4">
               <div className="rounded-lg bg-muted/50 p-3 flex justify-between items-center text-sm">
                 <span className="font-medium">{selectedPlan.name}</span>
-                <span>${(selectedPlan.priceInCents / 100).toLocaleString("es-CO")}</span>
+                <div className="text-right">
+                  <span>${(selectedPlan.priceInCents / 100).toLocaleString("en-US")} USD</span>
+                  {selectedPlan.currency === "USD" && (
+                    <p className="text-xs text-muted-foreground">${(selectedPlan.priceInCents * 38).toLocaleString("es-CO")} COP</p>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-3">
@@ -243,7 +257,7 @@ export function CheckoutDialog({ open, onOpenChange, plans, onSuccess }: Checkou
                 ) : (
                   <>
                     <CreditCard className="h-4 w-4 mr-2" />
-                    Pagar ${(selectedPlan.priceInCents / 100).toLocaleString("es-CO")}
+                    Pagar ${(selectedPlan.priceInCents / 100).toLocaleString("en-US")} USD
                   </>
                 )}
               </Button>

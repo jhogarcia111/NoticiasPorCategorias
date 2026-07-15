@@ -50,6 +50,11 @@ function formatPrice(cents: number, currency: string): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(value)
 }
 
+function formatCOP(centsUSD: number): string {
+  const cop = centsUSD * 38
+  return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(cop)
+}
+
 export function SubscriptionManager({ user }: { user: Session["user"] }) {
   const [checkoutOpen, setCheckoutOpen] = useState(false)
 
@@ -157,6 +162,11 @@ export function SubscriptionManager({ user }: { user: Session["user"] }) {
                   /{plan.interval === "month" ? "mes" : plan.interval}
                 </span>
               </p>
+              {plan.currency === "USD" && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {formatCOP(plan.priceInCents)} COP/mes
+                </p>
+              )}
             </CardHeader>
             <CardContent className="flex-1">
               {plan.features && plan.features.length > 0 && (

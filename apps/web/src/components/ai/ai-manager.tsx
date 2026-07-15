@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -58,6 +58,15 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
   const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null)
   const [scheduleDateTime, setScheduleDateTime] = useState("")
   const [alert, setAlert] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  const alertRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (alert) {
+      alertRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+      const timer = setTimeout(() => setAlert(null), 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [alert])
 
   const { data: session } = useSession()
 
@@ -294,13 +303,14 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
   return (
     <div className="space-y-6">
       {alert && (
-        <div className={cn(
-          "p-4 rounded-lg text-sm border",
+        <div ref={alertRef} className={cn(
+          "p-4 rounded-lg text-sm border sticky top-0 z-10",
           alert.type === "success" ? "bg-green-50 text-green-800 border-green-200" : "bg-red-50 text-red-800 border-red-200"
         )}>
           <div className="flex items-center gap-2">
             {alert.type === "success" ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
-            <span>{alert.text}</span>
+            <span className="flex-1">{alert.text}</span>
+            <button onClick={() => setAlert(null)} className="text-current opacity-60 hover:opacity-100">&times;</button>
           </div>
         </div>
       )}

@@ -112,12 +112,15 @@ export async function postToLinkedIn(profileId: number, content: string, title?:
     body: JSON.stringify(body),
   })
 
+  const raw = await response.text()
+
   if (!response.ok) {
-    const err = await response.json().catch(() => ({}))
-    throw new Error(err.message || "LinkedIn post failed")
+    let msg: string
+    try { msg = JSON.parse(raw).message } catch { msg = raw || "LinkedIn post failed" }
+    throw new Error(msg)
   }
 
-  return response.json()
+  return raw ? JSON.parse(raw) : { id: null }
 }
 
 export async function getLinkedInProfiles(userId: string) {

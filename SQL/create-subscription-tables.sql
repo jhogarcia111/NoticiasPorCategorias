@@ -45,7 +45,7 @@ CREATE INDEX IF NOT EXISTS idx_subscriptions_wompi_payment_source ON subscriptio
 -- Seed Plans
 INSERT INTO subscription_plans (name, slug, description, price_in_cents, currency, interval, trial_days, features)
 VALUES
-  ('Pro', 'pro', 'Para profesionales que crecen en LinkedIn', 29000, 'COP', 'month', 14,
+  ('Pro', 'pro', 'Para profesionales que crecen en LinkedIn', 2900, 'USD', 'month', 14,
    ARRAY[
      'Publicaciones ilimitadas',
      'Texto completo sin límites',
@@ -56,7 +56,7 @@ VALUES
      '4 estilos de escritura',
      'Soporte prioritario'
    ]),
-  ('Business', 'business', 'Para agencias y equipos', 79000, 'COP', 'month', 14,
+  ('Business', 'business', 'Para agencias y equipos', 7900, 'USD', 'month', 14,
    ARRAY[
      'Todo lo de Pro',
      'Perfiles ilimitados de LinkedIn',

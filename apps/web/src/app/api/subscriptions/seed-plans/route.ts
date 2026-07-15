@@ -7,8 +7,8 @@ const SEED_PLANS = [
     name: "Pro",
     slug: "pro",
     description: "Para profesionales que crecen en LinkedIn",
-    priceInCents: 29000,
-    currency: "COP",
+    priceInCents: 2900,
+    currency: "USD",
     interval: "month",
     trialDays: 14,
     features: [
@@ -26,8 +26,8 @@ const SEED_PLANS = [
     name: "Business",
     slug: "business",
     description: "Para agencias y equipos",
-    priceInCents: 79000,
-    currency: "COP",
+    priceInCents: 7900,
+    currency: "USD",
     interval: "month",
     trialDays: 14,
     features: [
