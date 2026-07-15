@@ -20,7 +20,12 @@
         "VITE_DEEPSEEK_API_KEY",
         "VITE_SUPABASE_URL",
         "VITE_SUPABASE_ANON_KEY",
-        "NEXT_PUBLIC_APP_URL"
+        "NEXT_PUBLIC_APP_URL",
+        "NEXT_PUBLIC_WOMPI_PUBLIC_KEY",
+        "WOMPI_PRIVATE_KEY",
+        "WOMPI_EVENT_SECRET",
+        "WOMPI_INTEGRITY_KEY",
+        "WOMPI_API_URL"
       ]
     },
     "dev": {

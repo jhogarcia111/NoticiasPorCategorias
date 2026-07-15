@@ -2,8 +2,8 @@ import NextAuth from "next-auth"
 import type { NextAuthConfig } from "next-auth"
 import LinkedIn from "next-auth/providers/linkedin"
 import Google from "next-auth/providers/google"
-import { getDb, profiles, linkedinProfiles } from "@noticias/database"
-import { eq } from "drizzle-orm"
+import { getDb, profiles, linkedinProfiles, subscriptions } from "@noticias/database"
+import { eq, and, inArray } from "drizzle-orm"
 
 export const authConfig: NextAuthConfig = {
   providers: [
@@ -102,7 +102,9 @@ export const authConfig: NextAuthConfig = {
       if (token.sub && session.user) {
         session.user.id = token.sub
 
-        const [profile] = await getDb()
+        const db = getDb()
+
+        const [profile] = await db
           .select()
           .from(profiles)
           .where(eq(profiles.id, token.sub))
@@ -111,6 +113,17 @@ export const authConfig: NextAuthConfig = {
         if (profile) {
           session.user.role = profile.role ?? "user"
         }
+
+        const [sub] = await db
+          .select({ status: subscriptions.status })
+          .from(subscriptions)
+          .where(and(
+            eq(subscriptions.userId, token.sub),
+            inArray(subscriptions.status, ["active", "trialing"]),
+          ))
+          .limit(1)
+
+        session.user.subscriptionStatus = sub?.status ?? null
       }
       return session
     },
