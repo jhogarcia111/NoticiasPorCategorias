@@ -100,6 +100,8 @@ Hashtags:`
     .map((h: string) => h.replace("#", ""))
 }
 
+const NO_TEXT_RULE = "ABSOLUTAMENTE PROHIBIDO incluir texto, letras, números, palabras, tipografía, logos, marcas, frases ni caracteres escritos en la imagen. La imagen debe ser SOLO elementos visuales sin texto."
+
 export async function generateImagePrompt(title: string, summary: string) {
   const prompt = `Eres un experto en diseño gráfico y marketing visual para LinkedIn.
 Genera un prompt PARA UNA IA DE IMÁGENES (como DALL-E, Midjourney o Stable Diffusion) que cree una imagen profesional, realista y moderna para acompañar esta noticia en LinkedIn.
@@ -111,6 +113,7 @@ REGLAS PARA EL PROMPT:
 - Si incluyes personas, especifica "fotografía realista de persona profesional, manos visibles y proporcionadas, anatomía correcta"
 - Estilo profesional corporativo, colores sobrios, composición limpia
 - NO uses términos abstractos como "innovación" o "futuro" solos - describe elementos visuales concretos
+- ${NO_TEXT_RULE}
 
 Título: ${title}
 Resumen: ${summary}
@@ -131,6 +134,7 @@ REGLAS PARA CADA PROMPT:
 - NO incluyas personas si el prompt va a generar rostros distorsionados
 - Estilo profesional corporativo, colores sobrios, composición limpia
 - NO uses términos abstractos como "innovación" o "futuro" solos
+- ${NO_TEXT_RULE}
 
 Noticia:
 Título: ${title}

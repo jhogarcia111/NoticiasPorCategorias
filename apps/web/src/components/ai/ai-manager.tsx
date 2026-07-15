@@ -9,7 +9,7 @@ import { useSession } from "next-auth/react"
 import { promptTemplates } from "@/data/prompt-templates"
 import {
   Brain, RefreshCw, Sparkles, Copy, Check, ChevronDown, ChevronRight,
-  Send, Calendar, Save, Loader2, ImageUp, X, Globe, ExternalLink,
+  Send, Calendar, Save, Loader2, ImageUp, X, Globe, ExternalLink, Images, FolderOpen, Search,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -62,6 +62,13 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
   const [generatingImages, setGeneratingImages] = useState(false)
   const [imageOptions, setImageOptions] = useState<string[]>([])
   const [imagePromptsUsed, setImagePromptsUsed] = useState<string[]>([])
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+  const [showGallery, setShowGallery] = useState(false)
+  const [galleryImages, setGalleryImages] = useState<any[]>([])
+  const [loadingGallery, setLoadingGallery] = useState(false)
+  const [showSavedAnalyses, setShowSavedAnalyses] = useState(false)
+  const [savedAnalysesList, setSavedAnalysesList] = useState<any[]>([])
+  const [loadingSavedAnalyses, setLoadingSavedAnalyses] = useState(false)
 
   useEffect(() => {
     if (alert) {
@@ -81,6 +88,26 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
         .catch(() => {})
     }
   }, [session])
+
+  useEffect(() => {
+    if (showGallery) {
+      setLoadingGallery(true)
+      fetch("/api/images/gallery")
+        .then((r) => r.json())
+        .then((d) => { setGalleryImages(d.data || []); setLoadingGallery(false) })
+        .catch(() => setLoadingGallery(false))
+    }
+  }, [showGallery])
+
+  useEffect(() => {
+    if (showSavedAnalyses) {
+      setLoadingSavedAnalyses(true)
+      fetch("/api/ai/saved-results")
+        .then((r) => r.json())
+        .then((d) => { setSavedAnalysesList(d.data || []); setLoadingSavedAnalyses(false) })
+        .catch(() => setLoadingSavedAnalyses(false))
+    }
+  }, [showSavedAnalyses])
 
   useEffect(() => {
     setActiveNewsIds(selectedNewsIds)
@@ -174,6 +201,20 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       const POLLINATIONS_URL = "https://image.pollinations.ai/prompt"
       const urls = prompts.map((p) => `${POLLINATIONS_URL}/${encodeURIComponent(p)}`)
       setImageOptions(urls)
+
+      // save all generated images to gallery
+      for (let i = 0; i < urls.length; i++) {
+        fetch("/api/images/save-generated", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            imageUrl: urls[i],
+            promptUsed: prompts[i],
+            newsTitle: activeNews[0]?.title || "",
+            newsId: activeNews[0]?.id || null,
+          }),
+        }).catch(() => {})
+      }
     } catch (e: any) {
       setAlert({ type: "error", text: `Error al generar imagen: ${e.message}` })
     } finally {
@@ -487,6 +528,62 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
         </div>
 
         <div className="space-y-4">
+          <div className="flex gap-2">
+            <Button
+              variant={showSavedAnalyses ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowSavedAnalyses(!showSavedAnalyses)}
+              className="text-xs h-8"
+            >
+              <FolderOpen className="h-3.5 w-3.5 mr-1" />
+              Análisis guardados
+            </Button>
+          </div>
+
+          {showSavedAnalyses && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <FolderOpen className="h-4 w-4 text-primary" />
+                  Análisis guardados
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loadingSavedAnalyses ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : savedAnalysesList.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">No hay análisis guardados</p>
+                ) : (
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {savedAnalysesList.map((item: any) => (
+                      <div
+                        key={item.id}
+                        className="p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
+                        onClick={() => {
+                          setResult(item.fullResponse || item.linkedinPost || "")
+                          setParsedResult(parseAIResponse(item.fullResponse || item.linkedinPost || ""))
+                          setShowSavedAnalyses(false)
+                          setAlert({ type: "success", text: "Análisis cargado exitosamente" })
+                        }}
+                      >
+                        <p className="text-sm font-medium truncate">{item.newsTitle || "Sin título"}</p>
+                        <p className="text-xs text-muted-foreground truncate mt-0.5">{item.newsSummary?.slice(0, 120)}...</p>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <Badge variant="secondary" className="text-[10px]">{item.templateName || "General"}</Badge>
+                          <span className="text-[10px] text-muted-foreground">
+                            {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ""}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {processing ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-16 text-muted-foreground">
@@ -550,13 +647,21 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                               <p className="text-xs font-medium text-muted-foreground mb-2">Selecciona una imagen para el post:</p>
                               <div className="grid grid-cols-3 gap-2">
                                 {imageOptions.map((url, i) => (
-                                  <button
-                                    key={i}
-                                    onClick={() => setCustomImage(url)}
-                                    className="relative rounded-lg overflow-hidden border-2 border-transparent hover:border-primary/50 transition-all aspect-[4/3]"
-                                  >
-                                    <img src={url} alt={`Opci�n ${i + 1}`} className="w-full h-full object-cover" />
-                                  </button>
+                                  <div key={i} className="relative group aspect-[4/3]">
+                                    <button
+                                      onClick={() => setCustomImage(url)}
+                                      className="w-full h-full rounded-lg overflow-hidden border-2 border-transparent hover:border-primary/50 transition-all"
+                                    >
+                                      <img src={url} alt={`Opción ${i + 1}`} className="w-full h-full object-cover" />
+                                    </button>
+                                    <button
+                                      onClick={() => setLightboxUrl(url)}
+                                      className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-all rounded-lg"
+                                      title="Ver más grande"
+                                    >
+                                      <Search className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    </button>
+                                  </div>
                                 ))}
                               </div>
                             </div>
@@ -583,7 +688,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                       </div>
 
                       <div className="flex items-center justify-between mt-4">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <Button
                             onClick={handleGenerateImages}
                             disabled={generatingImages || activeNews.length === 0}
@@ -597,6 +702,15 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                               <Sparkles className="h-3.5 w-3.5 mr-1" />
                             )}
                             {generatingImages ? "Generando..." : "Generar imagen IA"}
+                          </Button>
+                          <Button
+                            onClick={() => setShowGallery(true)}
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs"
+                          >
+                            <Images className="h-3.5 w-3.5 mr-1" />
+                            Galería
                           </Button>
                           <label className="inline-flex items-center gap-1.5 cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors">
                             <ImageUp className="h-3.5 w-3.5" />
@@ -710,6 +824,82 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
           )}
         </div>
       </div>
+
+      {/* Gallery panel */}
+      {showGallery && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowGallery(false)}>
+          <div className="bg-white rounded-xl max-w-3xl w-full max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="font-semibold text-sm flex items-center gap-2">
+                <Images className="h-4 w-4 text-primary" />
+                Galería de imágenes generadas
+              </h3>
+              <button onClick={() => setShowGallery(false)} className="p-1 rounded hover:bg-muted transition-colors">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              {loadingGallery ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : galleryImages.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-12">
+                  No hay imágenes guardadas. Genera imágenes con IA y se guardarán automáticamente.
+                </p>
+              ) : (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                  {galleryImages.map((img: any) => (
+                    <div key={img.id} className="group relative aspect-[4/3] rounded-lg overflow-hidden border">
+                      <img src={img.imageUrl} alt="" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => { setCustomImage(img.imageUrl); setShowGallery(false) }}
+                          className="bg-white text-black text-xs px-3 py-1.5 rounded-lg font-medium opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
+                        >
+                          Usar
+                        </button>
+                        <button
+                          onClick={() => setLightboxUrl(img.imageUrl)}
+                          className="bg-white/80 text-black p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"
+                        >
+                          <Search className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      {img.newsTitle && (
+                        <p className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                          <span className="text-[10px] text-white truncate block">{img.newsTitle}</span>
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4 cursor-zoom-out"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <img
+            src={lightboxUrl}
+            alt="Vista previa"
+            className="max-w-full max-h-full object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            onClick={() => setLightboxUrl(null)}
+            className="absolute top-4 right-4 bg-black/50 text-white rounded-full p-2 hover:bg-black/70 transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+      )}
     </div>
   )
 }
