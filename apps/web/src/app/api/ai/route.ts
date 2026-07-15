@@ -6,6 +6,7 @@ import {
   generateImagePrompt,
   generateImagePrompts,
   generateNewsImageData,
+  generateHeadlines,
 } from "@/services/ai-service"
 import { getDb } from "@/lib/db"
 import { news } from "@noticias/database"
@@ -31,6 +32,10 @@ export async function POST(request: Request) {
       }
       case "news-image-data": {
         const result = await generateNewsImageData(body.title, body.summary)
+        return NextResponse.json({ data: result })
+      }
+      case "headlines": {
+        const result = await generateHeadlines(body.title, body.summary)
         return NextResponse.json({ data: result })
       }
       case "linkedin-post": {

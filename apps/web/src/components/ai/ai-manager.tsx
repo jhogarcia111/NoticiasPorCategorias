@@ -78,6 +78,13 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
   const [finalImagePromptUsed, setFinalImagePromptUsed] = useState<string>("")
   const [finalHeadlineUsed, setFinalHeadlineUsed] = useState<string>("")
 
+  // Assembler state
+  const [showAssembler, setShowAssembler] = useState(false)
+  const [assemblerImage, setAssemblerImage] = useState<string | null>(null)
+  const [assemblerSource, setAssemblerSource] = useState<"generated" | "gallery" | "upload">("generated")
+  const [assembling, setAssembling] = useState(false)
+  const [customHeadline, setCustomHeadline] = useState("")
+
   useEffect(() => {
     if (alert) {
       alertRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
@@ -149,16 +156,6 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     setExpandedSections((prev) => ({ ...prev, [id]: !prev[id] }))
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      setCustomImage(event.target?.result as string)
-    }
-    reader.readAsDataURL(file)
-  }
-
   const handleSaveResult = async () => {
     if (!result || activeNewsIds.length === 0) return
     setSaving(true)
@@ -190,10 +187,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     setGeneratingImages(true)
     setImageOptions([])
     setImagePromptsUsed([])
-    setCustomImage(null)
-    setHeadlines([])
-    setSelectedHeadlineIdx(null)
-    setSelectedImageIdx(null)
+    setCustomHeadline("")
     setImageLoadStates({})
     setFinalImageUrl(null)
     setFinalImagePromptUsed("")
@@ -210,16 +204,12 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Error generando prompts")
-      const result = data.data
-      if (!result || !result.imagePrompts || result.imagePrompts.length === 0) {
+      const prompts: string[] = data.data
+      if (!prompts || prompts.length === 0) {
         throw new Error("No se generaron prompts")
       }
 
-      const prompts: string[] = result.imagePrompts
-      const hls: string[] = result.headlines || []
-
       setImagePromptsUsed(prompts)
-      setHeadlines(hls)
       const POLLINATIONS_URL = "https://image.pollinations.ai/prompt"
       const urls = prompts.map((p, idx) =>
         `${POLLINATIONS_URL}/${encodeURIComponent(p)}?nocache=${Date.now()}&seed=${idx + 1}`
@@ -227,7 +217,23 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       setImageOptions(urls)
       setImageLoadStates({})
 
-      // load images sequentially to avoid overwhelming Pollinations
+      // generate headlines in parallel
+      fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "headlines",
+          title: activeNews[0]?.title || "",
+          summary: activeNews[0]?.summary || activeNews[0]?.content || "",
+        }),
+      })
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.data) setHeadlines(d.data)
+        })
+        .catch(() => {})
+
+      // load images sequentially
       const loadNext = (idx: number) => {
         if (idx >= urls.length) return
         setImageLoadStates((prev) => ({ ...prev, [idx]: "loading" }))
@@ -244,7 +250,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       }
       loadNext(0)
 
-      // save all generated images to gallery
+      // save generated images to gallery
       for (let i = 0; i < urls.length; i++) {
         fetch("/api/images/save-generated", {
           method: "POST",
@@ -277,37 +283,135 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     img.src = url
   }
 
-  const handleGenerateFinalImage = async () => {
-    if (selectedImageIdx === null || selectedHeadlineIdx === null) return
-    setGeneratingFinalImage(true)
+  const overlayTextOnImage = (imgSrc: string, headline: string): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      img.crossOrigin = "anonymous"
+      img.onload = () => {
+        const canvas = document.createElement("canvas")
+        canvas.width = 1200
+        canvas.height = 627
+        const ctx = canvas.getContext("2d")!
+        ctx.drawImage(img, 0, 0, 1200, 627)
+
+        const bH = 82
+        const bY = 545
+        const gradient = ctx.createLinearGradient(0, bY, 0, 627)
+        gradient.addColorStop(0, "rgba(0,0,0,0.85)")
+        ctx.fillStyle = gradient
+        ctx.fillRect(0, bY, 1200, bH)
+
+        const badgeW = 148
+        ctx.fillStyle = "#CC0000"
+        ctx.beginPath()
+        ctx.roundRect(12, bY + 6, badgeW, bH - 12, 4)
+        ctx.fill()
+
+        ctx.fillStyle = "white"
+        ctx.font = "bold 28px Arial, sans-serif"
+        ctx.textAlign = "center"
+        ctx.textBaseline = "middle"
+        ctx.fillText("BREAKING NEWS", 12 + badgeW / 2, bY + bH / 2)
+
+        const textX = 175
+        const maxW = 1000
+        ctx.fillStyle = "white"
+        ctx.font = "bold 24px Arial, sans-serif"
+        ctx.textAlign = "left"
+        ctx.textBaseline = "top"
+
+        const words = headline.split(" ")
+        let line = ""
+        let lineY = bY + 12
+        const lineH = 32
+        for (const word of words) {
+          const test = line ? line + " " + word : word
+          if (ctx.measureText(test).width > maxW && line) {
+            ctx.fillText(line, textX, lineY)
+            line = word
+            lineY += lineH
+          } else {
+            line = test
+          }
+        }
+        if (line) ctx.fillText(line, textX, lineY)
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const reader = new FileReader()
+            reader.onload = () => resolve(reader.result as string)
+            reader.onerror = () => reject(new Error("Failed to encode image"))
+            reader.readAsDataURL(blob)
+          } else {
+            reject(new Error("Failed to create image"))
+          }
+        }, "image/jpeg", 0.92)
+      }
+      img.onerror = () => reject(new Error("Failed to load image"))
+      img.src = imgSrc
+    })
+  }
+
+  const compressImageFile = (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => {
+        const MAX_DIM = 1920
+        let { width, height } = img
+        if (width > MAX_DIM || height > MAX_DIM) {
+          if (width > height) {
+            height = Math.round((height / width) * MAX_DIM)
+            width = MAX_DIM
+          } else {
+            width = Math.round((width / height) * MAX_DIM)
+            height = MAX_DIM
+          }
+        }
+        const canvas = document.createElement("canvas")
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext("2d")!
+        ctx.drawImage(img, 0, 0, width, height)
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob)
+          else reject(new Error("Compression failed"))
+        }, "image/jpeg", 0.8)
+      }
+      img.onerror = () => reject(new Error("Failed to load image"))
+      img.src = URL.createObjectURL(file)
+    })
+  }
+
+  const handleAssembleImage = async () => {
+    if (!assemblerImage || (selectedHeadlineIdx === null && !customHeadline.trim())) return
+    setAssembling(true)
     try {
-      const visualPrompt = imagePromptsUsed[selectedImageIdx]
-      const chosenHeadline = headlines[selectedHeadlineIdx]
-      if (!visualPrompt || !chosenHeadline) throw new Error("Selección inválida")
-
-      const finalPrompt = visualPrompt.replace("[HEADLINE]", chosenHeadline)
-      const POLLINATIONS_URL = "https://image.pollinations.ai/prompt"
-      const url = `${POLLINATIONS_URL}/${encodeURIComponent(finalPrompt)}?nocache=${Date.now()}&seed=final`
-
-      setFinalImagePromptUsed(finalPrompt)
-      setFinalHeadlineUsed(chosenHeadline)
-      setFinalImageUrl(url)
-      setCustomImage(url)
-
-      fetch("/api/images/save-generated", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          imageUrl: url,
-          promptUsed: finalPrompt,
-          newsTitle: activeNews[0]?.title || "",
-          newsId: activeNews[0]?.id || null,
-        }),
-      }).catch(() => {})
+      const headline = selectedHeadlineIdx !== null ? headlines[selectedHeadlineIdx] : customHeadline.trim()
+      if (!headline) throw new Error("Selecciona o escribe un titular")
+      const finalBlobUrl = await overlayTextOnImage(assemblerImage, headline)
+      setFinalHeadlineUsed(headline)
+      setFinalImageUrl(finalBlobUrl)
+      setCustomImage(finalBlobUrl)
+      setShowAssembler(false)
+      setAlert({ type: "success", text: "Imagen armada exitosamente" })
     } catch (e: any) {
-      setAlert({ type: "error", text: `Error al generar imagen final: ${e.message}` })
+      setAlert({ type: "error", text: `Error al armar imagen: ${e.message}` })
     } finally {
-      setGeneratingFinalImage(false)
+      setAssembling(false)
+    }
+  }
+
+  const handleUploadWithCompression = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      const compressed = await compressImageFile(file)
+      const url = URL.createObjectURL(compressed)
+      setCustomImage(url)
+      setAssemblerImage(url)
+      setShowAssembler(true)
+    } catch (err: any) {
+      setAlert({ type: "error", text: `Error al comprimir imagen: ${err.message}` })
     }
   }
 
@@ -326,8 +430,6 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
             userId: session?.user?.id || "",
             newsIds: activeNewsIds,
             imageUrl: customImage || undefined,
-            headline: finalHeadlineUsed || undefined,
-            imagePrompt: finalImagePromptUsed || undefined,
           }),
       })
       const data = await res.json()
@@ -750,100 +852,106 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                             </div>
                           )}
 
-                          {/* Step 1-2: Select visual + headline, then generate final */}
-                          {imageOptions.length > 0 && !finalImageUrl && !customImage && (
-                            <div className="mb-3 space-y-3">
+                          {/* Armar foto: assembler panel */}
+                          {showAssembler && !finalImageUrl && (
+                            <div className="mb-3 space-y-3 p-3 border rounded-lg bg-gray-50">
+                              <p className="text-xs font-semibold flex items-center gap-1.5">
+                                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                                Armar foto
+                              </p>
+
+                              {/* Image source */}
                               <div>
-                                <p className="text-xs font-medium text-muted-foreground mb-1.5">
-                                  <span className="bg-primary text-primary-foreground text-[10px] rounded-full w-4 h-4 inline-flex items-center justify-center mr-1">1</span>
-                                  Selecciona el dise&ntilde;o visual:
-                                </p>
-                                <div className="grid grid-cols-3 gap-2">
+                                <p className="text-xs text-muted-foreground mb-1">Selecciona la imagen base:</p>
+                                <div className="flex gap-1.5 flex-wrap">
                                   {imageOptions.map((url, i) => (
-                                    <div key={i} className="relative group aspect-video">
-                                      <button
-                                        onClick={() => setSelectedImageIdx(i)}
-                                        className={cn(
-                                          "w-full h-full rounded-lg overflow-hidden border-2 transition-all",
-                                          selectedImageIdx === i ? "border-primary ring-2 ring-primary/30" : "border-transparent hover:border-primary/50"
-                                        )}
-                                      >
-                                        {imageLoadStates[i] === "loading" && (
-                                          <div className="w-full h-full flex items-center justify-center bg-muted rounded-lg">
-                                            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                                          </div>
-                                        )}
-                                        {imageLoadStates[i] === "loaded" && (
-                                          <img src={url} alt={`Opción ${i + 1}`} className="w-full h-full object-cover" />
-                                        )}
-                                        {imageLoadStates[i] === "error" && (
-                                          <div className="w-full h-full flex flex-col items-center justify-center bg-muted text-muted-foreground rounded-lg gap-1">
-                                            <X className="h-4 w-4" />
-                                            <span className="text-[10px]">Error</span>
-                                            <button
-                                              onClick={(e) => { e.stopPropagation(); handleRetryImage(i) }}
-                                              className="text-[10px] text-primary hover:underline"
-                                            >
-                                              Reintentar
-                                            </button>
-                                          </div>
-                                        )}
-                                      </button>
-                                      {imageLoadStates[i] === "loaded" && (
-                                        <button
-                                          onClick={() => setLightboxUrl(url)}
-                                          className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-all rounded-lg"
-                                          title="Ver más grande"
-                                        >
-                                          <Search className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        </button>
+                                    <button
+                                      key={i}
+                                      onClick={() => setAssemblerImage(url)}
+                                      className={cn(
+                                        "w-16 h-10 rounded overflow-hidden border-2 transition-all flex-shrink-0",
+                                        assemblerImage === url ? "border-primary ring-1 ring-primary/30" : "border-transparent hover:border-primary/50"
                                       )}
-                                    </div>
+                                    >
+                                      {imageLoadStates[i] === "loaded" ? (
+                                        <img src={url} alt="" className="w-full h-full object-cover" />
+                                      ) : (
+                                        <div className="w-full h-full bg-muted flex items-center justify-center">
+                                          {imageLoadStates[i] === "loading" ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
+                                        </div>
+                                      )}
+                                    </button>
                                   ))}
+                                  <button
+                                    onClick={() => setShowGallery(true)}
+                                    className={cn(
+                                      "w-16 h-10 rounded border-2 flex items-center justify-center text-muted-foreground hover:border-primary/50 transition-all flex-shrink-0",
+                                      assemblerSource === "gallery" ? "border-primary" : "border-dashed"
+                                    )}
+                                    title="De la galería"
+                                  >
+                                    <Images className="h-4 w-4" />
+                                  </button>
+                                  <label className={cn(
+                                    "w-16 h-10 rounded border-2 border-dashed flex items-center justify-center text-muted-foreground hover:border-primary/50 transition-all flex-shrink-0 cursor-pointer",
+                                    assemblerSource === "upload" ? "border-primary" : ""
+                                  )}>
+                                    <ImageUp className="h-4 w-4" />
+                                    <input type="file" accept="image/*" onChange={handleUploadWithCompression} className="hidden" />
+                                  </label>
                                 </div>
                               </div>
 
-                              {headlines.length > 0 && (
-                                <div>
-                                  <p className="text-xs font-medium text-muted-foreground mb-1.5">
-                                    <span className="bg-primary text-primary-foreground text-[10px] rounded-full w-4 h-4 inline-flex items-center justify-center mr-1">2</span>
-                                    Selecciona el titular para "BREAKING NEWS":
-                                  </p>
-                                  <div className="space-y-1.5">
-                                    {headlines.map((h, i) => (
-                                      <button
-                                        key={i}
-                                        onClick={() => setSelectedHeadlineIdx(i)}
-                                        className={cn(
-                                          "w-full text-left p-2 rounded-lg border text-xs transition-all",
-                                          selectedHeadlineIdx === i
-                                            ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                                            : "border-border hover:bg-muted"
-                                        )}
-                                      >
-                                        <span className="text-[10px] font-semibold text-red-600 mr-1">BREAKING:</span>
-                                        {h}
-                                      </button>
-                                    ))}
+                              {/* Preview with CSS overlay */}
+                              {assemblerImage && (
+                                <div className="relative rounded-lg overflow-hidden border border-gray-200 aspect-video bg-muted">
+                                  <img src={assemblerImage} alt="Vista previa" className="w-full h-full object-cover" />
+                                  <div className="absolute bottom-0 left-0 right-0 h-[18%] bg-gradient-to-t from-black/75 to-transparent flex items-end p-2">
+                                    <span className="text-[10px] text-white font-bold bg-red-600 px-1.5 py-0.5 rounded mr-1.5">BREAKING NEWS</span>
+                                    <span className="text-[11px] text-white font-bold truncate">
+                                      {selectedHeadlineIdx !== null ? headlines[selectedHeadlineIdx] : customHeadline || "Selecciona un titular"}
+                                    </span>
                                   </div>
                                 </div>
                               )}
 
-                              {selectedImageIdx !== null && selectedHeadlineIdx !== null && (
-                                <Button
-                                  onClick={handleGenerateFinalImage}
-                                  disabled={generatingFinalImage}
-                                  size="sm"
-                                  className="w-full h-8 text-xs"
-                                >
-                                  {generatingFinalImage ? (
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
-                                  ) : (
-                                    <Sparkles className="h-3.5 w-3.5 mr-1" />
-                                  )}
-                                  {generatingFinalImage ? "Generando imagen final..." : "Generar imagen final"}
-                                </Button>
-                              )}
+                              {/* Headline selection */}
+                              <div>
+                                <p className="text-xs text-muted-foreground mb-1">Titular para BREAKING NEWS:</p>
+                                <div className="space-y-1 mb-1.5">
+                                  {headlines.map((h, i) => (
+                                    <button
+                                      key={i}
+                                      onClick={() => { setSelectedHeadlineIdx(i); setCustomHeadline("") }}
+                                      className={cn(
+                                        "w-full text-left p-1.5 rounded border text-[11px] transition-all",
+                                        selectedHeadlineIdx === i && !customHeadline
+                                          ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                                          : "border-border hover:bg-muted"
+                                      )}
+                                    >
+                                      <span className="font-semibold text-red-600 mr-1">BREAKING:</span>
+                                      {h}
+                                    </button>
+                                  ))}
+                                </div>
+                                <input
+                                  value={customHeadline}
+                                  onChange={(e) => { setCustomHeadline(e.target.value); setSelectedHeadlineIdx(null) }}
+                                  placeholder="O escribe tu propio titular..."
+                                  className="w-full px-2 py-1.5 border border-input bg-white rounded text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                                />
+                              </div>
+
+                              <Button
+                                onClick={handleAssembleImage}
+                                disabled={!assemblerImage || (selectedHeadlineIdx === null && !customHeadline.trim()) || assembling}
+                                size="sm"
+                                className="w-full h-8 text-xs"
+                              >
+                                {assembling ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Sparkles className="h-3.5 w-3.5 mr-1" />}
+                                {assembling ? "Armando..." : "Armar foto"}
+                              </Button>
                             </div>
                           )}
 
@@ -851,7 +959,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                             <div className="relative mb-3 rounded-lg overflow-hidden border border-gray-200">
                               <img src={customImage} alt="Imagen del post" className="w-full max-h-64 object-cover" />
                               <button
-                                onClick={() => { setCustomImage(null); setImageOptions([]) }}
+                                onClick={() => { setCustomImage(null); setFinalImageUrl(null) }}
                                 className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70 transition-colors"
                               >
                                 <X className="h-3 w-3" />
@@ -883,6 +991,20 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                             )}
                             {generatingImages ? "Generando..." : "Generar imagen IA"}
                           </Button>
+                          {(headlines.length > 0 || imageOptions.length > 0 || customImage) && (
+                            <Button
+                              onClick={() => {
+                                if (customImage && !assemblerImage) setAssemblerImage(customImage)
+                                setShowAssembler(!showAssembler)
+                              }}
+                              variant={showAssembler ? "default" : "outline"}
+                              size="sm"
+                              className="h-8 text-xs"
+                            >
+                              <ImageUp className="h-3.5 w-3.5 mr-1" />
+                              Armar foto
+                            </Button>
+                          )}
                           <Button
                             onClick={() => setShowGallery(true)}
                             variant="outline"
@@ -895,7 +1017,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                           <label className="inline-flex items-center gap-1.5 cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors">
                             <ImageUp className="h-3.5 w-3.5" />
                             Subir
-                            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                            <input type="file" accept="image/*" onChange={handleUploadWithCompression} className="hidden" />
                           </label>
                         </div>
                         <Button onClick={handleSaveResult} disabled={saving} variant="outline" size="sm" className="h-8 text-xs">

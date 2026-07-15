@@ -123,70 +123,80 @@ Prompt para generación de imagen:`
   return callDeepSeek(prompt, 300)
 }
 
-const NEWS_IMAGE_TEMPLATE = `"A professional, high-impact cinematic news graphic for a LinkedIn article header. The scene is set in a futuristic, glowing [TEMA] landscape against a cosmic gradient background with flowing light trails, data streams, and interconnected global network nodes.
+const VISUAL_SCENE_TEMPLATE = `"A professional, high-impact cinematic news graphic for a LinkedIn article header. 16:9 aspect ratio.
 
-On the left, a large, curved premium [ELEMENTO_IZQUIERDO].
+The scene is set in [AMBIENTACION]. The visual composition includes [ELEMENTOS_VISUALES].
 
-On the right, a smaller, angled floating digital interface screen represents [ELEMENTO_DERECHO]. This screen displays [CONTENIDO_PANTALLA] and is cluttered with multiple, distinct, brightly colored display advertisement zones of various shapes. This interface has a slightly more utilitarian feel compared to the TV.
+The overall color palette is composed of deep blues, purples, and oranges.
 
-Both screens are integrated into the digital network flow. The overall color palette is composed of deep blues, purples, and oranges, with bright contrasting colors for the ads.
+Cinematic lighting, 8K, photorealistic, professional composition. NO TEXT, NO LETTERS, NO WORDS, NO TYPOGRAPHY of any kind anywhere in the image. Absolutely no text, no labels, no banners, no signs, no writing. The image must be purely visual with zero text elements."`
 
-Across the entire bottom third of the image, there is a clean, dark gradient news ticker banner. On the left side of this banner, there is a distinct 'BREAKING NEWS' text label in white on a red background block. The remainder of the banner contains the main headline text in clear, bold, white sans-serif font:
-
-[HEADLINE]
-
-The lighting is atmospheric, digital, and professional. No specific, recognizable company logos (other than abstract generic icons) are present on the screens or interface. The composition is balanced, with the screens framed by the data network."`
-
-export async function generateNewsImageData(title: string, summary: string, retries = 2): Promise<{
-  imagePrompts: string[]
-  headlines: string[]
-} | null> {
+export async function generateNewsImageData(title: string, summary: string, retries = 2): Promise<string[] | null> {
   const prompt = `Eres un experto en diseño gráfico de noticias para LinkedIn.
 
 Basado en esta noticia:
 Título: ${title}
 Resumen: ${summary}
 
-Genera 3 prompts visuales para Pollinations AI. Cada prompt debe describir una imagen profesional estilo noticiero cinematográfico, OBLIGATORIAMENTE en formato 16:9 (horizontal, como una foto de paisaje).
+Genera 3 prompts visuales para Pollinations AI. Cada prompt debe describir UNA IMAGEN PURAMENTE VISUAL, sin texto de ningún tipo.
 
-ESTRUCTURA DE CADA PROMPT (sigue exactamente este orden):
-1. "A professional, high-impact cinematic news graphic for a LinkedIn article header. Aspect ratio 16:9."
-2. Describe una escena visual ÚNICA (cambia la ambientación, colores secundarios, ángulo de cámara entre cada prompt). Usa lenguaje visual concreto: colores, iluminación, texturas, composición.
-3. Incluye: "Across the bottom, a dark news ticker banner with 'BREAKING NEWS' in white on red at left. The headline text in the banner says: [HEADLINE] (white bold sans-serif font)."
-4. Termina con: "Cinematic lighting, 8K, photorealistic, no logos, no recognizable brands, no text other than the breaking news banner."
+ESTRUCTURA DE CADA PROMPT:
+1. Comienza con "A professional, high-impact cinematic news graphic. Aspect ratio 16:9."
+2. Describe una escena visual ÚNICA (cambia ambientación, colores, ángulo de cámara entre cada prompt). Usa lenguaje concreto.
+3. FINALIZA CON: "NO TEXT, NO LETTERS, NO WORDS, NO TYPOGRAPHY anywhere in the image."
 
-REGLAS:
-- NO uses marcas o logos reales
-- NO pongas texto en ninguna otra parte de la imagen excepto el banner inferior
-- Usa "[HEADLINE]" EXACTAMENTE como placeholder (sin reemplazarlo)
-- Cada prompt debe ser CONCISO (máximo 400 caracteres) y visualmente diferente del anterior
-- Especifica "16:9 aspect ratio" en cada prompt
+REGLAS ESTRICTAS:
+- NO incluyas texto, letras, palabras, banners con texto, titulares, ni tipografía de ningún tipo
+- NO menciones "BREAKING NEWS", titulares, ni texto en la imagen
+- NO uses marcas o logos reales reconocibles
+- Cada prompt debe ser CONCISO (máximo 300 caracteres)
+- Especifica "16:9 aspect ratio" y "photorealistic, cinematic lighting"
+- Asegúrate que los 3 prompts sean visualmente diferentes entre sí
 
-Además genera 3 titulares cortos para el banner "BREAKING NEWS". Cada titular debe ser una frase impactante de máximo 80 caracteres, relacionada a la noticia.
-
-Devuelve SOLO este JSON (sin markdown, sin texto adicional):
-{"imagePrompts":["prompt 1","prompt 2","prompt 3"],"headlines":["titular 1","titular 2","titular 3"]}`
+Devuelve SOLO un array JSON (sin markdown, sin texto adicional):
+["prompt 1","prompt 2","prompt 3"]`
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const result = await callDeepSeek(prompt, 800)
       if (!result) continue
 
-      const jsonMatch = result.match(/\{[\s\S]*\}/)
+      const jsonMatch = result.match(/\[[\s\S]*\]/)
       if (!jsonMatch) continue
 
       const parsed = JSON.parse(jsonMatch[0])
-      if (parsed?.imagePrompts?.length >= 2 && parsed?.headlines?.length >= 2) {
-        return {
-          imagePrompts: parsed.imagePrompts.slice(0, 3),
-          headlines: parsed.headlines.slice(0, 3),
-        }
+      if (Array.isArray(parsed) && parsed.length >= 2) {
+        return parsed.slice(0, 3)
       }
     } catch {
       continue
     }
   }
   return null
+}
+
+export async function generateHeadlines(title: string, summary: string): Promise<string[]> {
+  const prompt = `Genera 3 titulares cortos e impactantes (máximo 80 caracteres cada uno) para un banner de "BREAKING NEWS" en una imagen profesional de LinkedIn.
+
+Cada titular debe ser diferente en tono o enfoque, todos relacionados a la noticia.
+
+Noticia: ${title}
+Resumen: ${summary}
+
+Devuelve SOLO un array JSON:
+["titular 1","titular 2","titular 3"]`
+
+  try {
+    const result = await callDeepSeek(prompt, 400)
+    if (!result) return []
+    const jsonMatch = result.match(/\[[\s\S]*\]/)
+    if (!jsonMatch) return []
+    const parsed = JSON.parse(jsonMatch[0])
+    if (Array.isArray(parsed)) return parsed.slice(0, 3)
+    return []
+  } catch {
+    return []
+  }
 }
 
 export async function generateImagePrompts(title: string, summary: string): Promise<string[]> {
