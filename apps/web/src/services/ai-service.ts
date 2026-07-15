@@ -110,7 +110,7 @@ REGLAS PARA EL PROMPT:
 - Describe la escena de forma realista y detallada (iluminación, colores, composición)
 - Especifica "fotografía realista, alta calidad, 8K, iluminación profesional"
 - NO incluyas personas si el prompt va a generar rostros distorsionados. Mejor usa objetos, entornos, texturas
-- Si incluyes personas, especifica "fotografía realista de persona profesional, manos visibles y proporcionadas, anatomía correcta"
+- Si incluyas personas, especifica "fotografía realista de persona profesional, manos visibles y proporcionadas, anatomía correcta"
 - Estilo profesional corporativo, colores sobrios, composición limpia
 - NO uses términos abstractos como "innovación" o "futuro" solos - describe elementos visuales concretos
 - ${NO_TEXT_RULE}
@@ -121,6 +121,76 @@ Resumen: ${summary}
 Prompt para generación de imagen:`
 
   return callDeepSeek(prompt, 300)
+}
+
+const NEWS_IMAGE_TEMPLATE = `"A professional, high-impact cinematic news graphic for a LinkedIn article header. The scene is set in a futuristic, glowing [TEMA] landscape against a cosmic gradient background with flowing light trails, data streams, and interconnected global network nodes.
+
+On the left, a large, curved premium [ELEMENTO_IZQUIERDO].
+
+On the right, a smaller, angled floating digital interface screen represents [ELEMENTO_DERECHO]. This screen displays [CONTENIDO_PANTALLA] and is cluttered with multiple, distinct, brightly colored display advertisement zones of various shapes. This interface has a slightly more utilitarian feel compared to the TV.
+
+Both screens are integrated into the digital network flow. The overall color palette is composed of deep blues, purples, and oranges, with bright contrasting colors for the ads.
+
+Across the entire bottom third of the image, there is a clean, dark gradient news ticker banner. On the left side of this banner, there is a distinct 'BREAKING NEWS' text label in white on a red background block. The remainder of the banner contains the main headline text in clear, bold, white sans-serif font:
+
+[HEADLINE]
+
+The lighting is atmospheric, digital, and professional. No specific, recognizable company logos (other than abstract generic icons) are present on the screens or interface. The composition is balanced, with the screens framed by the data network."`
+
+export async function generateNewsImageData(title: string, summary: string): Promise<{
+  imagePrompts: string[]
+  headlines: string[]
+} | null> {
+  const prompt = `Eres un experto en diseño gráfico de noticias para LinkedIn. Sigue EXACTAMENTE este estilo de gráfico noticiero cinematográfico de alto impacto:
+
+${NEWS_IMAGE_TEMPLATE}
+
+Tu tarea es generar 3 prompts visuales distintos para Pollinations AI, cada uno siguiendo esta misma estructura pero adaptado a la noticia y con variaciones en la composición visual (cambia ángulo, disposición de elementos, colores secundarios).
+
+La noticia a ilustrar:
+Título: ${title}
+Resumen: ${summary}
+
+INSTRUCCIONES PARA CADA PROMPT VISUAL:
+- Usa el template de arriba como base, reemplazando [TEMA], [ELEMENTO_IZQUIERDO], [ELEMENTO_DERECHO], [CONTENIDO_PANTALLA] con elementos visuales concretos relacionados a la noticia
+- Usa "[HEADLINE]" como placeholder exacto para el titular (donde irá la noticia en la franja)
+- Mantén la estructura de "BREAKING NEWS" banner, la composición de dos pantallas, y la paleta de colores profesionales
+- NO uses marcas o logos reales reconocibles
+- Especifica alta calidad, iluminación profesional, fotografía realista
+- Cada prompt debe ser visualmente diferente (varía la escena, los colores secundarios, la disposición)
+
+Además, genera 3 variantes del titular que irán en la franja "BREAKING NEWS". Cada titular debe ser una oración/frase impactante relacionada a la noticia, máximo 80 caracteres.
+
+Devuelve SOLO un JSON válido con este formato exacto (sin texto adicional):
+{
+  "imagePrompts": [
+    "prompt visual 1 completo...",
+    "prompt visual 2 completo...",
+    "prompt visual 3 completo..."
+  ],
+  "headlines": [
+    "Titular 1 para breaking news (máx 80 chars)",
+    "Titular 2 para breaking news (máx 80 chars)",
+    "Titular 3 para breaking news (máx 80 chars)"
+  ]
+}`
+
+  const result = await callDeepSeek(prompt, 1200)
+  if (!result) return null
+
+  try {
+    // Try to parse JSON from the response
+    const jsonMatch = result.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) return null
+    const parsed = JSON.parse(jsonMatch[0])
+    if (!parsed.imagePrompts || !parsed.headlines) return null
+    return {
+      imagePrompts: parsed.imagePrompts.slice(0, 3),
+      headlines: parsed.headlines.slice(0, 3),
+    }
+  } catch {
+    return null
+  }
 }
 
 export async function generateImagePrompts(title: string, summary: string): Promise<string[]> {
