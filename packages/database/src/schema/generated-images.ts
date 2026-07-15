@@ -10,5 +10,6 @@ export const generatedImages = pgTable("generated_images", {
   promptUsed: text("prompt_used"),
   newsTitle: text("news_title"),
   newsId: integer("news_id"),
+  headlinesJson: text("headlines_json"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 })

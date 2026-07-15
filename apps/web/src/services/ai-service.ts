@@ -77,6 +77,7 @@ REGLAS ESTRICTAS (violarlas cancela tu respuesta):
 Noticias:
 ${newsText}
 El post debe tener un hook inicial, ser profesional, generar engagement, incluir call-to-action.
+Incluye EMOJIS relevantes en cada párrafo (🔥💡📊🎯⚡💻🚀✅📢💬 etc.).
 Máximo ${maxLength} caracteres. Estilo: ${style}.
 ${langInstruction}
 Post para LinkedIn:`

@@ -44,7 +44,7 @@ Devuelve tu respuesta en EXACTAMENTE este formato, sin desviaciones:
 ---POST---
 [SOLO el texto del post para LinkedIn. Debe verse como un post escrito por un humano.
 NO incluyas "Gancho:", "Hook:", "Contexto:", "Reflexión:", "Llamado:", "Post para redes:" ni ningún otro label.
-Incluye emojis relevantes, saltos de línea, y fluidez natural.
+Incluye EMOJIS relevantes en cada párrafo (🔥💡📊🎯⚡💻🚀✅📢💬 etc.), saltos de línea, y fluidez natural.
 Termina con máximo 3 hashtags relevantes.]`,
   },
   {
@@ -84,7 +84,7 @@ Devuelve tu respuesta en el siguiente formato dividido:
 3. Dato clave: [dato numérico o fecha relevante]
 
 ---POST---
-[SOLO el texto del post. Sin "Post para redes:" ni ningún label. Escrito como un post humano natural con emojis, saltos de línea y fluidez. Máximo 3 hashtags.]`,
+[SOLO el texto del post. Sin "Post para redes:" ni ningún label. Escrito como un post humano natural con EMOJIS en cada párrafo (🔬🧠💡📚🔍✨🎓 etc.), saltos de línea y fluidez. Máximo 3 hashtags.]`,
   },
   {
     id: "satirico-humoristico",
@@ -123,7 +123,7 @@ Devuelve tu respuesta en el siguiente formato dividido:
 3. Hashtags: [creativos y relevantes]
 
 ---POST---
-[SOLO el texto del post. Sin "Post para redes:" ni ningún label. Escrito como post humano con humor, emojis y fluidez natural.]`,
+[SOLO el texto del post. Sin "Post para redes:" ni ningún label. Escrito como post humano con humor, EMOJIS en cada párrafo (😂🤡🔥💀🎭 etc.) y fluidez natural.]`,
   },
   {
     id: "ejecutivo-negocios",
@@ -161,6 +161,6 @@ Devuelve tu respuesta en el siguiente formato dividido:
 3. Players involucrados: [quién gana, quién pierde]
 
 ---POST---
-[SOLO el texto del post. Sin "Post para LinkedIn:" ni ningún label. Escrito como post profesional con tono ejecutivo y fluidez natural. Máximo 3 hashtags.]`,
+[SOLO el texto del post. Sin "Post para LinkedIn:" ni ningún label. Escrito como post profesional con tono ejecutivo, EMOJIS relevantes (📊💼📈🎯💡✅ etc.) y fluidez natural. Máximo 3 hashtags.]`,
   },
 ]

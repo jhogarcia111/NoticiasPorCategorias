@@ -149,6 +149,9 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     setRecuperando(true)
     setResult(saved.fullResponse || saved.linkedinPost || "")
     setParsedResult(parseAIResponse(saved.fullResponse || saved.linkedinPost || ""))
+    if (saved.newsId && !activeNewsIds.includes(saved.newsId)) {
+      setActiveNewsIds((prev: number[]) => [...prev, saved.newsId])
+    }
     setTimeout(() => setRecuperando(false), 300)
   }
 
@@ -218,6 +221,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       setImageLoadStates({})
 
       // generate headlines in parallel
+      let headlinesArr: string[] = []
       fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -229,7 +233,18 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       })
         .then((r) => r.json())
         .then((d) => {
-          if (d.data) setHeadlines(d.data)
+          if (d.data) {
+            headlinesArr = d.data
+            setHeadlines(d.data)
+            // update first saved gallery image with headlines
+            if (imageOptions.length > 0) {
+              fetch("/api/images/update-headlines", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ imageUrl: imageOptions[0], headlines: d.data }),
+              }).catch(() => {})
+            }
+          }
         })
         .catch(() => {})
 
@@ -380,6 +395,25 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       img.onerror = () => reject(new Error("Failed to load image"))
       img.src = URL.createObjectURL(file)
     })
+  }
+
+  const handleRegenerateHeadlines = async () => {
+    if (activeNews.length === 0) return
+    try {
+      const res = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "headlines",
+          title: activeNews[0]?.title || "",
+          summary: activeNews[0]?.summary || activeNews[0]?.content || "",
+        }),
+      })
+      const data = await res.json()
+      if (data.data) setHeadlines(data.data)
+    } catch (e: any) {
+      setAlert({ type: "error", text: `Error: ${e.message}` })
+    }
   }
 
   const handleAssembleImage = async () => {
@@ -777,6 +811,164 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
             </Card>
           )}
 
+          {/* Assembler card - always visible */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <ImageUp className="h-4 w-4 text-primary" />
+                Armar foto
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button
+                  onClick={handleGenerateImages}
+                  disabled={generatingImages || activeNews.length === 0}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                >
+                  {generatingImages ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Sparkles className="h-3.5 w-3.5 mr-1" />}
+                  {generatingImages ? "Generando..." : "Generar imagen IA"}
+                </Button>
+                <Button onClick={() => setShowGallery(true)} variant="outline" size="sm" className="h-8 text-xs">
+                  <Images className="h-3.5 w-3.5 mr-1" />
+                  Galería
+                </Button>
+                <label className="inline-flex items-center gap-1.5 cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors h-8 px-3 rounded-md border border-input hover:bg-accent">
+                  <ImageUp className="h-3.5 w-3.5" />
+                  Subir
+                  <input type="file" accept="image/*" onChange={handleUploadWithCompression} className="hidden" />
+                </label>
+              </div>
+
+              {/* Image source selection */}
+              {(imageOptions.length > 0 || assemblerImage) && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Selecciona la imagen base:</p>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {imageOptions.map((url, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setAssemblerImage(url)}
+                        className={cn(
+                          "w-20 h-12 rounded overflow-hidden border-2 transition-all flex-shrink-0",
+                          assemblerImage === url ? "border-primary ring-1 ring-primary/30" : "border-transparent hover:border-primary/50"
+                        )}
+                      >
+                        {imageLoadStates[i] === "loaded" ? (
+                          <img src={url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-muted flex items-center justify-center">
+                            {imageLoadStates[i] === "loading" ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setShowGallery(true)}
+                      className="w-20 h-12 rounded border-2 border-dashed flex items-center justify-center text-muted-foreground hover:border-primary/50 transition-all flex-shrink-0"
+                      title="De la galería"
+                    >
+                      <Images className="h-4 w-4" />
+                    </button>
+                    <label className="w-20 h-12 rounded border-2 border-dashed flex items-center justify-center text-muted-foreground hover:border-primary/50 transition-all flex-shrink-0 cursor-pointer">
+                      <ImageUp className="h-4 w-4" />
+                      <input type="file" accept="image/*" onChange={handleUploadWithCompression} className="hidden" />
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* Preview with CSS overlay */}
+              {assemblerImage && (
+                <div
+                  className="relative rounded-lg overflow-hidden border border-gray-200 aspect-video bg-muted cursor-pointer group"
+                  onClick={() => setLightboxUrl(assemblerImage)}
+                >
+                  <img src={assemblerImage} alt="Vista previa" className="w-full h-full object-cover" />
+                  <div className="absolute bottom-0 left-0 right-0 h-[18%] bg-gradient-to-t from-black/75 to-transparent flex items-end p-2">
+                    <span className="text-[10px] text-white font-bold bg-red-600 px-1.5 py-0.5 rounded mr-1.5">BREAKING NEWS</span>
+                    <span className="text-[11px] text-white font-bold truncate">
+                      {selectedHeadlineIdx !== null ? headlines[selectedHeadlineIdx] : customHeadline || "Selecciona un titular"}
+                    </span>
+                  </div>
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center">
+                    <Search className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </div>
+              )}
+
+              {/* Headline selection */}
+              {headlines.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs text-muted-foreground">Titular para BREAKING NEWS:</p>
+                    <button
+                      onClick={handleRegenerateHeadlines}
+                      className="text-[10px] text-primary hover:underline flex items-center gap-0.5"
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                      Regenerar
+                    </button>
+                  </div>
+                  <div className="space-y-1 mb-1.5">
+                    {headlines.map((h, i) => (
+                      <button
+                        key={i}
+                        onClick={() => { setSelectedHeadlineIdx(i); setCustomHeadline("") }}
+                        className={cn(
+                          "w-full text-left p-1.5 rounded border text-[11px] transition-all",
+                          selectedHeadlineIdx === i && !customHeadline
+                            ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                            : "border-border hover:bg-muted"
+                        )}
+                      >
+                        <span className="font-semibold text-red-600 mr-1">BREAKING:</span>
+                        {h}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    value={customHeadline}
+                    onChange={(e) => { setCustomHeadline(e.target.value); setSelectedHeadlineIdx(null) }}
+                    placeholder="O escribe tu propio titular..."
+                    className="w-full px-2 py-1.5 border border-input bg-white rounded text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+              )}
+
+              {/* Final assembled image preview with zoom */}
+              {finalImageUrl && (
+                <div className="relative rounded-lg overflow-hidden border border-gray-200">
+                  <img
+                    src={finalImageUrl}
+                    alt="Imagen final"
+                    className="w-full max-h-72 object-cover cursor-pointer"
+                    onClick={() => setLightboxUrl(finalImageUrl)}
+                  />
+                  <button
+                    onClick={() => { setFinalImageUrl(null); setCustomImage(null) }}
+                    className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70 transition-colors"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                  <p className="text-[10px] text-center text-muted-foreground py-1">Click para ampliar</p>
+                </div>
+              )}
+
+              <Button
+                onClick={handleAssembleImage}
+                disabled={!assemblerImage || (selectedHeadlineIdx === null && !customHeadline.trim()) || assembling}
+                size="sm"
+                className="w-full h-8 text-xs"
+              >
+                {assembling ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Sparkles className="h-3.5 w-3.5 mr-1" />}
+                {assembling ? "Armando..." : "Armar foto"}
+              </Button>
+            </CardContent>
+          </Card>
+
           {processing ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-16 text-muted-foreground">
@@ -852,120 +1044,6 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                             </div>
                           )}
 
-                          {/* Armar foto: assembler panel */}
-                          {showAssembler && !finalImageUrl && (
-                            <div className="mb-3 space-y-3 p-3 border rounded-lg bg-gray-50">
-                              <p className="text-xs font-semibold flex items-center gap-1.5">
-                                <Sparkles className="h-3.5 w-3.5 text-primary" />
-                                Armar foto
-                              </p>
-
-                              {/* Image source */}
-                              <div>
-                                <p className="text-xs text-muted-foreground mb-1">Selecciona la imagen base:</p>
-                                <div className="flex gap-1.5 flex-wrap">
-                                  {imageOptions.map((url, i) => (
-                                    <button
-                                      key={i}
-                                      onClick={() => setAssemblerImage(url)}
-                                      className={cn(
-                                        "w-16 h-10 rounded overflow-hidden border-2 transition-all flex-shrink-0",
-                                        assemblerImage === url ? "border-primary ring-1 ring-primary/30" : "border-transparent hover:border-primary/50"
-                                      )}
-                                    >
-                                      {imageLoadStates[i] === "loaded" ? (
-                                        <img src={url} alt="" className="w-full h-full object-cover" />
-                                      ) : (
-                                        <div className="w-full h-full bg-muted flex items-center justify-center">
-                                          {imageLoadStates[i] === "loading" ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
-                                        </div>
-                                      )}
-                                    </button>
-                                  ))}
-                                  <button
-                                    onClick={() => setShowGallery(true)}
-                                    className={cn(
-                                      "w-16 h-10 rounded border-2 flex items-center justify-center text-muted-foreground hover:border-primary/50 transition-all flex-shrink-0",
-                                      assemblerSource === "gallery" ? "border-primary" : "border-dashed"
-                                    )}
-                                    title="De la galería"
-                                  >
-                                    <Images className="h-4 w-4" />
-                                  </button>
-                                  <label className={cn(
-                                    "w-16 h-10 rounded border-2 border-dashed flex items-center justify-center text-muted-foreground hover:border-primary/50 transition-all flex-shrink-0 cursor-pointer",
-                                    assemblerSource === "upload" ? "border-primary" : ""
-                                  )}>
-                                    <ImageUp className="h-4 w-4" />
-                                    <input type="file" accept="image/*" onChange={handleUploadWithCompression} className="hidden" />
-                                  </label>
-                                </div>
-                              </div>
-
-                              {/* Preview with CSS overlay */}
-                              {assemblerImage && (
-                                <div className="relative rounded-lg overflow-hidden border border-gray-200 aspect-video bg-muted">
-                                  <img src={assemblerImage} alt="Vista previa" className="w-full h-full object-cover" />
-                                  <div className="absolute bottom-0 left-0 right-0 h-[18%] bg-gradient-to-t from-black/75 to-transparent flex items-end p-2">
-                                    <span className="text-[10px] text-white font-bold bg-red-600 px-1.5 py-0.5 rounded mr-1.5">BREAKING NEWS</span>
-                                    <span className="text-[11px] text-white font-bold truncate">
-                                      {selectedHeadlineIdx !== null ? headlines[selectedHeadlineIdx] : customHeadline || "Selecciona un titular"}
-                                    </span>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Headline selection */}
-                              <div>
-                                <p className="text-xs text-muted-foreground mb-1">Titular para BREAKING NEWS:</p>
-                                <div className="space-y-1 mb-1.5">
-                                  {headlines.map((h, i) => (
-                                    <button
-                                      key={i}
-                                      onClick={() => { setSelectedHeadlineIdx(i); setCustomHeadline("") }}
-                                      className={cn(
-                                        "w-full text-left p-1.5 rounded border text-[11px] transition-all",
-                                        selectedHeadlineIdx === i && !customHeadline
-                                          ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                                          : "border-border hover:bg-muted"
-                                      )}
-                                    >
-                                      <span className="font-semibold text-red-600 mr-1">BREAKING:</span>
-                                      {h}
-                                    </button>
-                                  ))}
-                                </div>
-                                <input
-                                  value={customHeadline}
-                                  onChange={(e) => { setCustomHeadline(e.target.value); setSelectedHeadlineIdx(null) }}
-                                  placeholder="O escribe tu propio titular..."
-                                  className="w-full px-2 py-1.5 border border-input bg-white rounded text-xs focus:outline-none focus:ring-2 focus:ring-ring"
-                                />
-                              </div>
-
-                              <Button
-                                onClick={handleAssembleImage}
-                                disabled={!assemblerImage || (selectedHeadlineIdx === null && !customHeadline.trim()) || assembling}
-                                size="sm"
-                                className="w-full h-8 text-xs"
-                              >
-                                {assembling ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Sparkles className="h-3.5 w-3.5 mr-1" />}
-                                {assembling ? "Armando..." : "Armar foto"}
-                              </Button>
-                            </div>
-                          )}
-
-                          {customImage && !finalImageUrl && (
-                            <div className="relative mb-3 rounded-lg overflow-hidden border border-gray-200">
-                              <img src={customImage} alt="Imagen del post" className="w-full max-h-64 object-cover" />
-                              <button
-                                onClick={() => { setCustomImage(null); setFinalImageUrl(null) }}
-                                className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70 transition-colors"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </div>
-                          )}
                         </div>
 
                         <div className="flex items-center gap-4 px-4 py-2.5 border-t text-xs text-gray-400">
@@ -975,51 +1053,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between mt-4">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Button
-                            onClick={handleGenerateImages}
-                            disabled={generatingImages || activeNews.length === 0}
-                            variant="outline"
-                            size="sm"
-                            className="h-8 text-xs"
-                          >
-                            {generatingImages ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
-                            ) : (
-                              <Sparkles className="h-3.5 w-3.5 mr-1" />
-                            )}
-                            {generatingImages ? "Generando..." : "Generar imagen IA"}
-                          </Button>
-                          {(headlines.length > 0 || imageOptions.length > 0 || customImage) && (
-                            <Button
-                              onClick={() => {
-                                if (customImage && !assemblerImage) setAssemblerImage(customImage)
-                                setShowAssembler(!showAssembler)
-                              }}
-                              variant={showAssembler ? "default" : "outline"}
-                              size="sm"
-                              className="h-8 text-xs"
-                            >
-                              <ImageUp className="h-3.5 w-3.5 mr-1" />
-                              Armar foto
-                            </Button>
-                          )}
-                          <Button
-                            onClick={() => setShowGallery(true)}
-                            variant="outline"
-                            size="sm"
-                            className="h-8 text-xs"
-                          >
-                            <Images className="h-3.5 w-3.5 mr-1" />
-                            Galería
-                          </Button>
-                          <label className="inline-flex items-center gap-1.5 cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors">
-                            <ImageUp className="h-3.5 w-3.5" />
-                            Subir
-                            <input type="file" accept="image/*" onChange={handleUploadWithCompression} className="hidden" />
-                          </label>
-                        </div>
+                      <div className="flex justify-end mt-4">
                         <Button onClick={handleSaveResult} disabled={saving} variant="outline" size="sm" className="h-8 text-xs">
                           {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Save className="h-3.5 w-3.5 mr-1" />}
                           Guardar
@@ -1156,7 +1190,18 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                       <img src={img.imageUrl} alt="" className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center gap-2">
                         <button
-                          onClick={() => { setCustomImage(img.imageUrl); setShowGallery(false) }}
+                          onClick={() => {
+                            setAssemblerImage(img.imageUrl)
+                            if (img.headlinesJson) {
+                              try {
+                                const hls = JSON.parse(img.headlinesJson)
+                                if (Array.isArray(hls)) setHeadlines(hls)
+                              } catch {}
+                            }
+                            setCustomImage(img.imageUrl)
+                            setFinalImageUrl(null)
+                            setShowGallery(false)
+                          }}
                           className="bg-white text-black text-xs px-3 py-1.5 rounded-lg font-medium opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
                         >
                           Usar
