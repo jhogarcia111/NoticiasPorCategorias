@@ -649,7 +649,19 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                                 {imageOptions.map((url, i) => (
                                   <div key={i} className="relative group aspect-[4/3]">
                                     <button
-                                      onClick={() => setCustomImage(url)}
+                                      onClick={() => {
+                                        setCustomImage(url)
+                                        fetch("/api/images/save-generated", {
+                                          method: "POST",
+                                          headers: { "Content-Type": "application/json" },
+                                          body: JSON.stringify({
+                                            imageUrl: url,
+                                            promptUsed: imagePromptsUsed[i] || "",
+                                            newsTitle: activeNews[0]?.title || "",
+                                            newsId: activeNews[0]?.id || null,
+                                          }),
+                                        }).catch(() => {})
+                                      }}
                                       className="w-full h-full rounded-lg overflow-hidden border-2 border-transparent hover:border-primary/50 transition-all"
                                     >
                                       <img src={url} alt={`Opción ${i + 1}`} className="w-full h-full object-cover" />
