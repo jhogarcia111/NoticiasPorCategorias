@@ -161,6 +161,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
             sourceUrl: activeNews[0]?.sourceUrl || "",
             userId: session?.user?.id || "",
             newsIds: activeNewsIds,
+            imageUrl: customImage || undefined,
           }),
       })
       const data = await res.json()
@@ -529,16 +530,21 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                       </div>
 
                       <div className="flex items-center justify-between mt-4">
-                        <label className="inline-flex items-center gap-1.5 cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors">
-                          <ImageUp className="h-3.5 w-3.5" />
-                          {customImage ? "Cambiar imagen" : "Agregar imagen"}
-                          <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                        </label>
-                        <Button onClick={handleSaveResult} disabled={saving} variant="outline" size="sm" className="h-8 text-xs">
-                          {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Save className="h-3.5 w-3.5 mr-1" />}
-                          Guardar
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <label className="inline-flex items-center gap-1.5 cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors">
+                            <ImageUp className="h-3.5 w-3.5" />
+                            {customImage ? "Cambiar imagen" : "Subir imagen"}
+                            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                          </label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button onClick={handleSaveResult} disabled={saving} variant="outline" size="sm" className="h-8 text-xs">
+                            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Save className="h-3.5 w-3.5 mr-1" />}
+                            Guardar
+                          </Button>
+                        </div>
                       </div>
+                      <p className="text-[10px] text-muted-foreground text-center mt-2">AI genera imagen autom�ticamente al publicar. Sube una personalizada si prefieres.</p>
                     </CardContent>
                   </Card>
 

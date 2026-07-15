@@ -1,20 +1,33 @@
 import { NextResponse } from "next/server"
-import { postToLinkedIn } from "@/services/linkedin-service"
+import { postToLinkedIn, uploadImageToLinkedIn } from "@/services/linkedin-service"
 import { getDb, scheduledPosts, postNews } from "@noticias/database"
+import { generateImagePrompt } from "@/services/ai-service"
+
+const POLLINATIONS_URL = "https://image.pollinations.ai/prompt"
 
 export async function POST(request: Request) {
   try {
-    const { profileId, content, title, sourceUrl, userId, newsIds } = await request.json()
+    const { profileId, content, title, sourceUrl, userId, newsIds, imageUrl: customImageUrl } = await request.json()
 
     if (!profileId || !content) {
       return NextResponse.json({ error: "profileId and content are required" }, { status: 400 })
     }
 
-    const contentWithUrl = sourceUrl && !content.includes(sourceUrl)
-      ? `${content}\n\n${sourceUrl}`
-      : content
+    let imageUrn: string | null = null
 
-    const result = await postToLinkedIn(profileId, contentWithUrl, title, sourceUrl)
+    if (customImageUrl) {
+      imageUrn = await uploadImageToLinkedIn(profileId, customImageUrl)
+    } else if (title) {
+      try {
+        const prompt = await generateImagePrompt(title, content.substring(0, 300))
+        const pollinationsUrl = `${POLLINATIONS_URL}/${encodeURIComponent(prompt)}`
+        imageUrn = await uploadImageToLinkedIn(profileId, pollinationsUrl)
+      } catch {
+        // image upload is optional; continue without it
+      }
+    }
+
+    const result = await postToLinkedIn(profileId, content, title, sourceUrl, imageUrn ?? undefined)
 
     if (userId) {
       const db = getDb()
@@ -40,7 +53,7 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ data: result })
+    return NextResponse.json({ data: result, imageUrn })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

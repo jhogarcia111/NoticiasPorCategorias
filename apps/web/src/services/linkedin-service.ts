@@ -71,7 +71,7 @@ export async function saveLinkedInProfile(profileData: any, tokens: any, userId:
   return profile
 }
 
-export async function postToLinkedIn(profileId: number, content: string, title?: string, sourceUrl?: string) {
+export async function uploadImageToLinkedIn(profileId: number, imageUrl: string): Promise<string | null> {
   const db = getDb()
   const [profile] = await db
     .select()
@@ -80,9 +80,71 @@ export async function postToLinkedIn(profileId: number, content: string, title?:
     .limit(1)
   if (!profile) throw new Error("LinkedIn profile not found")
 
+  const imageResp = await fetch(imageUrl)
+  if (!imageResp.ok) throw new Error("Failed to fetch image from Pollinations")
+  const imageBuffer = await imageResp.arrayBuffer()
+
+  const registerResp = await fetch("https://api.linkedin.com/v2/assets?action=registerUpload", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${profile.accessToken}`,
+      "Content-Type": "application/json",
+      "X-Restli-Protocol-Version": "2.0.0",
+    },
+    body: JSON.stringify({
+      registerUploadRequest: {
+        owner: `urn:li:person:${profile.linkedinId}`,
+        recipes: ["urn:li:digitalmediaRecipe:feedshare-image"],
+        serviceUploadLink: "pollinations-image",
+        supportedUploadMechanism: ["SYNCHRONOUS_UPLOAD"],
+      },
+    }),
+  })
+
+  const registerRaw = await registerResp.text()
+  if (!registerResp.ok) {
+    let msg: string
+    try { msg = JSON.parse(registerRaw).message } catch { msg = registerRaw || "Register upload failed" }
+    throw new Error(msg)
+  }
+
+  const registerData = JSON.parse(registerRaw)
+  const uploadUrl = registerData.value?.uploadMechanism?.["com.amazonaws.requestUrl"]
+  const assetUrn = registerData.value?.asset
+
+  if (!uploadUrl || !assetUrn) throw new Error("Failed to get upload URL from LinkedIn")
+
+  const uploadResp = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: { "Content-Type": "image/jpeg" },
+    body: imageBuffer,
+  })
+
+  if (!uploadResp.ok) throw new Error("Failed to upload image to LinkedIn")
+
+  return assetUrn
+}
+
+export async function postToLinkedIn(
+  profileId: number,
+  content: string,
+  title?: string,
+  sourceUrl?: string,
+  imageUrn?: string,
+) {
+  const db = getDb()
+  const [profile] = await db
+    .select()
+    .from(linkedinProfiles)
+    .where(eq(linkedinProfiles.id, profileId))
+    .limit(1)
+  if (!profile) throw new Error("LinkedIn profile not found")
+
+  const commentary = sourceUrl && !content.includes(sourceUrl) ? `${content}\n\n${sourceUrl}` : content
+
   const body: any = {
     author: `urn:li:person:${profile.linkedinId}`,
-    commentary: content,
+    commentary,
     visibility: "PUBLIC",
     distribution: {
       feedDistribution: "MAIN_FEED",
@@ -92,12 +154,14 @@ export async function postToLinkedIn(profileId: number, content: string, title?:
     lifecycleState: "PUBLISHED",
   }
 
-  if (sourceUrl) {
+  if (imageUrn) {
+    body.content = { media: { id: imageUrn } }
+  } else if (sourceUrl) {
     body.content = {
       article: {
         source: sourceUrl,
         title: title || "",
-        description: content.substring(0, 300),
+        description: commentary.substring(0, 300),
       },
     }
   }
