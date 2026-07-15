@@ -221,9 +221,28 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       setImagePromptsUsed(prompts)
       setHeadlines(hls)
       const POLLINATIONS_URL = "https://image.pollinations.ai/prompt"
-      const urls = prompts.map((p) => `${POLLINATIONS_URL}/${encodeURIComponent(p)}?width=1200&height=627`)
+      const urls = prompts.map((p, idx) =>
+        `${POLLINATIONS_URL}/${encodeURIComponent(p)}?nocache=${Date.now()}&seed=${idx + 1}`
+      )
       setImageOptions(urls)
-      setImageLoadStates({ 0: "loading", 1: "loading", 2: "loading" })
+      setImageLoadStates({})
+
+      // load images sequentially to avoid overwhelming Pollinations
+      const loadNext = (idx: number) => {
+        if (idx >= urls.length) return
+        setImageLoadStates((prev) => ({ ...prev, [idx]: "loading" }))
+        const img = new Image()
+        img.onload = () => {
+          setImageLoadStates((prev) => ({ ...prev, [idx]: "loaded" }))
+          setTimeout(() => loadNext(idx + 1), 1200)
+        }
+        img.onerror = () => {
+          setImageLoadStates((prev) => ({ ...prev, [idx]: "error" }))
+          setTimeout(() => loadNext(idx + 1), 800)
+        }
+        img.src = urls[idx]
+      }
+      loadNext(0)
 
       // save all generated images to gallery
       for (let i = 0; i < urls.length; i++) {
@@ -245,6 +264,19 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     }
   }
 
+  const handleRetryImage = (idx: number) => {
+    if (!imageOptions[idx]) return
+    const url = imageOptions[idx].replace(/&seed=\d+/, `&seed=${Date.now()}`)
+    const newUrls = [...imageOptions]
+    newUrls[idx] = url
+    setImageOptions(newUrls)
+    setImageLoadStates((prev) => ({ ...prev, [idx]: "loading" }))
+    const img = new Image()
+    img.onload = () => setImageLoadStates((prev) => ({ ...prev, [idx]: "loaded" }))
+    img.onerror = () => setImageLoadStates((prev) => ({ ...prev, [idx]: "error" }))
+    img.src = url
+  }
+
   const handleGenerateFinalImage = async () => {
     if (selectedImageIdx === null || selectedHeadlineIdx === null) return
     setGeneratingFinalImage(true)
@@ -255,7 +287,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
 
       const finalPrompt = visualPrompt.replace("[HEADLINE]", chosenHeadline)
       const POLLINATIONS_URL = "https://image.pollinations.ai/prompt"
-      const url = `${POLLINATIONS_URL}/${encodeURIComponent(finalPrompt)}?width=1200&height=627`
+      const url = `${POLLINATIONS_URL}/${encodeURIComponent(finalPrompt)}?nocache=${Date.now()}&seed=final`
 
       setFinalImagePromptUsed(finalPrompt)
       setFinalHeadlineUsed(chosenHeadline)
@@ -728,7 +760,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                                 </p>
                                 <div className="grid grid-cols-3 gap-2">
                                   {imageOptions.map((url, i) => (
-                                    <div key={i} className="relative group aspect-[4/3]">
+                                    <div key={i} className="relative group aspect-video">
                                       <button
                                         onClick={() => setSelectedImageIdx(i)}
                                         className={cn(
@@ -737,20 +769,23 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                                         )}
                                       >
                                         {imageLoadStates[i] === "loading" && (
-                                          <div className="w-full h-full flex items-center justify-center bg-muted">
+                                          <div className="w-full h-full flex items-center justify-center bg-muted rounded-lg">
                                             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                                           </div>
                                         )}
-                                        <img
-                                          src={url}
-                                          alt={`Opción ${i + 1}`}
-                                          className={cn("w-full h-full object-cover", imageLoadStates[i] === "loading" ? "hidden" : "")}
-                                          onLoad={() => setImageLoadStates((prev) => ({ ...prev, [i]: "loaded" }))}
-                                          onError={() => setImageLoadStates((prev) => ({ ...prev, [i]: "error" }))}
-                                        />
+                                        {imageLoadStates[i] === "loaded" && (
+                                          <img src={url} alt={`Opción ${i + 1}`} className="w-full h-full object-cover" />
+                                        )}
                                         {imageLoadStates[i] === "error" && (
-                                          <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground">
+                                          <div className="w-full h-full flex flex-col items-center justify-center bg-muted text-muted-foreground rounded-lg gap-1">
                                             <X className="h-4 w-4" />
+                                            <span className="text-[10px]">Error</span>
+                                            <button
+                                              onClick={(e) => { e.stopPropagation(); handleRetryImage(i) }}
+                                              className="text-[10px] text-primary hover:underline"
+                                            >
+                                              Reintentar
+                                            </button>
                                           </div>
                                         )}
                                       </button>
@@ -758,7 +793,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                                         <button
                                           onClick={() => setLightboxUrl(url)}
                                           className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-all rounded-lg"
-                                          title="Ver m&aacute;s grande"
+                                          title="Ver más grande"
                                         >
                                           <Search className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                                         </button>
@@ -995,7 +1030,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
               ) : (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                   {galleryImages.map((img: any) => (
-                    <div key={img.id} className="group relative aspect-[4/3] rounded-lg overflow-hidden border">
+                    <div key={img.id} className="group relative aspect-video rounded-lg overflow-hidden border">
                       <img src={img.imageUrl} alt="" className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center gap-2">
                         <button

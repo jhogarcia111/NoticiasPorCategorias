@@ -137,60 +137,56 @@ Across the entire bottom third of the image, there is a clean, dark gradient new
 
 The lighting is atmospheric, digital, and professional. No specific, recognizable company logos (other than abstract generic icons) are present on the screens or interface. The composition is balanced, with the screens framed by the data network."`
 
-export async function generateNewsImageData(title: string, summary: string): Promise<{
+export async function generateNewsImageData(title: string, summary: string, retries = 2): Promise<{
   imagePrompts: string[]
   headlines: string[]
 } | null> {
-  const prompt = `Eres un experto en diseño gráfico de noticias para LinkedIn. Sigue EXACTAMENTE este estilo de gráfico noticiero cinematográfico de alto impacto:
+  const prompt = `Eres un experto en diseño gráfico de noticias para LinkedIn.
 
-${NEWS_IMAGE_TEMPLATE}
-
-Tu tarea es generar 3 prompts visuales distintos para Pollinations AI, cada uno siguiendo esta misma estructura pero adaptado a la noticia y con variaciones en la composición visual (cambia ángulo, disposición de elementos, colores secundarios).
-
-La noticia a ilustrar:
+Basado en esta noticia:
 Título: ${title}
 Resumen: ${summary}
 
-INSTRUCCIONES PARA CADA PROMPT VISUAL:
-- Usa el template de arriba como base, reemplazando [TEMA], [ELEMENTO_IZQUIERDO], [ELEMENTO_DERECHO], [CONTENIDO_PANTALLA] con elementos visuales concretos relacionados a la noticia
-- Usa "[HEADLINE]" como placeholder exacto para el titular (donde irá la noticia en la franja)
-- Mantén la estructura de "BREAKING NEWS" banner, la composición de dos pantallas, y la paleta de colores profesionales
-- NO uses marcas o logos reales reconocibles
-- Especifica alta calidad, iluminación profesional, fotografía realista
-- Cada prompt debe ser visualmente diferente (varía la escena, los colores secundarios, la disposición)
+Genera 3 prompts visuales para Pollinations AI. Cada prompt debe describir una imagen profesional estilo noticiero cinematográfico, OBLIGATORIAMENTE en formato 16:9 (horizontal, como una foto de paisaje).
 
-Además, genera 3 variantes del titular que irán en la franja "BREAKING NEWS". Cada titular debe ser una oración/frase impactante relacionada a la noticia, máximo 80 caracteres.
+ESTRUCTURA DE CADA PROMPT (sigue exactamente este orden):
+1. "A professional, high-impact cinematic news graphic for a LinkedIn article header. Aspect ratio 16:9."
+2. Describe una escena visual ÚNICA (cambia la ambientación, colores secundarios, ángulo de cámara entre cada prompt). Usa lenguaje visual concreto: colores, iluminación, texturas, composición.
+3. Incluye: "Across the bottom, a dark news ticker banner with 'BREAKING NEWS' in white on red at left. The headline text in the banner says: [HEADLINE] (white bold sans-serif font)."
+4. Termina con: "Cinematic lighting, 8K, photorealistic, no logos, no recognizable brands, no text other than the breaking news banner."
 
-Devuelve SOLO un JSON válido con este formato exacto (sin texto adicional):
-{
-  "imagePrompts": [
-    "prompt visual 1 completo...",
-    "prompt visual 2 completo...",
-    "prompt visual 3 completo..."
-  ],
-  "headlines": [
-    "Titular 1 para breaking news (máx 80 chars)",
-    "Titular 2 para breaking news (máx 80 chars)",
-    "Titular 3 para breaking news (máx 80 chars)"
-  ]
-}`
+REGLAS:
+- NO uses marcas o logos reales
+- NO pongas texto en ninguna otra parte de la imagen excepto el banner inferior
+- Usa "[HEADLINE]" EXACTAMENTE como placeholder (sin reemplazarlo)
+- Cada prompt debe ser CONCISO (máximo 400 caracteres) y visualmente diferente del anterior
+- Especifica "16:9 aspect ratio" en cada prompt
 
-  const result = await callDeepSeek(prompt, 1200)
-  if (!result) return null
+Además genera 3 titulares cortos para el banner "BREAKING NEWS". Cada titular debe ser una frase impactante de máximo 80 caracteres, relacionada a la noticia.
 
-  try {
-    // Try to parse JSON from the response
-    const jsonMatch = result.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) return null
-    const parsed = JSON.parse(jsonMatch[0])
-    if (!parsed.imagePrompts || !parsed.headlines) return null
-    return {
-      imagePrompts: parsed.imagePrompts.slice(0, 3),
-      headlines: parsed.headlines.slice(0, 3),
+Devuelve SOLO este JSON (sin markdown, sin texto adicional):
+{"imagePrompts":["prompt 1","prompt 2","prompt 3"],"headlines":["titular 1","titular 2","titular 3"]}`
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const result = await callDeepSeek(prompt, 800)
+      if (!result) continue
+
+      const jsonMatch = result.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) continue
+
+      const parsed = JSON.parse(jsonMatch[0])
+      if (parsed?.imagePrompts?.length >= 2 && parsed?.headlines?.length >= 2) {
+        return {
+          imagePrompts: parsed.imagePrompts.slice(0, 3),
+          headlines: parsed.headlines.slice(0, 3),
+        }
+      }
+    } catch {
+      continue
     }
-  } catch {
-    return null
   }
+  return null
 }
 
 export async function generateImagePrompts(title: string, summary: string): Promise<string[]> {
