@@ -59,6 +59,9 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
   const [scheduleDateTime, setScheduleDateTime] = useState("")
   const [alert, setAlert] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const alertRef = useRef<HTMLDivElement>(null)
+  const [generatingImages, setGeneratingImages] = useState(false)
+  const [imageOptions, setImageOptions] = useState<string[]>([])
+  const [imagePromptsUsed, setImagePromptsUsed] = useState<string[]>([])
 
   useEffect(() => {
     if (alert) {
@@ -147,6 +150,37 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     }
   }
 
+  const handleGenerateImages = async () => {
+    if (activeNews.length === 0) return
+    setGeneratingImages(true)
+    setImageOptions([])
+    setCustomImage(null)
+    try {
+      const res = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "image-prompts",
+          title: activeNews[0]?.title || "",
+          summary: activeNews[0]?.summary || activeNews[0]?.content || "",
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Error generando prompts")
+      const prompts: string[] = data.data || []
+      if (prompts.length === 0) throw new Error("No se generaron prompts")
+
+      setImagePromptsUsed(prompts)
+      const POLLINATIONS_URL = "https://image.pollinations.ai/prompt"
+      const urls = prompts.map((p) => `${POLLINATIONS_URL}/${encodeURIComponent(p)}`)
+      setImageOptions(urls)
+    } catch (e: any) {
+      setAlert({ type: "error", text: `Error al generar imagen: ${e.message}` })
+    } finally {
+      setGeneratingImages(false)
+    }
+  }
+
   const handlePublishNow = async () => {
     if (!selectedProfileId || !result) return
     setPosting(true)
@@ -218,6 +252,8 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     setResult(null)
     setParsedResult(null)
     setCustomImage(null)
+    setImageOptions([])
+    setImagePromptsUsed([])
 
     const newsContent = activeNews.map((n: any, i: number) =>
       `--- NOTICIA ${i + 1} ---\nTitulo: ${n.title}\nFuente: ${n.sourceName}\nFecha: ${n.publishedAt || ""}\nResumen: ${n.summary || ""}\nContenido: ${n.content || n.summary || "No disponible"}\nURL (incluye esta URL en el post): ${n.sourceUrl || ""}`
@@ -509,11 +545,28 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                             </div>
                           )}
 
+                          {imageOptions.length > 0 && !customImage && (
+                            <div className="mb-3">
+                              <p className="text-xs font-medium text-muted-foreground mb-2">Selecciona una imagen para el post:</p>
+                              <div className="grid grid-cols-3 gap-2">
+                                {imageOptions.map((url, i) => (
+                                  <button
+                                    key={i}
+                                    onClick={() => setCustomImage(url)}
+                                    className="relative rounded-lg overflow-hidden border-2 border-transparent hover:border-primary/50 transition-all aspect-[4/3]"
+                                  >
+                                    <img src={url} alt={`Opci�n ${i + 1}`} className="w-full h-full object-cover" />
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
                           {customImage && (
                             <div className="relative mb-3 rounded-lg overflow-hidden border border-gray-200">
-                              <img src={customImage} alt="Uploaded" className="w-full max-h-64 object-cover" />
+                              <img src={customImage} alt="Imagen del post" className="w-full max-h-64 object-cover" />
                               <button
-                                onClick={() => setCustomImage(null)}
+                                onClick={() => { setCustomImage(null); setImageOptions([]) }}
                                 className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70 transition-colors"
                               >
                                 <X className="h-3 w-3" />
@@ -531,20 +584,31 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
 
                       <div className="flex items-center justify-between mt-4">
                         <div className="flex items-center gap-2">
+                          <Button
+                            onClick={handleGenerateImages}
+                            disabled={generatingImages || activeNews.length === 0}
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs"
+                          >
+                            {generatingImages ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                            ) : (
+                              <Sparkles className="h-3.5 w-3.5 mr-1" />
+                            )}
+                            {generatingImages ? "Generando..." : "Generar imagen IA"}
+                          </Button>
                           <label className="inline-flex items-center gap-1.5 cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors">
                             <ImageUp className="h-3.5 w-3.5" />
-                            {customImage ? "Cambiar imagen" : "Subir imagen"}
+                            Subir
                             <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                           </label>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Button onClick={handleSaveResult} disabled={saving} variant="outline" size="sm" className="h-8 text-xs">
-                            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Save className="h-3.5 w-3.5 mr-1" />}
-                            Guardar
-                          </Button>
-                        </div>
+                        <Button onClick={handleSaveResult} disabled={saving} variant="outline" size="sm" className="h-8 text-xs">
+                          {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Save className="h-3.5 w-3.5 mr-1" />}
+                          Guardar
+                        </Button>
                       </div>
-                      <p className="text-[10px] text-muted-foreground text-center mt-2">AI genera imagen autom�ticamente al publicar. Sube una personalizada si prefieres.</p>
                     </CardContent>
                   </Card>
 

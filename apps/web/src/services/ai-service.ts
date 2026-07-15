@@ -119,3 +119,35 @@ Prompt para generación de imagen:`
 
   return callDeepSeek(prompt, 300)
 }
+
+export async function generateImagePrompts(title: string, summary: string): Promise<string[]> {
+  const prompt = `Eres un experto en diseño gráfico y marketing visual para LinkedIn.
+Genera EXACTAMENTE 3 prompts distintos para una IA de imágenes (Pollinations AI).
+Cada prompt debe ser visualmente diferente (cambia ángulo, composición, estilo) pero todos deben ilustrar la misma noticia.
+
+REGLAS PARA CADA PROMPT:
+- Describe la escena de forma realista y detallada
+- Especifica "fotografía realista, alta calidad, iluminación profesional"
+- NO incluyas personas si el prompt va a generar rostros distorsionados
+- Estilo profesional corporativo, colores sobrios, composición limpia
+- NO uses términos abstractos como "innovación" o "futuro" solos
+
+Noticia:
+Título: ${title}
+Resumen: ${summary}
+
+Devuelve SOLO los 3 prompts, numerados del 1 al 3, sin texto adicional antes ni después.
+Ejemplo:
+1. [primer prompt]
+2. [segundo prompt]
+3. [tercer prompt]`
+
+  const result = await callDeepSeek(prompt, 600)
+  if (!result) return []
+
+  return result
+    .split(/\d\.\s+/)
+    .map((s: string) => s.trim())
+    .filter((s: string) => s.length > 10)
+    .slice(0, 3)
+}

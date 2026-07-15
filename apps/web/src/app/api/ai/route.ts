@@ -4,6 +4,7 @@ import {
   generateLinkedInPost,
   generateHashtags,
   generateImagePrompt,
+  generateImagePrompts,
 } from "@/services/ai-service"
 import { getDb } from "@/lib/db"
 import { news } from "@noticias/database"
@@ -21,6 +22,10 @@ export async function POST(request: Request) {
       }
       case "image-prompt": {
         const result = await generateImagePrompt(body.title, body.summary)
+        return NextResponse.json({ data: result })
+      }
+      case "image-prompts": {
+        const result = await generateImagePrompts(body.title, body.summary)
         return NextResponse.json({ data: result })
       }
       case "linkedin-post": {
