@@ -7,6 +7,7 @@ import {
   Star, CheckCircle2, ArrowRight, Clock, BarChart3,
   Linkedin, Newspaper, Brain, MessageCircle, Quote, Target
 } from "lucide-react"
+import { Logo } from "@/components/logo"
 
 const benefits = [
   {
@@ -175,51 +176,9 @@ function ImageCard({ src, alt, className = "" }: { src: string; alt: string; cla
 
 export default function HomePage() {
   const [activeFaq, setActiveFaq] = useState<number | null>(null)
-  const [menuOpen, setMenuOpen] = useState(false)
-
-  const navLinks = [
-    { href: "#beneficios", label: "Beneficios" },
-    { href: "#como-funciona", label: "Cómo funciona" },
-    { href: "#precios", label: "Precios" },
-    { href: "#faq", label: "FAQ" },
-  ]
 
   return (
     <div className="overflow-hidden">
-      <nav className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-          <Link href="/" className="flex items-center gap-2 text-lg font-bold text-[#0A66C2]">
-            <Newspaper className="h-5 w-5" />
-            <span>NewsLinked</span>
-          </Link>
-          <div className="hidden md:flex items-center gap-6">
-            {navLinks.map((l) => (
-              <a key={l.href} href={l.href}
-                className="text-sm font-medium text-muted-foreground hover:text-[#0A66C2] transition-colors"
-                onClick={(e) => { e.preventDefault(); document.querySelector(l.href)?.scrollIntoView({ behavior: "smooth" }) }}
-              >{l.label}</a>
-            ))}
-            <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-[#0A66C2] transition-colors">Iniciar sesión</Link>
-            <Link href="/register" className="rounded-lg bg-[#0A66C2] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0055A4] transition-colors">Comenzar gratis</Link>
-          </div>
-          <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden p-2 rounded-lg hover:bg-muted">
-            <span className="sr-only">Menu</span>
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
-          </button>
-        </div>
-        {menuOpen && (
-          <div className="md:hidden border-t bg-white px-4 py-3 space-y-2">
-            {navLinks.map((l) => (
-              <a key={l.href} href={l.href}
-                className="block text-sm font-medium text-muted-foreground hover:text-[#0A66C2] py-1"
-                onClick={(e) => { e.preventDefault(); document.querySelector(l.href)?.scrollIntoView({ behavior: "smooth" }); setMenuOpen(false) }}
-              >{l.label}</a>
-            ))}
-            <Link href="/login" className="block text-sm font-medium text-muted-foreground hover:text-[#0A66C2] py-1">Iniciar sesión</Link>
-            <Link href="/register" className="block text-center rounded-lg bg-[#0A66C2] px-4 py-2 text-sm font-semibold text-white">Comenzar gratis</Link>
-          </div>
-        )}
-      </nav>
 
       {/* HERO */}
       <section className="relative isolate px-4 pt-16 pb-24 md:pt-24 md:pb-32">
