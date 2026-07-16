@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { postToLinkedIn, uploadImageToLinkedIn } from "@/services/linkedin-service"
 import { getDb, scheduledPosts, postNews } from "@noticias/database"
 
+export const maxDuration = 30
+
 export async function POST(request: Request) {
   try {
     const { profileId, content, title, sourceUrl, userId, newsIds, imageBase64, imageMime } = await request.json()
