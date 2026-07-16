@@ -413,6 +413,23 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     })
   }
 
+  const ensureHeadlines = async () => {
+    if (headlines.length > 0 || activeNews.length === 0) return
+    try {
+      const res = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "headlines",
+          title: activeNews[0]?.title || "",
+          summary: activeNews[0]?.summary || activeNews[0]?.content || "",
+        }),
+      })
+      const data = await res.json()
+      if (data.data) setHeadlines(data.data)
+    } catch {}
+  }
+
   const handleRegenerateHeadlines = async () => {
     if (activeNews.length === 0) return
     try {
@@ -460,6 +477,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       setCustomImage(url)
       setAssemblerImage(url)
       setShowAssembler(true)
+      ensureHeadlines()
     } catch (err: any) {
       setAlert({ type: "error", text: `Error al comprimir imagen: ${err.message}` })
     }
@@ -865,7 +883,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                     {imageOptions.map((url, i) => (
                       <button
                         key={i}
-                        onClick={() => setAssemblerImage(url)}
+                        onClick={() => { setAssemblerImage(url); ensureHeadlines() }}
                         className={cn(
                           "w-20 h-12 rounded overflow-hidden border-2 transition-all flex-shrink-0",
                           assemblerImage === url ? "border-primary ring-1 ring-primary/30" : "border-transparent hover:border-primary/50"
@@ -902,13 +920,19 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                   onClick={() => setLightboxUrl(assemblerImage)}
                 >
                   <img src={assemblerImage} alt="Vista previa" className="w-full h-full object-cover" />
-                  <div className="absolute bottom-0 left-0 right-0 h-[18%] bg-gradient-to-t from-black/75 to-transparent flex items-end p-2">
+                  <div
+                    className="absolute bottom-0 left-0 right-0 h-[18%] bg-gradient-to-t from-black/75 to-transparent flex items-end p-2"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <span className="text-[10px] text-white font-bold bg-red-600 px-1.5 py-0.5 rounded mr-1.5">BREAKING NEWS</span>
                     <span className="text-[11px] text-white font-bold truncate">
                       {selectedHeadlineIdx !== null ? headlines[selectedHeadlineIdx] : customHeadline || "Selecciona un titular"}
                     </span>
                   </div>
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center">
+                  <div
+                    className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <Search className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
                 </div>
@@ -1207,12 +1231,17 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                         <button
                           onClick={() => {
                             setAssemblerImage(img.imageUrl)
+                            let hasHeadlines = false
                             if (img.headlinesJson) {
                               try {
                                 const hls = JSON.parse(img.headlinesJson)
-                                if (Array.isArray(hls)) setHeadlines(hls)
+                                if (Array.isArray(hls) && hls.length > 0) {
+                                  setHeadlines(hls)
+                                  hasHeadlines = true
+                                }
                               } catch {}
                             }
+                            if (!hasHeadlines) ensureHeadlines()
                             setCustomImage(img.imageUrl)
                             setFinalImageUrl(null)
                             setShowGallery(false)
