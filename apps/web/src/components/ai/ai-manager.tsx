@@ -730,10 +730,8 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
   const selectedTemplate = promptTemplates.find((t) => t.id === selectedTemplateId) || promptTemplates[0]
 
   const sections = useMemo(() => [
-    { id: "summary", label: "Resumen Ejecutivo", content: parsedResult?.analysis || "" },
-    { id: "topics", label: "Temas Clave", content: parsedResult?.analysis || "" },
     { id: "full-post", label: "Post Completo", content: parsedResult?.post || "" },
-    { id: "details", label: "Respuesta Completa de la IA", content: result || "" },
+    { id: "analysis", label: "Análisis", content: parsedResult?.analysis || "" },
   ], [parsedResult, result])
 
   const handleProcess = async () => {
@@ -976,16 +974,25 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
         </div>
 
         <div className="space-y-4">
-          <div className="flex gap-2">
-            <Button
-              variant={showSavedAnalyses ? "default" : "outline"}
-              size="sm"
-              onClick={() => setShowSavedAnalyses(!showSavedAnalyses)}
-              className="text-xs h-8"
-            >
-              <FolderOpen className="h-3.5 w-3.5 mr-1" />
-              Análisis guardados
-            </Button>
+          {/* Phase indicator */}
+          <div className="flex gap-2 text-xs font-medium">
+            {[
+              { id: 1, label: "1. Noticia" },
+              { id: 2, label: "2. Armar foto" },
+              { id: 3, label: "3. Publicar" },
+            ].map((p) => (
+              <button key={p.id} onClick={() => setPhase(p.id as 1|2|3)}
+                className={cn("px-3 py-1.5 rounded-full transition-all text-xs",
+                  phase === p.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                )}>{p.label}</button>
+            ))}
+            <button onClick={() => setShowSavedAnalyses(!showSavedAnalyses)}
+              className={cn("px-3 py-1.5 rounded-full transition-all text-xs ml-auto",
+                showSavedAnalyses ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+              )}>
+              <FolderOpen className="h-3 w-3 inline mr-0.5" />
+              Guardados
+            </button>
           </div>
 
           {showSavedAnalyses && (
@@ -1006,22 +1013,13 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                 ) : (
                   <div className="space-y-2 max-h-96 overflow-y-auto">
                     {savedAnalysesList.map((item: any) => (
-                      <div
-                        key={item.id}
-                        className="p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
-                        onClick={() => {
-                          handleRecuperar(item)
-                          setShowSavedAnalyses(false)
-                          setAlert({ type: "success", text: "Análisis cargado exitosamente" })
-                        }}
-                      >
+                      <div key={item.id} className="p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
+                        onClick={() => { handleRecuperar(item); setShowSavedAnalyses(false); setAlert({ type: "success", text: "Análisis cargado exitosamente" }) }}>
                         <p className="text-sm font-medium truncate">{item.newsTitle || "Sin título"}</p>
                         <p className="text-xs text-muted-foreground truncate mt-0.5">{item.newsSummary?.slice(0, 120)}...</p>
                         <div className="flex items-center gap-2 mt-1.5">
                           <Badge variant="secondary" className="text-[10px]">{item.templateName || "General"}</Badge>
-                          <span className="text-[10px] text-muted-foreground">
-                            {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ""}
-                          </span>
+                          <span className="text-[10px] text-muted-foreground">{item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ""}</span>
                         </div>
                       </div>
                     ))}
@@ -1031,8 +1029,8 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
             </Card>
           )}
 
-          {/* Assembler card - always visible */}
-          <Card>
+          {/* Assembler card */}
+          <Card className={phase === 2 ? "ring-2 ring-primary/20" : ""}>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <ImageUp className="h-4 w-4 text-primary" />
@@ -1100,80 +1098,54 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                 </div>
               )}
 
-              {/* Interactive editor preview */}
-              {assemblerImage && (
-                <div data-editor className="relative rounded-lg overflow-hidden border select-none bg-muted">
-                  <img
-                    src={assemblerImage}
-                    alt="Base"
-                    className="w-full max-h-[420px] object-contain pointer-events-none"
-                    onLoad={(e) => {
-                      const el = e.currentTarget
-                      const p = el.closest("[data-editor]") as HTMLElement
-                      if (p) p.style.aspectRatio = `${el.naturalWidth} / ${el.naturalHeight}`
-                    }}
-                  />
+              {/* Phase indicator */}
+              <div className="flex gap-2 text-xs font-medium border-b pb-2">
+                {[
+                  { id: 1, label: "1. Noticia" },
+                  { id: 2, label: "2. Armar foto" },
+                  { id: 3, label: "3. Publicar" },
+                ].map((p) => (
+                  <button key={p.id} onClick={() => setPhase(p.id as 1|2|3)}
+                    className={cn("px-3 py-1 rounded-full transition-all",
+                      phase === p.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    )}>{p.label}</button>
+                ))}
+              </div>
 
-                  {/* Label overlay */}
-                  <div
-                    className="absolute cursor-move group flex items-center justify-center"
-                    style={{
-                      left: `${labelX}%`, top: `${labelY}%`,
-                      width: `${labelW}%`, height: `${labelH}%`,
-                      fontSize: `clamp(8px, ${labelFontSz * 0.12}px, 60px)`,
-                    }}
-                    onMouseDown={(e) => editorMouseDown("label", e)}
-                  >
-                    {labelPreset.style === "split" && labelPreset.words.length >= 2 ? (
-                      <div className="flex w-full h-full font-bold" style={{ fontSize: "inherit" }}>
-                        <div className="flex items-center justify-center bg-red-600 text-white rounded-l" style={{ width: `${100 / labelPreset.words.length}%` }}>
-                          {labelPreset.words[0]}
-                        </div>
-                        <div className="flex items-center justify-center bg-white text-gray-900 rounded-r" style={{ width: `${100 / labelPreset.words.length}%` }}>
-                          {labelPreset.words[1]}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className={`w-full h-full flex items-center justify-center font-bold rounded text-white ${labelPreset.style === "accent" ? "bg-blue-600" : "bg-red-600"}`} style={{ fontSize: "inherit" }}>
-                        {labelPreset.text}
-                      </div>
-                    )}
-                    {["nw", "ne", "sw", "se"].map((c) => (
-                      <div key={c} className="absolute w-3 h-3 bg-white border border-gray-400 rounded-sm opacity-0 group-hover:opacity-100"
-                        style={{
-                          cursor: `${c}-resize`,
-                          ...(c.includes("n") ? { top: "-5px" } : { bottom: "-5px" }),
-                          ...(c.includes("w") ? { left: "-5px" } : { right: "-5px" }),
-                        }}
-                        onMouseDown={(e) => { e.stopPropagation(); editorMouseDown("label", e, c) }}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Text overlay */}
-                  <div
-                    className="absolute cursor-move group"
-                    style={{
-                      left: `${textX}%`, top: `${textY}%`,
-                      width: `${textW}%`, height: `${textH}%`,
-                      fontSize: `clamp(8px, ${textFontSz * 0.1}px, 50px)`,
-                    }}
-                    onMouseDown={(e) => editorMouseDown("text", e)}
-                  >
-                    <div className="w-full h-full flex items-center font-bold text-white leading-tight overflow-hidden px-1"
-                      style={{ fontSize: "inherit", textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
-                      {selectedHeadlineIdx !== null ? headlines[selectedHeadlineIdx] : customHeadline || "Titular"}
+              {/* Phase 2: image preview + invisible overlays for interaction */}
+              {assemblerImage && phase === 2 && (
+                <div className="rounded-lg overflow-hidden border bg-muted relative">
+                  <canvas ref={canvasRef} className="w-full h-auto" />
+                  {/* Invisible drag zones on top of canvas */}
+                  <div className="absolute inset-0">
+                    {/* Label hit area */}
+                    <div className="absolute cursor-move group"
+                      style={{ left: `${labelX}%`, top: `${labelY}%`, width: `${labelW}%`, height: `${labelH}%` }}
+                      onMouseDown={(e) => editorMouseDown("label", e)}>
+                      {["nw", "ne", "sw", "se"].map((c) => (
+                        <div key={c} className="absolute w-3 h-3 bg-white border border-gray-400 rounded-sm opacity-0 group-hover:opacity-100 z-10"
+                          style={{
+                            cursor: `${c}-resize`,
+                            ...(c.includes("n") ? { top: "-4px" } : { bottom: "-4px" }),
+                            ...(c.includes("w") ? { left: "-4px" } : { right: "-4px" }),
+                          }}
+                          onMouseDown={(e) => { e.stopPropagation(); editorMouseDown("label", e, c) }} />
+                      ))}
                     </div>
-                    {["nw", "ne", "sw", "se"].map((c) => (
-                      <div key={c} className="absolute w-3 h-3 bg-white border border-gray-400 rounded-sm opacity-0 group-hover:opacity-100"
-                        style={{
-                          cursor: `${c}-resize`,
-                          ...(c.includes("n") ? { top: "-5px" } : { bottom: "-5px" }),
-                          ...(c.includes("w") ? { left: "-5px" } : { right: "-5px" }),
-                        }}
-                        onMouseDown={(e) => { e.stopPropagation(); editorMouseDown("text", e, c) }}
-                      />
-                    ))}
+                    {/* Text hit area */}
+                    <div className="absolute cursor-move group"
+                      style={{ left: `${textX}%`, top: `${textY}%`, width: `${textW}%`, height: `${textH}%` }}
+                      onMouseDown={(e) => editorMouseDown("text", e)}>
+                      {["nw", "ne", "sw", "se"].map((c) => (
+                        <div key={c} className="absolute w-3 h-3 bg-white border border-gray-400 rounded-sm opacity-0 group-hover:opacity-100 z-10"
+                          style={{
+                            cursor: `${c}-resize`,
+                            ...(c.includes("n") ? { top: "-4px" } : { bottom: "-4px" }),
+                            ...(c.includes("w") ? { left: "-4px" } : { right: "-4px" }),
+                          }}
+                          onMouseDown={(e) => { e.stopPropagation(); editorMouseDown("text", e, c) }} />
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -1301,7 +1273,8 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
             </CardContent>
           </Card>
 
-          {processing ? (
+          {/* Phase 1: Processing */}
+          {processing && (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                 <RefreshCw className="h-10 w-10 animate-spin mb-4 text-primary" />
@@ -1309,7 +1282,10 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                 <p className="text-xs mt-1">Esto puede tomar unos segundos</p>
               </CardContent>
             </Card>
-          ) : result ? (
+          )}
+
+          {/* Phase 3: Result */}
+          {result && phase === 3 && (
             <>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="space-y-4">
@@ -1481,7 +1457,10 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                 </div>
               </div>
             </>
-          ) : (
+          )}
+
+          {/* Phase 1: Empty state */}
+          {!processing && !result && phase === 1 && (
             <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
               <div className="p-4 rounded-full bg-muted mb-4">
                 <Brain className="h-10 w-10 text-muted-foreground/50" />
