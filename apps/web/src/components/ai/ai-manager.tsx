@@ -695,7 +695,10 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
         const resp = await fetch(customImage)
         const blob = await resp.blob()
         const buffer = await blob.arrayBuffer()
-        const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
+        const bytes = new Uint8Array(buffer)
+        let binary = ""
+        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+        const base64 = btoa(binary)
         body.imageBase64 = base64
         body.imageMime = blob.type || "image/jpeg"
       }
