@@ -4,19 +4,24 @@ import { getDb, scheduledPosts, postNews } from "@noticias/database"
 
 export async function POST(request: Request) {
   try {
-    const { profileId, content, title, sourceUrl, userId, newsIds, imageUrl: customImageUrl } = await request.json()
+    const { profileId, content, title, sourceUrl, userId, newsIds, imageBase64, imageMime, imageUrl: customImageUrl } = await request.json()
 
     if (!profileId || !content) {
       return NextResponse.json({ error: "profileId and content are required" }, { status: 400 })
     }
 
     let imageUrn: string | null = null
+    let imageError: string | null = null
 
-    if (customImageUrl) {
+    const imgUrl = imageBase64
+      ? `data:${imageMime || "image/jpeg"};base64,${imageBase64}`
+      : customImageUrl
+
+    if (imgUrl) {
       try {
-        imageUrn = await uploadImageToLinkedIn(profileId, customImageUrl)
-      } catch {
-        // image upload is optional; continue without it
+        imageUrn = await uploadImageToLinkedIn(profileId, imgUrl)
+      } catch (e: any) {
+        imageError = e.message
       }
     }
 
@@ -51,7 +56,10 @@ export async function POST(request: Request) {
       data: {
         urn: result?.urn || result,
         imageUrn,
-        message: "Publicado exitosamente en LinkedIn",
+        imageError,
+        message: imageError
+          ? "Publicado sin imagen: " + imageError
+          : "Publicado exitosamente en LinkedIn",
       },
     })
   } catch (error: any) {

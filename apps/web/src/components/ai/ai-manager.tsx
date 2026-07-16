@@ -109,6 +109,45 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
   const [textH, setTextH] = useState(11)
   const [textFontSz, setTextFontSz] = useState(45)
 
+  // Real-time canvas preview
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [phase, setPhase] = useState<1 | 2 | 3>(1)
+  const assembledImageRef = useRef<string>("")
+
+  // Redraw preview canvas whenever controls change
+  useEffect(() => {
+    if (!assemblerImage || phase !== 2) return
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const img = new Image()
+    img.crossOrigin = "anonymous"
+    img.onload = () => {
+      canvas.width = Math.min(img.width, 1200)
+      canvas.height = Math.round(canvas.width * (img.height / img.width))
+      const ctx = canvas.getContext("2d")!
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+
+      const gradY = Math.round(canvas.height * 0.8)
+      const gradient = ctx.createLinearGradient(0, gradY, 0, canvas.height)
+      gradient.addColorStop(0, "rgba(0,0,0,0)")
+      gradient.addColorStop(1, "rgba(0,0,0,0.4)")
+      ctx.fillStyle = gradient
+      ctx.fillRect(0, gradY, canvas.width, canvas.height - gradY)
+
+      renderOverlay(ctx, labelPreset.text, labelFontSz,
+        labelX, labelY, labelW, labelH, labelPreset.style,
+        canvas.width, canvas.height)
+
+      const headline = selectedHeadlineIdx !== null ? headlines[selectedHeadlineIdx] : customHeadline
+      if (headline) {
+        renderText(ctx, headline, textFontSz,
+          textX, textY, textW, textH, canvas.width, canvas.height)
+      }
+    }
+    img.src = assemblerImage
+  }, [assemblerImage, phase, labelPresetIdx, labelPreset, labelX, labelY, labelW, labelH, labelFontSz,
+      selectedHeadlineIdx, headlines, customHeadline, textX, textY, textW, textH, textFontSz])
+
   // Drag/resize
   const dragRef = useRef<{ type: "label" | "text"; startX: number; startY: number; origX: number; origY: number; origW: number; origH: number; corner?: string } | null>(null)
 
@@ -544,24 +583,21 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     }
   }
 
-  const getAssembleConfig = () => ({
-    labelPreset,
-    labelX, labelY, labelW, labelH, labelFontSz,
-    textX, textY, textW, textH, textFontSz,
-  })
-
   const handleAssembleImage = async () => {
     if (!assemblerImage || (selectedHeadlineIdx === null && !customHeadline.trim())) return
     setAssembling(true)
     try {
+      const canvas = canvasRef.current
+      if (!canvas) throw new Error("Canvas no disponible")
+      const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.92))
+      if (!blob) throw new Error("Error al generar imagen")
+      const url = URL.createObjectURL(blob)
+      assembledImageRef.current = url
       const headline = selectedHeadlineIdx !== null ? headlines[selectedHeadlineIdx] : customHeadline.trim()
-      if (!headline) throw new Error("Selecciona o escribe un titular")
-      const config = getAssembleConfig()
-      const finalBlobUrl = await overlayTextOnImage(assemblerImage, headline, config)
       setFinalHeadlineUsed(headline)
-      setFinalImageUrl(finalBlobUrl)
-      setCustomImage(finalBlobUrl)
-      setShowAssembler(false)
+      setFinalImageUrl(url)
+      setCustomImage(url)
+      setPhase(3)
       setAlert({ type: "success", text: "Imagen armada exitosamente" })
     } catch (e: any) {
       setAlert({ type: "error", text: `Error al armar imagen: ${e.message}` })
@@ -627,18 +663,29 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     if (!selectedProfileId || !result) return
     setPosting(true)
     try {
+      const body: any = {
+        profileId: selectedProfileId,
+        content: parsedResult?.post || result,
+        title: activeNews[0]?.title || "",
+        sourceUrl: activeNews[0]?.sourceUrl || "",
+        userId: session?.user?.id || "",
+        newsIds: activeNewsIds,
+      }
+
+      // Send image as base64 instead of URL to avoid server fetch issues
+      if (customImage) {
+        const resp = await fetch(customImage)
+        const blob = await resp.blob()
+        const buffer = await blob.arrayBuffer()
+        const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
+        body.imageBase64 = base64
+        body.imageMime = blob.type || "image/jpeg"
+      }
+
       const res = await fetch("/api/linkedin/publish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            profileId: selectedProfileId,
-            content: parsedResult?.post || result,
-            title: activeNews[0]?.title || "",
-            sourceUrl: activeNews[0]?.sourceUrl || "",
-            userId: session?.user?.id || "",
-            newsIds: activeNewsIds,
-            imageUrl: customImage || undefined,
-          }),
+        body: JSON.stringify(body),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
