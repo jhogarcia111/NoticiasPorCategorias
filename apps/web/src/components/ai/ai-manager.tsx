@@ -616,16 +616,23 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     if (!file) return
     try {
       const compressed = await compressImageFile(file)
-      const url = URL.createObjectURL(compressed)
-      setCustomImage(url)
-      setAssemblerImage(url)
+      // Convert blob to base64 data URL for permanent storage
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = () => reject(new Error("Failed to read image"))
+        reader.readAsDataURL(compressed)
+      })
+      setCustomImage(dataUrl)
+      setAssemblerImage(dataUrl)
       setShowAssembler(true)
+      setPhase(2)
       ensureHeadlines()
-      // Save to gallery
+      // Save to gallery (data URL persists across refreshes)
       fetch("/api/images/save-generated", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageUrl: url, newsTitle: activeNews[0]?.title || "", newsId: activeNews[0]?.id || null }),
+        body: JSON.stringify({ imageUrl: dataUrl, newsTitle: activeNews[0]?.title || "", newsId: activeNews[0]?.id || null }),
       }).catch(() => {})
     } catch (err: any) {
       addToast("error", `Error al comprimir imagen: ${err.message}`)
@@ -1124,10 +1131,9 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                 ))}
               </div>
 
-              {/* Phase 2: image preview + invisible overlays for interaction */}
-              {assemblerImage && phase === 2 && (
-                <div data-editor className="rounded-lg overflow-hidden border bg-muted relative">
-                  <canvas ref={canvasRef} className="w-full h-auto block" />
+              {/* Always-mounted canvas (hidden outside phase 2) */}
+              <div data-editor className={cn("rounded-lg overflow-hidden border bg-muted relative", phase === 2 && assemblerImage ? "" : "hidden")}>
+                <canvas ref={canvasRef} className="w-full h-auto block" />
                   {/* Invisible drag zones on top of canvas */}
                   <div className="absolute inset-0">
                     {/* Label hit area */}
@@ -1159,10 +1165,9 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                           }}
                           onMouseDown={(e) => { e.stopPropagation(); editorMouseDown("text", e, c) }} />
                       ))}
-                    </div>
-                  </div>
                 </div>
-              )}
+              </div>
+            </div>
 
               {/* Headline + Label + Position controls */}
               <div className="grid grid-cols-2 gap-2">
