@@ -110,7 +110,8 @@ export async function uploadImageToLinkedIn(profileId: number, imageUrlOrBase64:
   const registerRaw = await registerResp.text()
   if (!registerResp.ok) {
     let msg: string
-    try { msg = JSON.parse(registerRaw).message } catch { msg = registerRaw || "Register upload failed" }
+    try { msg = `LinkedIn registerUpload failed (${registerResp.status}): ${JSON.parse(registerRaw).message}` } catch { msg = `LinkedIn registerUpload failed (${registerResp.status}): ${registerRaw || "empty response"}` }
+    console.error(msg)
     throw new Error(msg)
   }
 
@@ -132,7 +133,12 @@ export async function uploadImageToLinkedIn(profileId: number, imageUrlOrBase64:
     body: imageBody,
   })
 
-  if (!uploadResp.ok) throw new Error("Failed to upload image to LinkedIn")
+  if (!uploadResp.ok) {
+    const uploadErr = await uploadResp.text().catch(() => "unknown")
+    const msg = `LinkedIn image upload failed (${uploadResp.status}): ${uploadErr}`
+    console.error(msg)
+    throw new Error(msg)
+  }
 
   return assetUrn
 }
@@ -192,7 +198,8 @@ export async function postToLinkedIn(
 
   if (!response.ok) {
     let msg: string
-    try { msg = JSON.parse(raw).message } catch { msg = raw || "LinkedIn post failed" }
+    try { msg = `LinkedIn post failed (${response.status}): ${JSON.parse(raw).message}` } catch { msg = `LinkedIn post failed (${response.status}): ${raw || "empty response"}` }
+    console.error(msg)
     throw new Error(msg)
   }
 
