@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { useSession } from "next-auth/react"
 import { promptTemplates } from "@/data/prompt-templates"
 import {
-  Brain, RefreshCw, Sparkles, Copy, Check, ChevronDown, ChevronRight,
+  Brain, RefreshCw, Sparkles, Copy, Check, ChevronDown, ChevronRight, ChevronLeft,
   Send, Calendar, Save, Loader2, ImageUp, X, Globe, ExternalLink, Images, FolderOpen, Search,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -57,8 +57,16 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
   const [profiles, setProfiles] = useState<any[]>([])
   const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null)
   const [scheduleDateTime, setScheduleDateTime] = useState("")
-  const [alert, setAlert] = useState<{ type: "success" | "error"; text: string } | null>(null)
-  const alertRef = useRef<HTMLDivElement>(null)
+  const [toasts, setToasts] = useState<{ id: number; type: "success" | "error"; text: string }[]>([])
+  let toastId = useRef(0)
+
+  const addToast = (type: "success" | "error", text: string) => {
+    const id = ++toastId.current
+    setToasts((prev) => [...prev, { id, type, text }])
+    if (type === "success") {
+      setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3500)
+    }
+  }
   const [generatingImages, setGeneratingImages] = useState(false)
   const [imageOptions, setImageOptions] = useState<string[]>([])
   const [imagePromptsUsed, setImagePromptsUsed] = useState<string[]>([])
@@ -148,16 +156,13 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
   }, [assemblerImage, phase, labelPresetIdx, labelPreset, labelX, labelY, labelW, labelH, labelFontSz,
       selectedHeadlineIdx, headlines, customHeadline, textX, textY, textW, textH, textFontSz])
 
+  // Collapsible sidebar
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+
   // Drag/resize
   const dragRef = useRef<{ type: "label" | "text"; startX: number; startY: number; origX: number; origY: number; origW: number; origH: number; corner?: string } | null>(null)
 
-  useEffect(() => {
-    if (alert) {
-      alertRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
-      const timer = setTimeout(() => setAlert(null), 5000)
-      return () => clearTimeout(timer)
-    }
-  }, [alert])
+  // Toasts auto-dismiss via setTimeout in addToast
 
   const { data: session } = useSession()
 
@@ -259,9 +264,9 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
           }),
         })
       }
-      setAlert({ type: "success", text: "Resultado guardado exitosamente" })
+      addToast("success", "Resultado guardado exitosamente")
     } catch (e: any) {
-      setAlert({ type: "error", text: `Error: ${e.message}` })
+      addToast("error", `Error: ${e.message}`)
     } finally {
       setSaving(false)
     }
@@ -361,7 +366,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
         }).catch(() => {})
       }
     } catch (e: any) {
-      setAlert({ type: "error", text: `Error al generar imagen: ${e.message}` })
+      addToast("error", `Error al generar imagen: ${e.message}`)
     } finally {
       setGeneratingImages(false)
     }
@@ -579,7 +584,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       const data = await res.json()
       if (data.data) setHeadlines(data.data)
     } catch (e: any) {
-      setAlert({ type: "error", text: `Error: ${e.message}` })
+      addToast("error", `Error: ${e.message}`)
     }
   }
 
@@ -598,9 +603,9 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       setFinalImageUrl(url)
       setCustomImage(url)
       setPhase(3)
-      setAlert({ type: "success", text: "Imagen armada exitosamente" })
+      addToast("success", "Imagen armada exitosamente")
     } catch (e: any) {
-      setAlert({ type: "error", text: `Error al armar imagen: ${e.message}` })
+      addToast("error", `Error al armar imagen: ${e.message}`)
     } finally {
       setAssembling(false)
     }
@@ -616,8 +621,14 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       setAssemblerImage(url)
       setShowAssembler(true)
       ensureHeadlines()
+      // Save to gallery
+      fetch("/api/images/save-generated", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl: url, newsTitle: activeNews[0]?.title || "", newsId: activeNews[0]?.id || null }),
+      }).catch(() => {})
     } catch (err: any) {
-      setAlert({ type: "error", text: `Error al comprimir imagen: ${err.message}` })
+      addToast("error", `Error al comprimir imagen: ${err.message}`)
     }
   }
 
@@ -689,9 +700,9 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      setAlert({ type: "success", text: "Publicado en LinkedIn exitosamente" })
+      addToast("success", "Publicado en LinkedIn exitosamente")
     } catch (e: any) {
-      setAlert({ type: "error", text: `Error al publicar: ${e.message}` })
+      addToast("error", `Error al publicar: ${e.message}`)
     } finally {
       setPosting(false)
     }
@@ -719,9 +730,9 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      setAlert({ type: "success", text: "Publicacion programada exitosamente" })
+      addToast("success", "Publicacion programada exitosamente")
     } catch (e: any) {
-      setAlert({ type: "error", text: `Error: ${e.message}` })
+      addToast("error", `Error: ${e.message}`)
     } finally {
       setScheduling(false)
     }
@@ -826,21 +837,16 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
 
   return (
     <div className="space-y-6">
-      {alert && (
-        <div ref={alertRef} className={cn(
-          "p-4 rounded-lg text-sm border sticky top-0 z-10",
-          alert.type === "success" ? "bg-green-50 text-green-800 border-green-200" : "bg-red-50 text-red-800 border-red-200"
-        )}>
-          <div className="flex items-center gap-2">
-            {alert.type === "success" ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
-            <span className="flex-1">{alert.text}</span>
-            <button onClick={() => setAlert(null)} className="text-current opacity-60 hover:opacity-100">&times;</button>
-          </div>
-        </div>
-      )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-[380px_1fr] gap-6">
-        <div className="space-y-4">
+      <div className={cn("grid gap-6 transition-all duration-300",
+        "grid-cols-1",
+        sidebarOpen ? "xl:grid-cols-[380px_1fr]" : "xl:grid-cols-[0_1fr]"
+      )}>
+        <div className={cn("space-y-4 overflow-hidden", sidebarOpen ? "" : "hidden xl:block xl:w-0 xl:overflow-hidden")}>
+          <button onClick={() => setSidebarOpen(false)}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-1">
+            <ChevronLeft className="h-3.5 w-3.5" /> Ocultar
+          </button>
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -974,6 +980,12 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
         </div>
 
         <div className="space-y-4">
+          {!sidebarOpen && (
+            <button onClick={() => setSidebarOpen(true)}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+              <ChevronRight className="h-3.5 w-3.5" /> Mostrar panel
+            </button>
+          )}
           {/* Phase indicator */}
           <div className="flex gap-2 text-xs font-medium">
             {[
@@ -1014,7 +1026,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                   <div className="space-y-2 max-h-96 overflow-y-auto">
                     {savedAnalysesList.map((item: any) => (
                       <div key={item.id} className="p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
-                        onClick={() => { handleRecuperar(item); setShowSavedAnalyses(false); setAlert({ type: "success", text: "Análisis cargado exitosamente" }) }}>
+                        onClick={() => { handleRecuperar(item); setShowSavedAnalyses(false); addToast("success", "Análisis cargado exitosamente") }}>
                         <p className="text-sm font-medium truncate">{item.newsTitle || "Sin título"}</p>
                         <p className="text-xs text-muted-foreground truncate mt-0.5">{item.newsSummary?.slice(0, 120)}...</p>
                         <div className="flex items-center gap-2 mt-1.5">
@@ -1114,14 +1126,15 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
 
               {/* Phase 2: image preview + invisible overlays for interaction */}
               {assemblerImage && phase === 2 && (
-                <div className="rounded-lg overflow-hidden border bg-muted relative">
-                  <canvas ref={canvasRef} className="w-full h-auto" />
+                <div data-editor className="rounded-lg overflow-hidden border bg-muted relative">
+                  <canvas ref={canvasRef} className="w-full h-auto block" />
                   {/* Invisible drag zones on top of canvas */}
                   <div className="absolute inset-0">
                     {/* Label hit area */}
                     <div className="absolute cursor-move group"
                       style={{ left: `${labelX}%`, top: `${labelY}%`, width: `${labelW}%`, height: `${labelH}%` }}
                       onMouseDown={(e) => editorMouseDown("label", e)}>
+                      <div className="w-full h-full border-2 border-dashed border-white/40 rounded opacity-0 group-hover:opacity-100 transition-opacity" />
                       {["nw", "ne", "sw", "se"].map((c) => (
                         <div key={c} className="absolute w-3 h-3 bg-white border border-gray-400 rounded-sm opacity-0 group-hover:opacity-100 z-10"
                           style={{
@@ -1136,6 +1149,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                     <div className="absolute cursor-move group"
                       style={{ left: `${textX}%`, top: `${textY}%`, width: `${textW}%`, height: `${textH}%` }}
                       onMouseDown={(e) => editorMouseDown("text", e)}>
+                      <div className="w-full h-full border-2 border-dashed border-white/60 rounded opacity-0 group-hover:opacity-100 transition-opacity" />
                       {["nw", "ne", "sw", "se"].map((c) => (
                         <div key={c} className="absolute w-3 h-3 bg-white border border-gray-400 rounded-sm opacity-0 group-hover:opacity-100 z-10"
                           style={{
@@ -1561,6 +1575,24 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
           >
             <X className="h-5 w-5" />
           </button>
+        </div>
+      )}
+
+      {/* Toast container */}
+      {toasts.length > 0 && (
+        <div className="fixed top-4 right-4 z-50 space-y-2 max-w-sm">
+          {toasts.map((t) => (
+            <div key={t.id} className={cn(
+              "px-4 py-3 rounded-lg text-sm shadow-lg flex items-start gap-2",
+              t.type === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white"
+            )}>
+              {t.type === "success" ? <Check className="h-4 w-4 mt-0.5 flex-shrink-0" /> : <X className="h-4 w-4 mt-0.5 flex-shrink-0" />}
+              <span className="flex-1">{t.text}</span>
+              {t.type === "error" && (
+                <button onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))} className="opacity-70 hover:opacity-100 ml-2">&times;</button>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>
