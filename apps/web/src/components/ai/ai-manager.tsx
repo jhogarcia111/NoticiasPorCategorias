@@ -128,12 +128,17 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     if (!assemblerImage || phase !== 2) return
     const canvas = canvasRef.current
     if (!canvas) return
+
+    // Clear canvas first
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+
     const img = new Image()
     img.crossOrigin = "anonymous"
     img.onload = () => {
       canvas.width = Math.min(img.width, 1200)
       canvas.height = Math.round(canvas.width * (img.height / img.width))
-      const ctx = canvas.getContext("2d")!
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
 
       const gradY = Math.round(canvas.height * 0.8)
@@ -152,6 +157,17 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
         renderText(ctx, headline, textFontSz,
           textX, textY, textW, textH, canvas.width, canvas.height)
       }
+    }
+    img.onerror = () => {
+      // Draw error text on canvas if image fails
+      canvas.width = 600
+      canvas.height = 300
+      ctx.fillStyle = "#f3f4f6"
+      ctx.fillRect(0, 0, 600, 300)
+      ctx.fillStyle = "#666"
+      ctx.font = "14px Arial"
+      ctx.textAlign = "center"
+      ctx.fillText("Error al cargar la imagen", 300, 150)
     }
     img.src = assemblerImage
   }, [assemblerImage, phase, labelPresetIdx, labelPreset, labelX, labelY, labelW, labelH, labelFontSz,
@@ -743,6 +759,10 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
+      const imgErr = data.data?.imageError
+      if (imgErr) {
+        addToast("error", `La imagen no se publicó: ${imgErr}`)
+      }
       addToast("success", "Publicado en LinkedIn exitosamente")
     } catch (e: any) {
       addToast("error", `Error al publicar: ${e.message}`)

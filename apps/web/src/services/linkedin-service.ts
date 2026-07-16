@@ -95,7 +95,6 @@ export async function uploadImageToLinkedIn(profileId: number, imageUrl: string)
       registerUploadRequest: {
         owner: `urn:li:person:${profile.linkedinId}`,
         recipes: ["urn:li:digitalmediaRecipe:feedshare-image"],
-        serviceUploadLink: "pollinations-image",
         supportedUploadMechanism: ["SYNCHRONOUS_UPLOAD"],
       },
     }),
