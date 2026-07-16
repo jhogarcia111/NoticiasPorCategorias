@@ -173,7 +173,7 @@ export async function postToLinkedIn(
   }
 
   if (imageUrn) {
-    body.content = { media: { id: imageUrn, mediaType: "image" } }
+    body.content = { media: { id: imageUrn } }
   } else if (sourceUrl) {
     body.content = {
       article: {
