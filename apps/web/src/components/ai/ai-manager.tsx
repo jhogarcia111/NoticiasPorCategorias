@@ -85,6 +85,33 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
   const [assembling, setAssembling] = useState(false)
   const [customHeadline, setCustomHeadline] = useState("")
 
+  // Label presets
+  const LABEL_PRESETS = [
+    { text: "BREAKING NEWS", words: ["BREAKING", "NEWS"], style: "split" as const },
+    { text: "Última noticia", words: ["Última", "noticia"], style: "split" as const },
+    { text: "¿Sabías que?", words: ["¿Sabías", "que?"], style: "red" as const },
+    { text: "Atención", words: ["Atención"], style: "red" as const },
+    { text: "Infórmate", words: ["Infórmate"], style: "accent" as const },
+  ]
+  const [labelPresetIdx, setLabelPresetIdx] = useState(0)
+  const [labelStyle, setLabelStyle] = useState<"red" | "split" | "accent">("split")
+  const labelPreset = LABEL_PRESETS[labelPresetIdx]
+
+  // Overlay positions (percentages of container)
+  const [labelX, setLabelX] = useState(2)
+  const [labelY, setLabelY] = useState(84)
+  const [labelW, setLabelW] = useState(24)
+  const [labelH, setLabelH] = useState(11)
+  const [labelFontSz, setLabelFontSz] = useState(55)
+  const [textX, setTextX] = useState(27)
+  const [textY, setTextY] = useState(84)
+  const [textW, setTextW] = useState(71)
+  const [textH, setTextH] = useState(11)
+  const [textFontSz, setTextFontSz] = useState(45)
+
+  // Drag/resize
+  const dragRef = useRef<{ type: "label" | "text"; startX: number; startY: number; origX: number; origY: number; origW: number; origH: number; corner?: string } | null>(null)
+
   useEffect(() => {
     if (alert) {
       alertRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
@@ -314,7 +341,99 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     img.src = url
   }
 
-  const overlayTextOnImage = (imgSrc: string, headline: string): Promise<string> => {
+  const renderOverlay = (
+    ctx: CanvasRenderingContext2D,
+    label: string,
+    fontSz: number,
+    x: number, y: number, w: number, h: number,
+    style: "red" | "split" | "accent",
+  ) => {
+    const px = (pct: number, dim: number) => Math.round((pct / 100) * dim)
+    const lx = px(x, 1200), ly = px(y, 627), lw = px(w, 1200), lh = px(h, 627)
+    const fs = Math.max(10, Math.round(fontSz / 100 * lh))
+    const words = label.split(" ")
+    const isSplit = style === "split" && words.length >= 2
+
+    if (isSplit) {
+      const halfW = lw / words.length
+      words.forEach((word, i) => {
+        const wx = lx + i * halfW
+        if (i === 0) {
+          ctx.fillStyle = "#CC0000"
+          ctx.beginPath()
+          ctx.roundRect(wx, ly, halfW, lh, i === 0 ? 4 : 0)
+          ctx.fill()
+          ctx.fillStyle = "white"
+        } else {
+          ctx.fillStyle = "white"
+          ctx.beginPath()
+          ctx.roundRect(wx, ly, halfW, lh, i === words.length - 1 ? 4 : 0)
+          ctx.fill()
+          ctx.fillStyle = "#111"
+        }
+        ctx.font = `bold ${fs}px Arial, sans-serif`
+        ctx.textAlign = "center"
+        ctx.textBaseline = "middle"
+        ctx.fillText(word, wx + halfW / 2, ly + lh / 2)
+      })
+    } else {
+      ctx.fillStyle = style === "accent" ? "#0066CC" : "#CC0000"
+      ctx.beginPath()
+      ctx.roundRect(lx, ly, lw, lh, 4)
+      ctx.fill()
+      ctx.fillStyle = "white"
+      ctx.font = `bold ${fs}px Arial, sans-serif`
+      ctx.textAlign = "center"
+      ctx.textBaseline = "middle"
+      ctx.fillText(label, lx + lw / 2, ly + lh / 2)
+    }
+  }
+
+  const renderText = (
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    fontSz: number,
+    x: number, y: number, w: number, h: number,
+  ) => {
+    const px = (pct: number, dim: number) => Math.round((pct / 100) * dim)
+    const tx = px(x, 1200), ty = px(y, 627), tw = px(w, 1200), th = px(h, 627)
+    const fs = Math.max(10, Math.round(fontSz / 100 * th))
+
+    ctx.fillStyle = "rgba(0,0,0,0.65)"
+    ctx.beginPath()
+    ctx.roundRect(tx - 4, ty - 2, tw + 8, th + 4, 4)
+    ctx.fill()
+
+    ctx.fillStyle = "white"
+    ctx.font = `bold ${fs}px Arial, sans-serif`
+    ctx.textAlign = "left"
+    ctx.textBaseline = "top"
+
+    const words = text.split(" ")
+    let line = "", lineY = ty + 4
+    const lineH = fs * 1.3
+    for (const word of words) {
+      const test = line ? line + " " + word : word
+      if (ctx.measureText(test).width > tw - 8 && line) {
+        ctx.fillText(line, tx + 4, lineY)
+        line = word
+        lineY += lineH
+      } else {
+        line = test
+      }
+    }
+    if (line) ctx.fillText(line, tx + 4, lineY)
+  }
+
+  const overlayTextOnImage = (
+    imgSrc: string,
+    headline: string,
+    config: {
+      labelPreset: { text: string; style: "red" | "split" | "accent" }
+      labelX: number; labelY: number; labelW: number; labelH: number; labelFontSz: number
+      textX: number; textY: number; textW: number; textH: number; textFontSz: number
+    }
+  ): Promise<string> => {
     return new Promise((resolve, reject) => {
       const img = new Image()
       img.crossOrigin = "anonymous"
@@ -325,47 +444,19 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
         const ctx = canvas.getContext("2d")!
         ctx.drawImage(img, 0, 0, 1200, 627)
 
-        const bH = 82
-        const bY = 545
-        const gradient = ctx.createLinearGradient(0, bY, 0, 627)
-        gradient.addColorStop(0, "rgba(0,0,0,0.85)")
+        // Dark overlay at bottom for readability
+        const gradient = ctx.createLinearGradient(0, 500, 0, 627)
+        gradient.addColorStop(0, "rgba(0,0,0,0)")
+        gradient.addColorStop(1, "rgba(0,0,0,0.4)")
         ctx.fillStyle = gradient
-        ctx.fillRect(0, bY, 1200, bH)
+        ctx.fillRect(0, 500, 1200, 127)
 
-        const badgeW = 148
-        ctx.fillStyle = "#CC0000"
-        ctx.beginPath()
-        ctx.roundRect(12, bY + 6, badgeW, bH - 12, 4)
-        ctx.fill()
+        renderOverlay(ctx, config.labelPreset.text, config.labelFontSz,
+          config.labelX, config.labelY, config.labelW, config.labelH,
+          config.labelPreset.style)
 
-        ctx.fillStyle = "white"
-        ctx.font = "bold 28px Arial, sans-serif"
-        ctx.textAlign = "center"
-        ctx.textBaseline = "middle"
-        ctx.fillText("BREAKING NEWS", 12 + badgeW / 2, bY + bH / 2)
-
-        const textX = 175
-        const maxW = 1000
-        ctx.fillStyle = "white"
-        ctx.font = "bold 24px Arial, sans-serif"
-        ctx.textAlign = "left"
-        ctx.textBaseline = "top"
-
-        const words = headline.split(" ")
-        let line = ""
-        let lineY = bY + 12
-        const lineH = 32
-        for (const word of words) {
-          const test = line ? line + " " + word : word
-          if (ctx.measureText(test).width > maxW && line) {
-            ctx.fillText(line, textX, lineY)
-            line = word
-            lineY += lineH
-          } else {
-            line = test
-          }
-        }
-        if (line) ctx.fillText(line, textX, lineY)
+        renderText(ctx, headline, config.textFontSz,
+          config.textX, config.textY, config.textW, config.textH)
 
         canvas.toBlob((blob) => {
           if (blob) {
@@ -449,13 +540,20 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     }
   }
 
+  const getAssembleConfig = () => ({
+    labelPreset,
+    labelX, labelY, labelW, labelH, labelFontSz,
+    textX, textY, textW, textH, textFontSz,
+  })
+
   const handleAssembleImage = async () => {
     if (!assemblerImage || (selectedHeadlineIdx === null && !customHeadline.trim())) return
     setAssembling(true)
     try {
       const headline = selectedHeadlineIdx !== null ? headlines[selectedHeadlineIdx] : customHeadline.trim()
       if (!headline) throw new Error("Selecciona o escribe un titular")
-      const finalBlobUrl = await overlayTextOnImage(assemblerImage, headline)
+      const config = getAssembleConfig()
+      const finalBlobUrl = await overlayTextOnImage(assemblerImage, headline, config)
       setFinalHeadlineUsed(headline)
       setFinalImageUrl(finalBlobUrl)
       setCustomImage(finalBlobUrl)
@@ -481,6 +579,44 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     } catch (err: any) {
       setAlert({ type: "error", text: `Error al comprimir imagen: ${err.message}` })
     }
+  }
+
+  const editorMouseDown = (type: "label" | "text", e: React.MouseEvent, corner?: string) => {
+    e.preventDefault()
+    const rect = e.currentTarget.closest("[data-editor]")?.getBoundingClientRect()
+    if (!rect) return
+    const startX = e.clientX, startY = e.clientY
+    const [ox, oy, ow, oh] = type === "label"
+      ? [labelX, labelY, labelW, labelH] : [textX, textY, textW, textH]
+    dragRef.current = { type, startX, startY, origX: ox, origY: oy, origW: ow, origH: oh, corner }
+
+    const onMove = (ev: MouseEvent) => {
+      if (!dragRef.current) return
+      const dx = ((ev.clientX - startX) / rect.width) * 100
+      const dy = ((ev.clientY - startY) / rect.height) * 100
+      const { type: t, origX: ox2, origY: oy2, origW: ow2, origH: oh2, corner: c } = dragRef.current
+
+      if (c) {
+        const [nx, ny, nw, nh] = resizeFromCorner(c, ox2, oy2, ow2, oh2, dx, dy)
+        if (t === "label") { setLabelX(nx); setLabelY(ny); setLabelW(nw); setLabelH(nh) }
+        else { setTextX(nx); setTextY(ny); setTextW(nw); setTextH(nh) }
+      } else {
+        if (t === "label") { setLabelX(Math.max(0, Math.min(100 - labelW, ox2 + dx))); setLabelY(Math.max(0, Math.min(100 - labelH, oy2 + dy))) }
+        else { setTextX(Math.max(0, Math.min(100 - textW, ox2 + dx))); setTextY(Math.max(0, Math.min(100 - textH, oy2 + dy))) }
+      }
+    }
+    const onUp = () => { dragRef.current = null; window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp) }
+    window.addEventListener("mousemove", onMove)
+    window.addEventListener("mouseup", onUp)
+  }
+
+  const resizeFromCorner = (corner: string, ox: number, oy: number, ow: number, oh: number, dx: number, dy: number): [number, number, number, number] => {
+    let nx = ox, ny = oy, nw = ow, nh = oh
+    if (corner.includes("e")) nw = Math.max(5, ow + dx)
+    if (corner.includes("w")) { nw = Math.max(5, ow - dx); nx = ox + dx }
+    if (corner.includes("s")) nh = Math.max(3, oh + dy)
+    if (corner.includes("n")) { nh = Math.max(3, oh - dy); ny = oy + dy }
+    return [nx, ny, nw, nh]
   }
 
   const handlePublishNow = async () => {
@@ -913,69 +1049,164 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                 </div>
               )}
 
-              {/* Preview with CSS overlay */}
+              {/* Interactive editor preview */}
               {assemblerImage && (
-                <div
-                  className="relative rounded-lg overflow-hidden border border-gray-200 aspect-video bg-muted cursor-pointer group"
-                  onClick={() => setLightboxUrl(assemblerImage)}
-                >
-                  <img src={assemblerImage} alt="Vista previa" className="w-full h-full object-cover" />
+                <div data-editor className="relative rounded-lg overflow-hidden border select-none aspect-video bg-muted">
+                  <img src={assemblerImage} alt="Base" className="w-full h-full object-cover pointer-events-none" />
+
+                  {/* Label overlay */}
                   <div
-                    className="absolute bottom-0 left-0 right-0 h-[18%] bg-gradient-to-t from-black/75 to-transparent flex items-end p-2"
-                    onClick={(e) => e.stopPropagation()}
+                    className="absolute cursor-move group"
+                    style={{ left: `${labelX}%`, top: `${labelY}%`, width: `${labelW}%`, height: `${labelH}%` }}
+                    onMouseDown={(e) => editorMouseDown("label", e)}
                   >
-                    <span className="text-[10px] text-white font-bold bg-red-600 px-1.5 py-0.5 rounded mr-1.5">BREAKING NEWS</span>
-                    <span className="text-[11px] text-white font-bold truncate">
-                      {selectedHeadlineIdx !== null ? headlines[selectedHeadlineIdx] : customHeadline || "Selecciona un titular"}
-                    </span>
+                    {/* Split style */}
+                    {labelPreset.style === "split" && labelPreset.words.length >= 2 ? (
+                      <div className="flex w-full h-full text-[0.6vw]">
+                        <div className="flex items-center justify-center bg-red-600 text-white font-bold rounded-l" style={{ width: `${100 / labelPreset.words.length}%` }}>
+                          {labelPreset.words[0]}
+                        </div>
+                        <div className="flex items-center justify-center bg-white text-gray-900 font-bold rounded-r" style={{ width: `${100 / labelPreset.words.length}%` }}>
+                          {labelPreset.words[1]}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={`w-full h-full flex items-center justify-center font-bold rounded text-white ${labelPreset.style === "accent" ? "bg-blue-600" : "bg-red-600"} text-[0.6vw]`}>
+                        {labelPreset.text}
+                      </div>
+                    )}
+                    {/* Resize handles */}
+                    {["nw", "ne", "sw", "se"].map((c) => (
+                      <div
+                        key={c}
+                        className="absolute w-3 h-3 bg-white border border-gray-400 rounded-sm opacity-0 group-hover:opacity-100"
+                        style={{
+                          cursor: `${c}-resize`,
+                          ...(c.includes("n") ? { top: "-5px" } : { bottom: "-5px" }),
+                          ...(c.includes("w") ? { left: "-5px" } : { right: "-5px" }),
+                        }}
+                        onMouseDown={(e) => { e.stopPropagation(); editorMouseDown("label", e, c) }}
+                      />
+                    ))}
                   </div>
+
+                  {/* Text overlay */}
                   <div
-                    className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center"
-                    onClick={(e) => e.stopPropagation()}
+                    className="absolute cursor-move group"
+                    style={{ left: `${textX}%`, top: `${textY}%`, width: `${textW}%`, height: `${textH}%` }}
+                    onMouseDown={(e) => editorMouseDown("text", e)}
                   >
-                    <Search className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="w-full h-full flex items-center font-bold text-white text-[0.55vw] leading-tight overflow-hidden px-1"
+                      style={{ textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
+                      {selectedHeadlineIdx !== null ? headlines[selectedHeadlineIdx] : customHeadline || "Titular"}
+                    </div>
+                    {["nw", "ne", "sw", "se"].map((c) => (
+                      <div
+                        key={c}
+                        className="absolute w-3 h-3 bg-white border border-gray-400 rounded-sm opacity-0 group-hover:opacity-100"
+                        style={{
+                          cursor: `${c}-resize`,
+                          ...(c.includes("n") ? { top: "-5px" } : { bottom: "-5px" }),
+                          ...(c.includes("w") ? { left: "-5px" } : { right: "-5px" }),
+                        }}
+                        onMouseDown={(e) => { e.stopPropagation(); editorMouseDown("text", e, c) }}
+                      />
+                    ))}
                   </div>
                 </div>
               )}
 
-              {/* Headline selection */}
-              {headlines.length > 0 && (
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-xs text-muted-foreground">Titular para BREAKING NEWS:</p>
-                    <button
-                      onClick={handleRegenerateHeadlines}
-                      className="text-[10px] text-primary hover:underline flex items-center gap-0.5"
-                    >
-                      <RefreshCw className="h-3 w-3" />
-                      Regenerar
-                    </button>
+              {/* Headline + Label + Position controls */}
+              <div className="grid grid-cols-2 gap-2">
+                {/* Left col: headline + label */}
+                <div className="space-y-2">
+                  {headlines.length > 0 && (
+                    <div>
+                      <div className="flex items-center justify-between mb-0.5">
+                        <p className="text-[10px] text-muted-foreground">Titular:</p>
+                        <button onClick={handleRegenerateHeadlines} className="text-[9px] text-primary hover:underline flex items-center gap-0.5">
+                          <RefreshCw className="h-2.5 w-2.5" /> Regenerar
+                        </button>
+                      </div>
+                      <div className="space-y-0.5">
+                        {headlines.map((h, i) => (
+                          <button key={i} onClick={() => { setSelectedHeadlineIdx(i); setCustomHeadline("") }}
+                            className={cn("w-full text-left px-1.5 py-0.5 rounded border text-[9px] transition-all leading-tight",
+                              selectedHeadlineIdx === i && !customHeadline ? "border-primary bg-primary/5" : "border-border hover:bg-muted")}
+                          >{h}</button>
+                        ))}
+                      </div>
+                      <input value={customHeadline} onChange={(e) => { setCustomHeadline(e.target.value); setSelectedHeadlineIdx(null) }}
+                        placeholder="O escribe uno propio..." className="w-full mt-0.5 px-1.5 py-0.5 border rounded text-[9px]" />
+                    </div>
+                  )}
+
+                  {/* Label preset selector */}
+                  <div>
+                    <p className="text-[10px] text-muted-foreground mb-0.5">Etiqueta:</p>
+                    <div className="flex gap-1 flex-wrap">
+                      {LABEL_PRESETS.map((p, i) => (
+                        <button key={i} onClick={() => { setLabelPresetIdx(i); setLabelStyle(p.style) }}
+                          className={cn("px-1.5 py-0.5 rounded text-[9px] border font-medium transition-all",
+                            labelPresetIdx === i ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border hover:bg-muted"
+                          )}>
+                          {p.text}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div className="space-y-1 mb-1.5">
-                    {headlines.map((h, i) => (
-                      <button
-                        key={i}
-                        onClick={() => { setSelectedHeadlineIdx(i); setCustomHeadline("") }}
-                        className={cn(
-                          "w-full text-left p-1.5 rounded border text-[11px] transition-all",
-                          selectedHeadlineIdx === i && !customHeadline
-                            ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                            : "border-border hover:bg-muted"
-                        )}
-                      >
-                        <span className="font-semibold text-red-600 mr-1">BREAKING:</span>
-                        {h}
-                      </button>
-                    ))}
+
+                  {/* Position presets */}
+                  <div>
+                    <p className="text-[10px] text-muted-foreground mb-0.5">Posición:</p>
+                    <div className="flex gap-1">
+                      {[
+                        { l: "TL", x: 2, y: 2 }, { l: "TC", x: 35, y: 2 }, { l: "TR", x: 68, y: 2 },
+                        { l: "BL", x: 2, y: 84 }, { l: "BC", x: 20, y: 84 }, { l: "BR", x: 50, y: 84 },
+                      ].map((p) => (
+                        <button key={p.l} onClick={() => { setLabelX(p.x); setLabelY(p.y); setTextX(p.x + 22); setTextY(p.y) }}
+                          className="px-1.5 py-0.5 rounded text-[8px] border border-border hover:bg-muted font-mono">{p.l}</button>
+                      ))}
+                    </div>
                   </div>
-                  <input
-                    value={customHeadline}
-                    onChange={(e) => { setCustomHeadline(e.target.value); setSelectedHeadlineIdx(null) }}
-                    placeholder="O escribe tu propio titular..."
-                    className="w-full px-2 py-1.5 border border-input bg-white rounded text-xs focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
                 </div>
-              )}
+
+                {/* Right col: size sliders */}
+                <div className="space-y-1.5">
+                  <p className="text-[10px] text-muted-foreground">Etiqueta:</p>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[8px] text-muted-foreground w-4">W</span>
+                    <input type="range" min="8" max="50" value={labelW} onChange={(e) => setLabelW(Number(e.target.value))} className="flex-1 h-1" />
+                    <span className="text-[8px] text-muted-foreground w-6">{labelW}%</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[8px] text-muted-foreground w-4">H</span>
+                    <input type="range" min="4" max="20" value={labelH} onChange={(e) => setLabelH(Number(e.target.value))} className="flex-1 h-1" />
+                    <span className="text-[8px] text-muted-foreground w-6">{labelH}%</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[8px] text-muted-foreground w-4">Aa</span>
+                    <input type="range" min="20" max="100" value={labelFontSz} onChange={(e) => setLabelFontSz(Number(e.target.value))} className="flex-1 h-1" />
+                    <span className="text-[8px] text-muted-foreground w-6">{labelFontSz}%</span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1.5">Texto:</p>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[8px] text-muted-foreground w-4">W</span>
+                    <input type="range" min="20" max="90" value={textW} onChange={(e) => setTextW(Number(e.target.value))} className="flex-1 h-1" />
+                    <span className="text-[8px] text-muted-foreground w-6">{textW}%</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[8px] text-muted-foreground w-4">H</span>
+                    <input type="range" min="4" max="20" value={textH} onChange={(e) => setTextH(Number(e.target.value))} className="flex-1 h-1" />
+                    <span className="text-[8px] text-muted-foreground w-6">{textH}%</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[8px] text-muted-foreground w-4">Aa</span>
+                    <input type="range" min="20" max="100" value={textFontSz} onChange={(e) => setTextFontSz(Number(e.target.value))} className="flex-1 h-1" />
+                    <span className="text-[8px] text-muted-foreground w-6">{textFontSz}%</span>
+                  </div>
+                </div>
+              </div>
 
               {/* Final assembled image preview with zoom */}
               {finalImageUrl && (
