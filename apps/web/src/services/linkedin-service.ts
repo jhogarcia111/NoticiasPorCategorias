@@ -80,10 +80,11 @@ export async function uploadImageToLinkedIn(profileId: number, imageUrlOrBase64:
     .limit(1)
   if (!profile) throw new Error("LinkedIn profile not found")
 
-  let imageBody: ArrayBuffer | Uint8Array
+  let imageBody: ArrayBuffer
   let mimeType = imageMime || "image/jpeg"
   if (isBase64) {
-    imageBody = Buffer.from(imageUrlOrBase64, "base64")
+    const buf = Buffer.from(imageUrlOrBase64, "base64")
+    imageBody = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
   } else {
     const imageResp = await fetch(imageUrlOrBase64)
     if (!imageResp.ok) throw new Error("Failed to fetch image")
