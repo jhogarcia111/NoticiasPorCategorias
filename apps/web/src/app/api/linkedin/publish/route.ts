@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     // Upload image FIRST using base64 directly (no data URL fetch)
     let imageUrn: string | null = null
     if (imageBase64) {
-      imageUrn = await uploadImageToLinkedIn(profileId, imageBase64, true)
+      imageUrn = await uploadImageToLinkedIn(profileId, imageBase64, true, imageMime)
     }
 
     // Only publish after successful image upload (or no image requested)
@@ -52,6 +52,7 @@ export async function POST(request: Request) {
       },
     })
   } catch (error: any) {
+    console.error("LinkedIn publish error:", error)
     return NextResponse.json({ error: error.message || "Error interno" }, { status: 500 })
   }
 }

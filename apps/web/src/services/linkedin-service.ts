@@ -71,7 +71,7 @@ export async function saveLinkedInProfile(profileData: any, tokens: any, userId:
   return profile
 }
 
-export async function uploadImageToLinkedIn(profileId: number, imageUrlOrBase64: string, isBase64?: boolean): Promise<string | null> {
+export async function uploadImageToLinkedIn(profileId: number, imageUrlOrBase64: string, isBase64?: boolean, imageMime?: string): Promise<string | null> {
   const db = getDb()
   const [profile] = await db
     .select()
@@ -80,13 +80,14 @@ export async function uploadImageToLinkedIn(profileId: number, imageUrlOrBase64:
     .limit(1)
   if (!profile) throw new Error("LinkedIn profile not found")
 
-  let imageBuffer: ArrayBuffer
+  let imageBody: ArrayBuffer | Uint8Array
+  let mimeType = imageMime || "image/jpeg"
   if (isBase64) {
-    imageBuffer = Buffer.from(imageUrlOrBase64, "base64").buffer as ArrayBuffer
+    imageBody = Buffer.from(imageUrlOrBase64, "base64")
   } else {
     const imageResp = await fetch(imageUrlOrBase64)
     if (!imageResp.ok) throw new Error("Failed to fetch image")
-    imageBuffer = await imageResp.arrayBuffer()
+    imageBody = await imageResp.arrayBuffer()
   }
 
   const registerResp = await fetch("https://api.linkedin.com/v2/assets?action=registerUpload", {
@@ -126,8 +127,8 @@ export async function uploadImageToLinkedIn(profileId: number, imageUrlOrBase64:
 
   const uploadResp = await fetch(uploadUrl, {
     method: "PUT",
-    headers: { "Content-Type": "image/jpeg" },
-    body: imageBuffer,
+    headers: { "Content-Type": mimeType },
+    body: imageBody,
   })
 
   if (!uploadResp.ok) throw new Error("Failed to upload image to LinkedIn")

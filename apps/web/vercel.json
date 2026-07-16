@@ -3,5 +3,10 @@
   "buildCommand": "npx turbo build --filter=web",
   "installCommand": "npm install --legacy-peer-deps",
   "framework": "nextjs",
-  "outputDirectory": ".next"
+  "outputDirectory": ".next",
+  "functions": {
+    "api/linkedin/publish": {
+      "maxDuration": 30
+    }
+  }
 }
