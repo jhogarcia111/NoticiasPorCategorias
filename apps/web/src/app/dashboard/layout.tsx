@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import {
   LayoutDashboard, Newspaper, Brain, Calendar, Settings,
   Menu, X, LogOut, Linkedin, Shield, CreditCard,
+  ChevronLeft, ChevronRight,
 } from "lucide-react"
 
 function getNavItems(role?: string): { id: Tab; label: string; icon: any }[] {
@@ -26,7 +27,7 @@ function getNavItems(role?: string): { id: Tab; label: string; icon: any }[] {
 }
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
-  const { activeTab, setActiveTab } = useDashboard()
+  const { activeTab, setActiveTab, aiSidebarOpen, setAiSidebarOpen } = useDashboard()
   const { data: session } = useSession()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const navItems = getNavItems(session?.user?.role)
@@ -96,10 +97,17 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="lg:pl-60 min-h-screen">
-        <header className="sticky top-0 z-30 h-16 bg-white/80 backdrop-blur-sm border-b flex items-center justify-between px-4 lg:px-8">
-          <h1 className="text-lg font-semibold ml-10 lg:ml-0">
-            {navItems.find(n => n.id === activeTab)?.label || "Dashboard"}
-          </h1>
+          <header className="sticky top-0 z-30 h-16 bg-white/80 backdrop-blur-sm border-b flex items-center justify-between px-4 lg:px-8">
+            <h1 className="text-lg font-semibold ml-10 lg:ml-0 flex items-center gap-3">
+              {activeTab === "ai" && (
+                <button onClick={() => setAiSidebarOpen(!aiSidebarOpen)}
+                  className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                  title={aiSidebarOpen ? "Ocultar panel" : "Mostrar panel"}>
+                  {aiSidebarOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                </button>
+              )}
+              {navItems.find(n => n.id === activeTab)?.label || "Dashboard"}
+            </h1>
           <div className="flex items-center gap-3">
             <button
               onClick={() => signOut()}

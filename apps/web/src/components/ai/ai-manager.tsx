@@ -8,10 +8,11 @@ import { Badge } from "@/components/ui/badge"
 import { useSession } from "next-auth/react"
 import { promptTemplates } from "@/data/prompt-templates"
 import {
-  Brain, RefreshCw, Sparkles, Copy, Check, ChevronDown, ChevronRight, ChevronLeft,
+  Brain, RefreshCw, Sparkles, Copy, Check, ChevronDown, ChevronRight,
   Send, Calendar, Save, Loader2, ImageUp, X, Globe, ExternalLink, Images, FolderOpen, Search,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useDashboard } from "@/app/dashboard/dashboard-context"
 
 function parseAIResponse(response: string): { analysis: string; post: string; raw: string } {
   const analysisMatch = response.match(/---ANALISIS---([\s\S]*?)---POST---/)
@@ -156,8 +157,8 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
   }, [assemblerImage, phase, labelPresetIdx, labelPreset, labelX, labelY, labelW, labelH, labelFontSz,
       selectedHeadlineIdx, headlines, customHeadline, textX, textY, textW, textH, textFontSz])
 
-  // Collapsible sidebar
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  // Collapsible sidebar via context
+  const { aiSidebarOpen: sidebarOpen, setAiSidebarOpen: setSidebarOpen } = useDashboard()
 
   // Drag/resize
   const dragRef = useRef<{ type: "label" | "text"; startX: number; startY: number; origX: number; origY: number; origW: number; origH: number; corner?: string } | null>(null)
@@ -853,10 +854,6 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
         sidebarOpen ? "xl:grid-cols-[380px_1fr]" : "xl:grid-cols-[0_1fr]"
       )}>
         <div className={cn("space-y-4 overflow-hidden", sidebarOpen ? "" : "hidden xl:block xl:w-0 xl:overflow-hidden")}>
-          <button onClick={() => setSidebarOpen(false)}
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-1">
-            <ChevronLeft className="h-3.5 w-3.5" /> Ocultar
-          </button>
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -990,12 +987,6 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
         </div>
 
         <div className="space-y-4">
-          {!sidebarOpen && (
-            <button onClick={() => setSidebarOpen(true)}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-              <ChevronRight className="h-3.5 w-3.5" /> Mostrar panel
-            </button>
-          )}
           {/* Phase indicator */}
           <div className="flex gap-2 text-xs font-medium">
             {[
@@ -1520,7 +1511,8 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                   {galleryImages.map((img: any) => (
                     <div key={img.id} className="group relative aspect-video rounded-lg overflow-hidden border">
-                      <img src={img.imageUrl} alt="" className="w-full h-full object-cover" />
+                      <img src={img.imageUrl} alt="" className="w-full h-full object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }} />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center gap-2">
                         <button
                           onClick={() => {
@@ -1538,6 +1530,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                             if (!hasHeadlines) ensureHeadlines()
                             setCustomImage(img.imageUrl)
                             setFinalImageUrl(null)
+                            setPhase(2)
                             setShowGallery(false)
                           }}
                           className="bg-white text-black text-xs px-3 py-1.5 rounded-lg font-medium opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
@@ -1545,10 +1538,31 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                           Usar
                         </button>
                         <button
-                          onClick={() => setLightboxUrl(img.imageUrl)}
+                          onClick={() => { setLightboxUrl(img.imageUrl) }}
                           className="bg-white/80 text-black p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"
+                          title="Ver"
                         >
                           <Search className="h-3.5 w-3.5" />
+                        </button>
+                        {img.promptUsed && (
+                          <button
+                            onClick={() => { navigator.clipboard.writeText(img.promptUsed); addToast("success", "Prompt copiado") }}
+                            className="bg-white/80 text-black p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"
+                            title="Copiar prompt"
+                          >
+                            <Copy className="h-3 w-3" />
+                          </button>
+                        )}
+                        <button
+                          onClick={async () => {
+                            await fetch(`/api/images/delete?id=${img.id}`, { method: "DELETE" })
+                            setGalleryImages((prev: any[]) => prev.filter((x: any) => x.id !== img.id))
+                            addToast("success", "Imagen eliminada")
+                          }}
+                          className="bg-red-500 text-white p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                          title="Eliminar"
+                        >
+                          <X className="h-3 w-3" />
                         </button>
                       </div>
                       {img.newsTitle && (

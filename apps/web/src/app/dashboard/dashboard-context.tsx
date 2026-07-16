@@ -14,6 +14,8 @@ interface DashboardState {
   setSelectedNewsIds: (ids: number[] | ((prev: number[]) => number[])) => void
   cachedNews: any[]
   setCachedNews: Dispatch<SetStateAction<any[]>>
+  aiSidebarOpen: boolean
+  setAiSidebarOpen: (v: boolean | ((prev: boolean) => boolean)) => void
 }
 
 const DashboardContext = createContext<DashboardState | undefined>(undefined)
@@ -23,6 +25,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const [configSubTab, setConfigSubTab] = useState<ConfigSubTab>("linkedin")
   const [selectedNewsIds, setSelectedNewsIds] = useState<number[]>([])
   const [cachedNews, setCachedNews] = useState<any[]>([])
+  const [aiSidebarOpen, setAiSidebarOpen] = useState(true)
 
   return (
     <DashboardContext.Provider
@@ -31,6 +34,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
         configSubTab, setConfigSubTab,
         selectedNewsIds, setSelectedNewsIds,
         cachedNews, setCachedNews,
+        aiSidebarOpen, setAiSidebarOpen,
       }}
     >
       {children}
