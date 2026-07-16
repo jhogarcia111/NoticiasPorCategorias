@@ -239,6 +239,27 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     if (saved.newsId && !activeNewsIds.includes(saved.newsId)) {
       setActiveNewsIds((prev: number[]) => [...prev, saved.newsId])
     }
+
+    // restore assembled image from gallery
+    if (saved.newsId) {
+      fetch(`/api/images/gallery?newsId=${saved.newsId}&limit=1`)
+        .then((r) => r.json())
+        .then((d) => {
+          const img = d.data?.[0]
+          if (img?.imageUrl) {
+            setCustomImage(img.imageUrl)
+            setAssemblerImage(img.imageUrl)
+            setFinalImageUrl(img.imageUrl)
+            if (img.headlinesJson) {
+              try {
+                const hls = JSON.parse(img.headlinesJson)
+                if (Array.isArray(hls)) setHeadlines(hls)
+              } catch {}
+            }
+          }
+        }).catch(() => {})
+    }
+
     setTimeout(() => setRecuperando(false), 300)
   }
 
@@ -264,6 +285,19 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
             headlines: headlines.length > 0 ? JSON.stringify(headlines) : null,
           }),
         })
+        // Save assembled image to gallery for persistence
+        if (finalImageUrl && finalImageUrl.startsWith("data:")) {
+          fetch("/api/images/save-generated", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              imageUrl: finalImageUrl,
+              newsTitle: activeNews.find((n: any) => n.id === newsId)?.title || "",
+              newsId,
+              headlines: headlines.length > 0 ? headlines : undefined,
+            }),
+          }).catch(() => {})
+        }
       }
       addToast("success", "Resultado guardado exitosamente")
     } catch (e: any) {
@@ -691,17 +725,11 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
         newsIds: activeNewsIds,
       }
 
-      // Send image as base64 instead of URL to avoid server fetch issues
-      if (customImage) {
-        const resp = await fetch(customImage)
-        const blob = await resp.blob()
-        const buffer = await blob.arrayBuffer()
-        const bytes = new Uint8Array(buffer)
-        let binary = ""
-        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
-        const base64 = btoa(binary)
-        body.imageBase64 = base64
-        body.imageMime = blob.type || "image/jpeg"
+      // Send image as base64 extracted from data URL
+      if (customImage?.startsWith("data:")) {
+        const parts = customImage.split(",")
+        body.imageBase64 = parts[1]
+        body.imageMime = customImage.split(";")[0].split(":")[1] || "image/jpeg"
       }
 
       const res = await fetch("/api/linkedin/publish", {
