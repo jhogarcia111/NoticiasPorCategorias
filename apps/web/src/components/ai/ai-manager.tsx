@@ -149,6 +149,21 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     setRecuperando(true)
     setResult(saved.fullResponse || saved.linkedinPost || "")
     setParsedResult(parseAIResponse(saved.fullResponse || saved.linkedinPost || ""))
+
+    // auto-select template
+    if (saved.templateName) {
+      const match = promptTemplates.find((t) => t.name === saved.templateName)
+      if (match) setSelectedTemplateId(match.id)
+    }
+
+    // restore headlines
+    if (saved.headlines) {
+      try {
+        const parsed = typeof saved.headlines === "string" ? JSON.parse(saved.headlines) : saved.headlines
+        if (Array.isArray(parsed)) setHeadlines(parsed)
+      } catch {}
+    }
+
     if (saved.newsId && !activeNewsIds.includes(saved.newsId)) {
       setActiveNewsIds((prev: number[]) => [...prev, saved.newsId])
     }
@@ -174,6 +189,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
             language: "es",
             linkedinPost: parsedResult?.post || result,
             fullResponse: result,
+            headlines: headlines.length > 0 ? JSON.stringify(headlines) : null,
           }),
         })
       }
@@ -789,8 +805,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                         key={item.id}
                         className="p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
                         onClick={() => {
-                          setResult(item.fullResponse || item.linkedinPost || "")
-                          setParsedResult(parseAIResponse(item.fullResponse || item.linkedinPost || ""))
+                          handleRecuperar(item)
                           setShowSavedAnalyses(false)
                           setAlert({ type: "success", text: "Análisis cargado exitosamente" })
                         }}

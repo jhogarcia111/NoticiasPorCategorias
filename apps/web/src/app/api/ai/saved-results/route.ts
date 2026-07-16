@@ -12,6 +12,7 @@ export async function GET() {
         templateName: newsAiResults.templateName,
         linkedinPost: newsAiResults.linkedinPost,
         fullResponse: newsAiResults.fullResponse,
+        headlines: newsAiResults.headlines,
         createdAt: newsAiResults.createdAt,
         newsTitle: news.title,
         newsSummary: news.summary,

@@ -5,7 +5,7 @@ import { newsAiResults } from "@noticias/database"
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { newsId, templateId, templateName, language, summary, linkedinPost, hashtags, imagePrompt, fullResponse } = body
+    const { newsId, templateId, templateName, language, summary, linkedinPost, hashtags, imagePrompt, fullResponse, headlines } = body
 
     if (!newsId) {
       return NextResponse.json({ error: "newsId is required" }, { status: 400 })
@@ -24,6 +24,7 @@ export async function POST(request: Request) {
         hashtags: hashtags || null,
         imagePrompt: imagePrompt || null,
         fullResponse: fullResponse || null,
+        headlines: headlines || null,
       })
       .returning()
 

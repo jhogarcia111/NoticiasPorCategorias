@@ -12,5 +12,6 @@ export const newsAiResults = pgTable("news_ai_results", {
   hashtags: text("hashtags").array(),
   imagePrompt: text("image_prompt"),
   fullResponse: text("full_response"),
+  headlines: text("headlines"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 })
