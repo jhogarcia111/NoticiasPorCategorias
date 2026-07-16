@@ -347,9 +347,10 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     fontSz: number,
     x: number, y: number, w: number, h: number,
     style: "red" | "split" | "accent",
+    cw: number, ch: number,
   ) => {
     const px = (pct: number, dim: number) => Math.round((pct / 100) * dim)
-    const lx = px(x, 1200), ly = px(y, 627), lw = px(w, 1200), lh = px(h, 627)
+    const lx = px(x, cw), ly = px(y, ch), lw = px(w, cw), lh = px(h, ch)
     const fs = Math.max(10, Math.round(fontSz / 100 * lh))
     const words = label.split(" ")
     const isSplit = style === "split" && words.length >= 2
@@ -394,9 +395,10 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     text: string,
     fontSz: number,
     x: number, y: number, w: number, h: number,
+    cw: number, ch: number,
   ) => {
     const px = (pct: number, dim: number) => Math.round((pct / 100) * dim)
-    const tx = px(x, 1200), ty = px(y, 627), tw = px(w, 1200), th = px(h, 627)
+    const tx = px(x, cw), ty = px(y, ch), tw = px(w, cw), th = px(h, ch)
     const fs = Math.max(10, Math.round(fontSz / 100 * th))
 
     ctx.fillStyle = "rgba(0,0,0,0.65)"
@@ -438,25 +440,27 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       const img = new Image()
       img.crossOrigin = "anonymous"
       img.onload = () => {
+        const cw = img.width, ch = img.height
         const canvas = document.createElement("canvas")
-        canvas.width = 1200
-        canvas.height = 627
+        canvas.width = cw
+        canvas.height = ch
         const ctx = canvas.getContext("2d")!
-        ctx.drawImage(img, 0, 0, 1200, 627)
+        ctx.drawImage(img, 0, 0)
 
         // Dark overlay at bottom for readability
-        const gradient = ctx.createLinearGradient(0, 500, 0, 627)
+        const gradY = Math.round(ch * 0.8)
+        const gradient = ctx.createLinearGradient(0, gradY, 0, ch)
         gradient.addColorStop(0, "rgba(0,0,0,0)")
         gradient.addColorStop(1, "rgba(0,0,0,0.4)")
         ctx.fillStyle = gradient
-        ctx.fillRect(0, 500, 1200, 127)
+        ctx.fillRect(0, gradY, cw, ch - gradY)
 
         renderOverlay(ctx, config.labelPreset.text, config.labelFontSz,
           config.labelX, config.labelY, config.labelW, config.labelH,
-          config.labelPreset.style)
+          config.labelPreset.style, cw, ch)
 
         renderText(ctx, headline, config.textFontSz,
-          config.textX, config.textY, config.textW, config.textH)
+          config.textX, config.textY, config.textW, config.textH, cw, ch)
 
         canvas.toBlob((blob) => {
           if (blob) {
@@ -1051,35 +1055,44 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
 
               {/* Interactive editor preview */}
               {assemblerImage && (
-                <div data-editor className="relative rounded-lg overflow-hidden border select-none aspect-video bg-muted">
-                  <img src={assemblerImage} alt="Base" className="w-full h-full object-cover pointer-events-none" />
+                <div data-editor className="relative rounded-lg overflow-hidden border select-none bg-muted">
+                  <img
+                    src={assemblerImage}
+                    alt="Base"
+                    className="w-full max-h-[420px] object-contain pointer-events-none"
+                    onLoad={(e) => {
+                      const el = e.currentTarget
+                      const p = el.closest("[data-editor]") as HTMLElement
+                      if (p) p.style.aspectRatio = `${el.naturalWidth} / ${el.naturalHeight}`
+                    }}
+                  />
 
                   {/* Label overlay */}
                   <div
-                    className="absolute cursor-move group"
-                    style={{ left: `${labelX}%`, top: `${labelY}%`, width: `${labelW}%`, height: `${labelH}%` }}
+                    className="absolute cursor-move group flex items-center justify-center"
+                    style={{
+                      left: `${labelX}%`, top: `${labelY}%`,
+                      width: `${labelW}%`, height: `${labelH}%`,
+                      fontSize: `clamp(8px, ${labelFontSz * 0.12}px, 60px)`,
+                    }}
                     onMouseDown={(e) => editorMouseDown("label", e)}
                   >
-                    {/* Split style */}
                     {labelPreset.style === "split" && labelPreset.words.length >= 2 ? (
-                      <div className="flex w-full h-full text-[0.6vw]">
-                        <div className="flex items-center justify-center bg-red-600 text-white font-bold rounded-l" style={{ width: `${100 / labelPreset.words.length}%` }}>
+                      <div className="flex w-full h-full font-bold" style={{ fontSize: "inherit" }}>
+                        <div className="flex items-center justify-center bg-red-600 text-white rounded-l" style={{ width: `${100 / labelPreset.words.length}%` }}>
                           {labelPreset.words[0]}
                         </div>
-                        <div className="flex items-center justify-center bg-white text-gray-900 font-bold rounded-r" style={{ width: `${100 / labelPreset.words.length}%` }}>
+                        <div className="flex items-center justify-center bg-white text-gray-900 rounded-r" style={{ width: `${100 / labelPreset.words.length}%` }}>
                           {labelPreset.words[1]}
                         </div>
                       </div>
                     ) : (
-                      <div className={`w-full h-full flex items-center justify-center font-bold rounded text-white ${labelPreset.style === "accent" ? "bg-blue-600" : "bg-red-600"} text-[0.6vw]`}>
+                      <div className={`w-full h-full flex items-center justify-center font-bold rounded text-white ${labelPreset.style === "accent" ? "bg-blue-600" : "bg-red-600"}`} style={{ fontSize: "inherit" }}>
                         {labelPreset.text}
                       </div>
                     )}
-                    {/* Resize handles */}
                     {["nw", "ne", "sw", "se"].map((c) => (
-                      <div
-                        key={c}
-                        className="absolute w-3 h-3 bg-white border border-gray-400 rounded-sm opacity-0 group-hover:opacity-100"
+                      <div key={c} className="absolute w-3 h-3 bg-white border border-gray-400 rounded-sm opacity-0 group-hover:opacity-100"
                         style={{
                           cursor: `${c}-resize`,
                           ...(c.includes("n") ? { top: "-5px" } : { bottom: "-5px" }),
@@ -1093,17 +1106,19 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                   {/* Text overlay */}
                   <div
                     className="absolute cursor-move group"
-                    style={{ left: `${textX}%`, top: `${textY}%`, width: `${textW}%`, height: `${textH}%` }}
+                    style={{
+                      left: `${textX}%`, top: `${textY}%`,
+                      width: `${textW}%`, height: `${textH}%`,
+                      fontSize: `clamp(8px, ${textFontSz * 0.1}px, 50px)`,
+                    }}
                     onMouseDown={(e) => editorMouseDown("text", e)}
                   >
-                    <div className="w-full h-full flex items-center font-bold text-white text-[0.55vw] leading-tight overflow-hidden px-1"
-                      style={{ textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
+                    <div className="w-full h-full flex items-center font-bold text-white leading-tight overflow-hidden px-1"
+                      style={{ fontSize: "inherit", textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
                       {selectedHeadlineIdx !== null ? headlines[selectedHeadlineIdx] : customHeadline || "Titular"}
                     </div>
                     {["nw", "ne", "sw", "se"].map((c) => (
-                      <div
-                        key={c}
-                        className="absolute w-3 h-3 bg-white border border-gray-400 rounded-sm opacity-0 group-hover:opacity-100"
+                      <div key={c} className="absolute w-3 h-3 bg-white border border-gray-400 rounded-sm opacity-0 group-hover:opacity-100"
                         style={{
                           cursor: `${c}-resize`,
                           ...(c.includes("n") ? { top: "-5px" } : { bottom: "-5px" }),
