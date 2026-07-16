@@ -173,7 +173,7 @@ export async function postToLinkedIn(
   }
 
   if (imageUrn) {
-    body.content = { media: { id: imageUrn } }
+    body.content = { media: { id: imageUrn, mediaType: "image" } }
   } else if (sourceUrl) {
     body.content = {
       article: {
@@ -184,6 +184,8 @@ export async function postToLinkedIn(
     }
   }
 
+  const bodyStr = JSON.stringify(body)
+  console.error("LinkedIn post body:", bodyStr.substring(0, 2000))
   const response = await fetch("https://api.linkedin.com/v2/posts", {
     method: "POST",
     headers: {
@@ -191,7 +193,7 @@ export async function postToLinkedIn(
       "Content-Type": "application/json",
       "X-Restli-Protocol-Version": "2.0.0",
     },
-    body: JSON.stringify(body),
+    body: bodyStr,
   })
 
   const raw = await response.text()

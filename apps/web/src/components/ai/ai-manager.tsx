@@ -732,6 +732,42 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     return [nx, ny, nw, nh]
   }
 
+  const compressForLinkedIn = (dataUrl: string): Promise<{ base64: string; mime: string }> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => {
+        const MAX_DIM = 1200
+        let { width, height } = img
+        if (width > MAX_DIM || height > MAX_DIM) {
+          if (width > height) {
+            height = Math.round((height / width) * MAX_DIM)
+            width = MAX_DIM
+          } else {
+            width = Math.round((width / height) * MAX_DIM)
+            height = MAX_DIM
+          }
+        }
+        const canvas = document.createElement("canvas")
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext("2d")!
+        ctx.drawImage(img, 0, 0, width, height)
+        canvas.toBlob((blob) => {
+          if (!blob) return reject(new Error("Compression failed"))
+          const reader = new FileReader()
+          reader.onload = () => {
+            const result = reader.result as string
+            resolve({ base64: result.split(",")[1], mime: "image/jpeg" })
+          }
+          reader.onerror = () => reject(new Error("Failed to read compressed image"))
+          reader.readAsDataURL(blob)
+        }, "image/jpeg", 0.7)
+      }
+      img.onerror = () => reject(new Error("Failed to load image"))
+      img.src = dataUrl
+    })
+  }
+
   const handlePublishNow = async () => {
     if (!selectedProfileId || !result) return
     setPosting(true)
@@ -745,11 +781,11 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
         newsIds: activeNewsIds,
       }
 
-      // Send image as base64 extracted from data URL
+      // Compress image and send as JPEG base64
       if (customImage?.startsWith("data:")) {
-        const parts = customImage.split(",")
-        body.imageBase64 = parts[1]
-        body.imageMime = customImage.split(";")[0].split(":")[1] || "image/jpeg"
+        const compressed = await compressForLinkedIn(customImage)
+        body.imageBase64 = compressed.base64
+        body.imageMime = compressed.mime
       }
 
       const res = await fetch("/api/linkedin/publish", {
