@@ -58,7 +58,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
           {!navCollapsed && (
             <>
-              <span className="font-bold text-base text-foreground">NotiPress</span>
+              <span className="font-bold text-base text-foreground">Noticias</span>
               <button onClick={() => setSidebarOpen(false)} className="ml-auto lg:hidden p-1 rounded-md hover:bg-muted">
                 <X className="h-4 w-4" />
               </button>

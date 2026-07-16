@@ -1,18 +1,17 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { getDb, generatedImages } from "@noticias/database"
 import { eq, desc, and } from "drizzle-orm"
 import { auth } from "@/lib/auth"
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
 
-    const { searchParams } = new URL(request.url)
-    const newsId = searchParams.get("newsId")
-    const limit = Math.min(Number(searchParams.get("limit")) || 50, 100)
+    const newsId = request.nextUrl.searchParams.get("newsId")
+    const limit = Math.min(Number(request.nextUrl.searchParams.get("limit")) || 50, 100)
 
     const db = getDb()
     const conditions = [eq(generatedImages.userId, session.user.id)]

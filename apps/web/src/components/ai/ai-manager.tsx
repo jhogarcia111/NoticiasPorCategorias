@@ -180,9 +180,13 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     if (showGallery) {
       setLoadingGallery(true)
       fetch("/api/images/gallery")
-        .then((r) => r.json())
-        .then((d) => { setGalleryImages(d.data || []); setLoadingGallery(false) })
-        .catch(() => setLoadingGallery(false))
+        .then(async (r) => {
+          const d = await r.json()
+          if (!r.ok) throw new Error(d.error || "Error al cargar galería")
+          setGalleryImages(d.data || [])
+        })
+        .catch((e) => addToast("error", e.message))
+        .finally(() => setLoadingGallery(false))
     }
   }, [showGallery])
 

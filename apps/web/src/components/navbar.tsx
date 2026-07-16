@@ -42,7 +42,7 @@ export function Navbar() {
       <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 md:px-8">
         <Link href={session ? "/dashboard" : "/"} className="flex shrink-0 items-center gap-2">
           <Logo size={36} />
-          <span className="text-lg font-bold text-[#0A66C2] hidden sm:inline">NewsLinked</span>
+          <span className="text-lg font-bold text-[#0A66C2] hidden sm:inline">Noticias</span>
         </Link>
 
         {session ? (
