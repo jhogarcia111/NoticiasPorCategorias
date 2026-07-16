@@ -597,12 +597,12 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       if (!canvas) throw new Error("Canvas no disponible")
       const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.92))
       if (!blob) throw new Error("Error al generar imagen")
-      const url = URL.createObjectURL(blob)
-      assembledImageRef.current = url
+      const dataUrl = await new Promise<string>((r) => { const f = new FileReader(); f.onload = () => r(f.result as string); f.readAsDataURL(blob) })
+      assembledImageRef.current = dataUrl
       const headline = selectedHeadlineIdx !== null ? headlines[selectedHeadlineIdx] : customHeadline.trim()
       setFinalHeadlineUsed(headline)
-      setFinalImageUrl(url)
-      setCustomImage(url)
+      setFinalImageUrl(dataUrl)
+      setCustomImage(dataUrl)
       setPhase(3)
       addToast("success", "Imagen armada exitosamente")
     } catch (e: any) {
