@@ -71,7 +71,7 @@ export async function saveLinkedInProfile(profileData: any, tokens: any, userId:
   return profile
 }
 
-export async function uploadImageToLinkedIn(profileId: number, imageUrl: string): Promise<string | null> {
+export async function uploadImageToLinkedIn(profileId: number, imageUrlOrBase64: string, isBase64?: boolean): Promise<string | null> {
   const db = getDb()
   const [profile] = await db
     .select()
@@ -80,9 +80,14 @@ export async function uploadImageToLinkedIn(profileId: number, imageUrl: string)
     .limit(1)
   if (!profile) throw new Error("LinkedIn profile not found")
 
-  const imageResp = await fetch(imageUrl)
-  if (!imageResp.ok) throw new Error("Failed to fetch image from Pollinations")
-  const imageBuffer = await imageResp.arrayBuffer()
+  let imageBuffer: ArrayBuffer
+  if (isBase64) {
+    imageBuffer = Buffer.from(imageUrlOrBase64, "base64").buffer as ArrayBuffer
+  } else {
+    const imageResp = await fetch(imageUrlOrBase64)
+    if (!imageResp.ok) throw new Error("Failed to fetch image")
+    imageBuffer = await imageResp.arrayBuffer()
+  }
 
   const registerResp = await fetch("https://api.linkedin.com/v2/assets?action=registerUpload", {
     method: "POST",

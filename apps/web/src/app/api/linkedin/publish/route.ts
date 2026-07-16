@@ -4,23 +4,19 @@ import { getDb, scheduledPosts, postNews } from "@noticias/database"
 
 export async function POST(request: Request) {
   try {
-    const { profileId, content, title, sourceUrl, userId, newsIds, imageBase64, imageMime, imageUrl: customImageUrl } = await request.json()
+    const { profileId, content, title, sourceUrl, userId, newsIds, imageBase64, imageMime } = await request.json()
 
     if (!profileId || !content) {
       return NextResponse.json({ error: "profileId and content are required" }, { status: 400 })
     }
 
-    const imgUrl = imageBase64
-      ? `data:${imageMime || "image/jpeg"};base64,${imageBase64}`
-      : customImageUrl
-
-    // Upload image FIRST - fail early if it doesn't work
+    // Upload image FIRST using base64 directly (no data URL fetch)
     let imageUrn: string | null = null
-    if (imgUrl) {
-      imageUrn = await uploadImageToLinkedIn(profileId, imgUrl)
+    if (imageBase64) {
+      imageUrn = await uploadImageToLinkedIn(profileId, imageBase64, true)
     }
 
-    // Only publish if image uploaded (or no image requested)
+    // Only publish after successful image upload (or no image requested)
     const result = await postToLinkedIn(profileId, content, title, sourceUrl, imageUrn ?? undefined)
 
     if (userId) {
@@ -56,6 +52,6 @@ export async function POST(request: Request) {
       },
     })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: error.message || "Error interno" }, { status: 500 })
   }
 }
