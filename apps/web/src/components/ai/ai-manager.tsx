@@ -759,10 +759,6 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
-      const imgErr = data.data?.imageError
-      if (imgErr) {
-        addToast("error", `La imagen no se publicó: ${imgErr}`)
-      }
       addToast("success", "Publicado en LinkedIn exitosamente")
     } catch (e: any) {
       addToast("error", `Error al publicar: ${e.message}`)

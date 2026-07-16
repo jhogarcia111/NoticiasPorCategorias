@@ -108,7 +108,8 @@ export async function uploadImageToLinkedIn(profileId: number, imageUrl: string)
   }
 
   const registerData = JSON.parse(registerRaw)
-  const uploadUrl = registerData.value?.uploadMechanism?.["com.amazonaws.requestUrl"]
+  const mech = registerData.value?.uploadMechanism?.["com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"]
+  const uploadUrl = mech?.uploadUrl || registerData.value?.uploadMechanism?.["com.amazonaws.requestUrl"]
   const assetUrn = registerData.value?.asset
 
   if (!uploadUrl || !assetUrn) throw new Error("Failed to get upload URL from LinkedIn")

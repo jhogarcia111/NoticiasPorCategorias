@@ -10,21 +10,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "profileId and content are required" }, { status: 400 })
     }
 
-    let imageUrn: string | null = null
-    let imageError: string | null = null
-
     const imgUrl = imageBase64
       ? `data:${imageMime || "image/jpeg"};base64,${imageBase64}`
       : customImageUrl
 
+    // Upload image FIRST - fail early if it doesn't work
+    let imageUrn: string | null = null
     if (imgUrl) {
-      try {
-        imageUrn = await uploadImageToLinkedIn(profileId, imgUrl)
-      } catch (e: any) {
-        imageError = e.message
-      }
+      imageUrn = await uploadImageToLinkedIn(profileId, imgUrl)
     }
 
+    // Only publish if image uploaded (or no image requested)
     const result = await postToLinkedIn(profileId, content, title, sourceUrl, imageUrn ?? undefined)
 
     if (userId) {
@@ -56,10 +52,7 @@ export async function POST(request: Request) {
       data: {
         urn: result?.urn || result,
         imageUrn,
-        imageError,
-        message: imageError
-          ? "Publicado sin imagen: " + imageError
-          : "Publicado exitosamente en LinkedIn",
+        message: "Publicado exitosamente en LinkedIn",
       },
     })
   } catch (error: any) {
