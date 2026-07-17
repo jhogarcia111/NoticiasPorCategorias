@@ -164,11 +164,6 @@ export async function postToLinkedIn(
     author: `urn:li:person:${profile.linkedinId}`,
     commentary,
     visibility: "PUBLIC",
-    distribution: {
-      feedDistribution: "MAIN_FEED",
-      targetEntities: [],
-      thirdPartyDistributionChannels: [],
-    },
     lifecycleState: "PUBLISHED",
   }
 
