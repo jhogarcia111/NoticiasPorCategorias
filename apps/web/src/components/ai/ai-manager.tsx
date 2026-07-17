@@ -280,7 +280,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
         }).catch(() => {})
     }
 
-    setTimeout(() => setRecuperando(false), 300)
+    setTimeout(() => { setRecuperando(false); ensureHeadlines() }, 300)
   }
 
   const toggleSection = (id: string) => {
@@ -1251,14 +1251,14 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
               <div className="grid grid-cols-2 gap-2">
                 {/* Left col: headline + label */}
                 <div className="space-y-2">
-                  {headlines.length > 0 && (
-                    <div>
-                      <div className="flex items-center justify-between mb-0.5">
-                        <p className="text-[10px] text-muted-foreground">Titular:</p>
-                        <button onClick={handleRegenerateHeadlines} className="text-[9px] text-primary hover:underline flex items-center gap-0.5">
-                          <RefreshCw className="h-2.5 w-2.5" /> Regenerar
-                        </button>
-                      </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <p className="text-[10px] text-muted-foreground">Titular:</p>
+                      <button onClick={handleRegenerateHeadlines} className="text-[9px] text-primary hover:underline flex items-center gap-0.5">
+                        <RefreshCw className="h-2.5 w-2.5" /> {headlines.length > 0 ? "Regenerar" : "Generar"}
+                      </button>
+                    </div>
+                    {headlines.length > 0 && (
                       <div className="space-y-0.5">
                         {headlines.map((h, i) => (
                           <button key={i} onClick={() => { setSelectedHeadlineIdx(i); setCustomHeadline("") }}
@@ -1267,10 +1267,10 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                           >{h}</button>
                         ))}
                       </div>
-                      <input value={customHeadline} onChange={(e) => { setCustomHeadline(e.target.value); setSelectedHeadlineIdx(null) }}
-                        placeholder="O escribe uno propio..." className="w-full mt-0.5 px-1.5 py-0.5 border rounded text-[9px]" />
-                    </div>
-                  )}
+                    )}
+                    <input value={customHeadline} onChange={(e) => { setCustomHeadline(e.target.value); setSelectedHeadlineIdx(null) }}
+                      placeholder={headlines.length > 0 ? "O escribe uno propio..." : "Sin titulares — haz clic en Generar"} className="w-full mt-0.5 px-1.5 py-0.5 border rounded text-[9px]" />
+                  </div>
 
                   {/* Label preset selector */}
                   <div>
