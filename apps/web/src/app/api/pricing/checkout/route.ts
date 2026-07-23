@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     })
 
     const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VITE_APP_URL || "http://localhost:4017"
-    const checkoutUrl = `https://checkout.wompi.co/p?public-key=${publicKey}&reference=${reference}&redirect-url=${encodeURIComponent(appBaseUrl + "/dashboard?tab=subscription&success=true")}&signature=${integritySignature}&currency=${plan.currency}&amount-in-cents=${plan.priceInCents}`
+    const checkoutUrl = `https://checkout.wompi.co/p/?public-key=${publicKey}&currency=${plan.currency}&amount-in-cents=${plan.priceInCents}&reference=${reference}&signature:integrity=${integritySignature}&redirect-url=${encodeURIComponent(appBaseUrl + "/dashboard?tab=subscription&success=true")}`
 
     return NextResponse.json({
       checkoutUrl,
