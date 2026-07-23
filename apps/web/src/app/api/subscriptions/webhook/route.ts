@@ -1,18 +1,26 @@
 import { NextResponse } from "next/server"
 import { getDb, subscriptions, subscriptionPlans } from "@noticias/database"
 import { eq, and, inArray } from "drizzle-orm"
-import { verifyWebhookSignature } from "@/lib/wompi"
+import { verifyWebhookSignature, verifyDeployTrackerSignature } from "@/lib/wompi"
 
 export async function POST(request: Request) {
   try {
     const rawBody = await request.text()
 
-    const checksum = request.headers.get("x-event-checksum") || request.headers.get("x-signature") || ""
-    if (!checksum) {
-      return NextResponse.json({ error: "Missing signature header" }, { status: 401 })
+    const deploySig = request.headers.get("x-deploytracker-signature")
+    const deployTs = request.headers.get("x-deploytracker-timestamp")
+    const secretToken = process.env.DEPLOYTRACKER_WEBHOOK_SECRET
+
+    let isValid = false
+
+    if (deploySig && deployTs && secretToken) {
+      isValid = verifyDeployTrackerSignature(deploySig, deployTs, secretToken)
+    } else {
+      const checksum = request.headers.get("x-event-checksum") || request.headers.get("x-signature") || ""
+      isValid = !!checksum && verifyWebhookSignature(rawBody, checksum)
     }
 
-    if (!verifyWebhookSignature(rawBody, checksum)) {
+    if (!isValid) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
     }
 

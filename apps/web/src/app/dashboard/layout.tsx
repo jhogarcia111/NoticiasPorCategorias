@@ -6,7 +6,7 @@ import { DashboardProvider, useDashboard, type Tab } from "./dashboard-context"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard, Newspaper, Brain, Calendar, Settings,
-  Menu, X, LogOut, Linkedin, Shield, CreditCard,
+  Menu, X, LogOut, Linkedin, Shield, Gem,
   ChevronLeft, ChevronRight,
 } from "lucide-react"
 
@@ -19,7 +19,7 @@ function getNavItems(role?: string): { id: Tab; label: string; icon: any }[] {
     { id: "published", label: "Publicadas", icon: Linkedin },
     { id: "config", label: "Configuración", icon: Settings },
   ]
-  items.push({ id: "subscription", label: "Suscripción", icon: CreditCard })
+  items.push({ id: "subscription", label: "Premium", icon: Gem })
   if (role === "admin") {
     items.push({ id: "admin", label: "Admin", icon: Shield })
   }

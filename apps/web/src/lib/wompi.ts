@@ -158,4 +158,16 @@ export function verifyWebhookSignature(body: string, checksumHeader: string): bo
   return expected === checksumHeader
 }
 
+export function verifyDeployTrackerSignature(
+  signature: string | null,
+  timestamp: string | null,
+  secretToken: string
+): boolean {
+  if (!signature || !timestamp) return false
+  const expected = createHash("sha256")
+    .update(`${secretToken}:${timestamp}`)
+    .digest("hex")
+  return expected === signature
+}
+
 export type { WompiError }
