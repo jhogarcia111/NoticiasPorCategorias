@@ -1,18 +1,19 @@
--- CORREGIR PRECIOS EN DB
--- La DB tiene priceInCents incorrectos (29000 en vez de 2900, 79000 en vez de 7900)
--- Ejecutar en Neon SQL Editor
+-- CORREGIR PRECIOS A COP (Wompi Colombia solo acepta COP)
+-- Pro: $110.000 COP = 11000000 cents
+-- Business: $300.000 COP = 30000000 cents
+-- Pionero: $10.000 COP = 1000000 cents
 
 UPDATE subscription_plans
-SET price_in_cents = 2900, currency = 'USD'
-WHERE slug = 'pro' AND price_in_cents != 2900;
+SET price_in_cents = 11000000, currency = 'COP'
+WHERE slug = 'pro';
 
 UPDATE subscription_plans
-SET price_in_cents = 7900, currency = 'USD'
-WHERE slug = 'business' AND price_in_cents != 7900;
+SET price_in_cents = 30000000, currency = 'COP'
+WHERE slug = 'business';
 
 UPDATE subscription_plans
 SET price_in_cents = 1000000, currency = 'COP'
-WHERE slug = 'pioneer_cofounder' AND price_in_cents != 1000000;
+WHERE slug = 'pioneer_cofounder';
 
 -- Verificar
 SELECT slug, name, price_in_cents, currency FROM subscription_plans ORDER BY price_in_cents;

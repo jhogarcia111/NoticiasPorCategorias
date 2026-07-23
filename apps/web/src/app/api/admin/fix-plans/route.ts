@@ -4,8 +4,8 @@ import { eq } from "drizzle-orm"
 import { auth } from "@/lib/auth"
 
 const CORRECT_VALUES: Record<string, { priceInCents: number; currency: string }> = {
-  pro: { priceInCents: 2900, currency: "USD" },
-  business: { priceInCents: 7900, currency: "USD" },
+  pro: { priceInCents: 11000000, currency: "COP" },
+  business: { priceInCents: 30000000, currency: "COP" },
   pioneer_cofounder: { priceInCents: 1000000, currency: "COP" },
 }
 

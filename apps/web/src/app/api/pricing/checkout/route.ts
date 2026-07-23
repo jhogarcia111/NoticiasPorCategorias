@@ -52,8 +52,8 @@ export async function POST(request: Request) {
     }
 
     const PRICE_MAP: Record<string, { cents: number; currency: string }> = {
-      pro: { cents: 2900, currency: "USD" },
-      business: { cents: 7900, currency: "USD" },
+      pro: { cents: 11000000, currency: "COP" },
+      business: { cents: 30000000, currency: "COP" },
       pioneer_cofounder: { cents: 1000000, currency: "COP" },
     }
 
