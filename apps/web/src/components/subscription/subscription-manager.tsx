@@ -5,7 +5,7 @@ import type { Session } from "next-auth"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Loader2, CreditCard, CheckCircle2, XCircle, AlertCircle, Sparkles, Gem } from "lucide-react"
+import { Loader2, CreditCard, CheckCircle2, XCircle, AlertCircle, Gem } from "lucide-react"
 import { formatDate } from "@/lib/utils"
 
 interface Plan {
@@ -244,12 +244,11 @@ export function SubscriptionManager({ user }: { user: Session["user"] }) {
         </Card>
 
         {pioneerPlan && (
-          <Card className="relative flex flex-col border-primary shadow-lg shadow-primary/10 scale-105">
-            <div className="absolute top-3 right-3 z-10">
-              <span className="inline-flex items-center gap-1 bg-primary text-primary-foreground text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider shadow">
-                <Sparkles className="h-3 w-3" />
+          <Card className="relative flex flex-col border-primary shadow-lg shadow-primary/10 scale-105 overflow-hidden">
+            <div className="absolute top-0 right-0 z-10">
+              <div className="bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider py-1 px-10 -rotate-45 translate-x-8 translate-y-4 shadow text-center">
                 Recomendado
-              </span>
+              </div>
             </div>
             <CardHeader>
               <div className="flex items-center gap-2 mb-1">
@@ -268,7 +267,7 @@ export function SubscriptionManager({ user }: { user: Session["user"] }) {
                   </span>
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {formatCOPPerDay(pioneerPlan.priceInCents)} al día
+                  Solo alrededor de {formatCOPPerDay(pioneerPlan.priceInCents)} al día
                 </p>
                 <p className="text-xs font-semibold text-primary mt-1">
                   Precio especial pioneros de por vida
