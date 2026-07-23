@@ -51,11 +51,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Ya tienes una suscripción activa o pendiente" }, { status: 409 })
     }
 
+    const PRICE_MAP: Record<string, { cents: number; currency: string }> = {
+      pro: { cents: 2900, currency: "USD" },
+      business: { cents: 7900, currency: "USD" },
+      pioneer_cofounder: { cents: 1000000, currency: "COP" },
+    }
+
+    const price = PRICE_MAP[planSlug]
+    if (!price) {
+      return NextResponse.json({ error: "Plan sin precio configurado" }, { status: 500 })
+    }
+
     const reference = `sub_${session.user.id}_${Date.now()}`
-    const integritySignature = generateIntegritySignature(reference, plan.priceInCents, plan.currency)
+    const integritySignature = generateIntegritySignature(reference, price.cents, price.currency)
 
     const periodEnd = new Date()
-    periodEnd.setMonth(periodEnd.getMonth() + 1)
+    periodEnd.setDate(periodEnd.getDate() + 30)
 
     await db.insert(subscriptions).values({
       userId: session.user.id,
@@ -66,16 +77,16 @@ export async function POST(request: Request) {
     })
 
     const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VITE_APP_URL || "http://localhost:4017"
-    const checkoutUrl = `https://checkout.wompi.co/p/?public-key=${publicKey}&currency=${plan.currency}&amount-in-cents=${plan.priceInCents}&reference=${reference}&signature:integrity=${integritySignature}&redirect-url=${encodeURIComponent(appBaseUrl + "/dashboard?tab=subscription&success=true")}`
+    const checkoutUrl = `https://checkout.wompi.co/p/?public-key=${publicKey}&currency=${price.currency}&amount-in-cents=${price.cents}&reference=${reference}&signature:integrity=${integritySignature}&redirect-url=${encodeURIComponent(appBaseUrl + "/dashboard?tab=subscription&success=true")}`
 
     return NextResponse.json({
       checkoutUrl,
       reference,
       publicKey,
       integritySignature,
-      amountInCents: plan.priceInCents,
-      currency: plan.currency,
-      plan: { name: plan.name, priceInCents: plan.priceInCents, currency: plan.currency },
+      amountInCents: price.cents,
+      currency: price.currency,
+      plan: { name: plan.name, priceInCents: price.cents, currency: price.currency },
     })
   } catch (error: any) {
     console.error("Checkout error:", error)
