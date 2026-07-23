@@ -49,51 +49,65 @@ export const authConfig: NextAuthConfig = {
   ],
   callbacks: {
     async signIn({ user, account }) {
-      if ((account?.provider === "google" || account?.provider === "linkedin") && user.email && user.id) {
-        const db = getDb()
-        const [existing] = await db
+      if (!user.email || !user.id) return true
+
+      const db = getDb()
+
+      // Buscar perfil existente por email (no por id) para evitar duplicados
+      // cuando un mismo usuario usa Google, LinkedIn o email/password
+      const [existingByEmail] = await db
+        .select()
+        .from(profiles)
+        .where(eq(profiles.username, user.email.split("@")[0]))
+        .limit(1)
+
+      let profileId = existingByEmail?.id
+
+      if (!profileId) {
+        // No hay perfil con este email — crear uno nuevo
+        await db.insert(profiles).values({
+          id: user.id,
+          username: user.name || user.email.split("@")[0],
+          role: "user",
+        })
+        profileId = user.id
+      }
+
+      // Si el perfil existente tiene id distinto al user.id del provider,
+      // mapear todas las relaciones al id canónico
+      if (profileId !== user.id) {
+        // El JWT usará el id canónico del perfil existente
+        user.id = profileId
+      }
+
+      if (account?.provider === "linkedin" && account.access_token) {
+        const [existingLinkedIn] = await db
           .select()
-          .from(profiles)
-          .where(eq(profiles.id, user.id))
+          .from(linkedinProfiles)
+          .where(eq(linkedinProfiles.userId, profileId))
           .limit(1)
 
-        if (!existing) {
-          await db.insert(profiles).values({
-            id: user.id,
-            username: user.name || user.email.split("@")[0],
-            role: "user",
-          })
-        }
-
-        if (account.provider === "linkedin" && account.access_token) {
-          const [existingLinkedIn] = await db
-            .select()
-            .from(linkedinProfiles)
-            .where(eq(linkedinProfiles.userId, user.id))
-            .limit(1)
-
-          if (existingLinkedIn) {
-            await db
-              .update(linkedinProfiles)
-              .set({
-                accessToken: account.access_token,
-                refreshToken: account.refresh_token,
-                tokenExpiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null,
-                linkedinId: account.providerAccountId || user.id,
-              })
-              .where(eq(linkedinProfiles.id, existingLinkedIn.id))
-          } else {
-            await db.insert(linkedinProfiles).values({
-              userId: user.id,
-              linkedinId: account.providerAccountId || user.id,
-              firstName: user.name,
+        if (existingLinkedIn) {
+          await db
+            .update(linkedinProfiles)
+            .set({
               accessToken: account.access_token,
               refreshToken: account.refresh_token,
               tokenExpiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null,
-              isActive: true,
-              isPrimary: true,
+              linkedinId: account.providerAccountId || profileId,
             })
-          }
+            .where(eq(linkedinProfiles.id, existingLinkedIn.id))
+        } else {
+          await db.insert(linkedinProfiles).values({
+            userId: profileId,
+            linkedinId: account.providerAccountId || profileId,
+            firstName: user.name,
+            accessToken: account.access_token,
+            refreshToken: account.refresh_token,
+            tokenExpiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null,
+            isActive: true,
+            isPrimary: true,
+          })
         }
       }
       return true
@@ -129,7 +143,10 @@ export const authConfig: NextAuthConfig = {
     },
     async jwt({ token, user }) {
       if (user) {
+        // user.id puede haber sido reasignado en signIn al id canónico
         token.sub = user.id
+        // Guardar email en token para búsqueda futura
+        token.email = user.email
       }
       return token
     },

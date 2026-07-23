@@ -117,6 +117,17 @@ export function SubscriptionManager({ user }: { user: Session["user"] }) {
     },
   })
 
+  const cancelMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/subscriptions/cancel", { method: "POST" })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error)
+      return json
+    },
+    onSuccess: () => { refetchSub() },
+    onError: (err: Error) => { alert(err.message) },
+  })
+
   const testActivateMutation = useMutation({
     mutationFn: async () => {
       const res = await fetch("/api/pricing/test-activate", { method: "POST" })
@@ -188,7 +199,20 @@ export function SubscriptionManager({ user }: { user: Session["user"] }) {
               </p>
               {subscription.canceledAt && <p className="text-muted-foreground">Cancelada el: {formatDate(subscription.canceledAt)}</p>}
             </div>
-          </CardContent>
+            </CardContent>
+            {(subscription.status === "pending" || subscription.status === "active") && (
+              <CardFooter>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-red-600 border-red-200 hover:bg-red-50"
+                  onClick={() => { if (confirm("¿Cancelar suscripción?")) cancelMutation.mutate() }}
+                  disabled={cancelMutation.isPending}
+                >
+                  {cancelMutation.isPending ? "Cancelando..." : "Cancelar suscripción"}
+                </Button>
+              </CardFooter>
+            )}
         </Card>
       </div>
     )

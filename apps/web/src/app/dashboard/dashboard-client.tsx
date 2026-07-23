@@ -9,6 +9,7 @@ import { SourcesManager } from "@/components/sources/sources-manager"
 import { CalendarView } from "@/components/scheduling/calendar-view"
 import { PublishedView } from "@/components/news/published-view"
 import { EmailTemplatesAdmin } from "./admin/email-templates-admin"
+import { AdminSubscriptions } from "@/components/admin/admin-subscriptions"
 import { SubscriptionManager } from "@/components/subscription/subscription-manager"
 import { Card, CardContent } from "@/components/ui/card"
 import { useNews } from "@/hooks/use-news"
@@ -142,6 +143,11 @@ export default function DashboardClient({ user }: DashboardClientProps) {
 
       {activeTab === "subscription" && <SubscriptionManager user={user} />}
 
-      {activeTab === "admin" && <EmailTemplatesAdmin />}
+      {activeTab === "admin" && (
+        <div className="space-y-8">
+          <EmailTemplatesAdmin />
+          <AdminSubscriptions />
+        </div>
+      )}
     </>)
   }
