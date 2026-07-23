@@ -72,7 +72,9 @@ export async function POST() {
         .where(eq(subscriptionPlans.slug, plan.slug))
         .limit(1)
 
-      if (!existing) {
+      if (existing) {
+        await db.update(subscriptionPlans).set(plan).where(eq(subscriptionPlans.slug, plan.slug))
+      } else {
         await db.insert(subscriptionPlans).values(plan)
       }
     }
