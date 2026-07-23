@@ -4,6 +4,26 @@ import { eq } from "drizzle-orm"
 
 const SEED_PLANS = [
   {
+    name: "Pionero Cofundador",
+    slug: "pioneer_cofounder",
+    description: "50% descuento por lanzamiento. Precio especial pioneros de por vida.",
+    priceInCents: 1000000,
+    currency: "COP",
+    interval: "month",
+    trialDays: 0,
+    features: [
+      "Publicaciones ilimitadas",
+      "Texto completo sin límites",
+      "3 perfiles de LinkedIn",
+      "10 categorías de noticias",
+      "Calendario inteligente",
+      "Programación automática",
+      "4 estilos de escritura",
+      "Soporte prioritario",
+      "Precio congelado de por vida",
+    ],
+  },
+  {
     name: "Pro",
     slug: "pro",
     description: "Para profesionales que crecen en LinkedIn",

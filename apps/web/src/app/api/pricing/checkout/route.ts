@@ -26,7 +26,7 @@ export async function POST() {
     const [plan] = await db
       .select()
       .from(subscriptionPlans)
-      .where(and(eq(subscriptionPlans.slug, "premium_monthly"), eq(subscriptionPlans.isActive, true)))
+      .where(and(eq(subscriptionPlans.slug, "pioneer_cofounder"), eq(subscriptionPlans.isActive, true)))
       .limit(1)
 
     if (!plan) {
