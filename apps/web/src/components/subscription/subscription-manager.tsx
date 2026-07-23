@@ -256,7 +256,7 @@ export function SubscriptionManager({ user }: { user: Session["user"] }) {
         {pioneerPlan && (
           <Card className="relative flex flex-col border-primary shadow-lg shadow-primary/10 scale-105 overflow-hidden">
             <div className="absolute top-0 right-0 z-10">
-              <div className="bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider py-1 px-10 -rotate-45 translate-x-8 translate-y-4 shadow text-center">Recomendado</div>
+              <div className="bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wider py-1 px-10 rotate-45 translate-x-6 -translate-y-1 shadow text-center">Recomendado</div>
             </div>
             <CardHeader>
               <div className="flex items-center gap-2 mb-1">
@@ -283,7 +283,13 @@ export function SubscriptionManager({ user }: { user: Session["user"] }) {
                 </ul>
               )}
             </CardContent>
-            <CardFooter className="flex flex-col gap-2">
+            <div className="px-6 pb-4">
+              <div className="rounded-lg bg-primary/5 border border-primary/20 px-3 py-2 text-center">
+                <p className="text-xs font-bold text-primary">✨ Precio especial pioneros de por vida</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Precio congelado de por vida</p>
+              </div>
+            </div>
+            <CardFooter className="flex flex-col gap-2 pt-0">
               <Button className="w-full" onClick={() => checkoutMutation.mutate("pioneer_cofounder")} disabled={checkoutMutation.isPending}>
                 {checkoutMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Gem className="h-4 w-4 mr-2" />}
                 Pagar con Wompi · $10,000/mes

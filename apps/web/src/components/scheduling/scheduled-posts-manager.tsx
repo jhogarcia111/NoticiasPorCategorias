@@ -225,7 +225,7 @@ export function ScheduledPostsManager() {
                         <Calendar className="h-3 w-3" />
                         <span>Programado: {formatDate(post.scheduledAt)}</span>
                       </div>
-                      {post.postedAt && (
+{post.postedAt && (
                         <div className="flex items-center space-x-1">
                           <CheckCircle className="h-3 w-3" />
                           <span>Publicado: {formatDate(post.postedAt)}</span>

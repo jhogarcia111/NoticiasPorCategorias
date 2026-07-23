@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import type { Session } from "next-auth"
 import { useDashboard, type Tab } from "./dashboard-context"
 import { NewsManager } from "@/components/news/news-manager"
@@ -12,11 +13,12 @@ import { EmailTemplatesAdmin } from "./admin/email-templates-admin"
 import { AdminSubscriptions } from "@/components/admin/admin-subscriptions"
 import { SubscriptionManager } from "@/components/subscription/subscription-manager"
 import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { useNews } from "@/hooks/use-news"
 import { cn } from "@/lib/utils"
 import {
   Newspaper, Brain, Calendar,
-  RefreshCw, CheckCircle2, Clock, ArrowRight,
+  RefreshCw, CheckCircle2, Clock, ArrowRight, Gem,
 } from "lucide-react"
 
 interface DashboardClientProps {
@@ -56,6 +58,17 @@ export default function DashboardClient({ user }: DashboardClientProps) {
 
   const totalNews = allNewsData?.total ?? allNewsData?.data?.length ?? "—"
 
+  const [usage, setUsage] = useState<{ used: number; limit: number; limitLabel: string; plan: string } | null>(null)
+
+  useEffect(() => {
+    if (user?.id) {
+      fetch(`/api/usage?userId=${user.id}`)
+        .then(r => r.json())
+        .then(d => setUsage(d))
+        .catch(() => {})
+    }
+  }, [user?.id])
+
   return (
     <>
       {activeTab === "home" && (
@@ -84,6 +97,37 @@ export default function DashboardClient({ user }: DashboardClientProps) {
             <StatsCard icon={Calendar} label="Programadas" value="—" color="text-purple-600" bg="bg-purple-50" />
             <StatsCard icon={CheckCircle2} label="Publicadas hoy" value="—" color="text-green-600" bg="bg-green-50" />
           </div>
+
+          {usage && usage.limit !== Infinity && (
+            <Card className="border-yellow-200 bg-yellow-50">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Gem className="h-4 w-4 text-yellow-600" />
+                    <span className="text-sm font-medium text-yellow-800">
+                      Plan {usage.plan} — {usage.used}/{usage.limitLabel} publicaciones este mes
+                    </span>
+                    {usage.used >= usage.limit ? (
+                      <Badge variant="destructive" className="text-xs">Límite alcanzado</Badge>
+                    ) : usage.used >= usage.limit * 0.8 ? (
+                      <Badge variant="secondary" className="text-xs bg-yellow-200 text-yellow-800">Por agotarse</Badge>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="w-full bg-yellow-200 rounded-full h-2.5">
+                  <div
+                    className={`h-2.5 rounded-full transition-all ${usage.used >= usage.limit ? "bg-red-500" : "bg-yellow-500"}`}
+                    style={{ width: `${Math.min((usage.used / usage.limit) * 100, 100)}%` }}
+                  />
+                </div>
+                {usage.used >= usage.limit && (
+                  <p className="text-xs text-red-600 mt-2">
+                    Actualiza tu plan para seguir publicando.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-3">Accesos directos</h3>

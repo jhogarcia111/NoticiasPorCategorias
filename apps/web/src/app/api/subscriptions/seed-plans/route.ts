@@ -12,7 +12,7 @@ const SEED_PLANS = [
     interval: "month",
     trialDays: 0,
     features: [
-      "Publicaciones ilimitadas",
+      "5 publicaciones por mes",
       "Texto completo sin límites",
       "3 perfiles de LinkedIn",
       "10 categorías de noticias",

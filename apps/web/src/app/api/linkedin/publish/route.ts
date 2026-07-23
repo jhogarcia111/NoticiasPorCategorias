@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { postToLinkedIn, uploadImageToLinkedIn } from "@/services/linkedin-service"
 import { getDb, scheduledPosts, postNews } from "@noticias/database"
+import { checkPostLimit } from "@/lib/check-limit"
 
 export const maxDuration = 30
 
@@ -10,6 +11,14 @@ export async function POST(request: Request) {
 
     if (!profileId || !content) {
       return NextResponse.json({ error: "profileId and content are required" }, { status: 400 })
+    }
+
+    // Check post limit before publishing
+    if (userId) {
+      const limit = await checkPostLimit(userId)
+      if (!limit.allowed) {
+        return NextResponse.json({ error: limit.message, limit }, { status: 403 })
+      }
     }
 
     // Upload image FIRST using base64 directly (no data URL fetch)

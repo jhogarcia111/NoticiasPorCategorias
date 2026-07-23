@@ -8,6 +8,7 @@ import {
   deleteScheduledPost,
   updateScheduledPost,
 } from "@/services/scheduling-service"
+import { checkPostLimit } from "@/lib/check-limit"
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -50,6 +51,10 @@ export async function POST(request: Request) {
     }
 
     if (type === "post") {
+      const limit = await checkPostLimit(userId)
+      if (!limit.allowed) {
+        return NextResponse.json({ error: limit.message, limit }, { status: 403 })
+      }
       const data = await schedulePost(userId, body.postData)
       return NextResponse.json({ data })
     }
@@ -68,6 +73,16 @@ export async function POST(request: Request) {
 
     if (type === "schedule-multiple") {
       const { linkedinProfileId, newsItems, config } = body
+      const limit = await checkPostLimit(userId)
+      if (!limit.allowed) {
+        return NextResponse.json({ error: limit.message, limit }, { status: 403 })
+      }
+      if (newsItems?.length && limit.used + (newsItems.length) > limit.limit) {
+        return NextResponse.json({
+          error: `Solo te quedan ${limit.limit - limit.used} publicaciones de tu plan. Selecciona menos artículos o actualiza tu plan.`,
+          limit,
+        }, { status: 403 })
+      }
       const { scheduleMultiplePosts } = await import("@/services/scheduling-service")
       const data = await scheduleMultiplePosts(userId, linkedinProfileId, newsItems, config)
       return NextResponse.json({ data })
