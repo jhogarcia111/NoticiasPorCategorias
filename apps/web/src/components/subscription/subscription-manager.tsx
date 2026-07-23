@@ -6,6 +6,7 @@ import { useQuery, useMutation } from "@tanstack/react-query"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Loader2, CreditCard, CheckCircle2, XCircle, AlertCircle, Gem } from "lucide-react"
+import { CheckoutDialog } from "./checkout-dialog"
 import { formatDate } from "@/lib/utils"
 
 interface Plan {
@@ -76,7 +77,7 @@ const FREE_PLAN = {
 
 export function SubscriptionManager({ user }: { user: Session["user"] }) {
   const [checkoutOpen, setCheckoutOpen] = useState(false)
-  const [selectedPlanSlug, setSelectedPlanSlug] = useState<string | null>(null)
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null)
 
   const { data: plansData, isLoading: plansLoading } = useQuery<{ data: Plan[] }>({
     queryKey: ["subscription-plans"],
@@ -96,9 +97,8 @@ export function SubscriptionManager({ user }: { user: Session["user"] }) {
         if (!res.ok) throw new Error(json.error || "Error al crear checkout")
         return json
       }
-      const res = await fetch("/api/subscriptions/plans")
-      const plansJson = await res.json()
-      const plan = plansJson.data?.find((p: Plan) => p.slug === planSlug)
+      const plans = plansData?.data || []
+      const plan = plans.find((p: Plan) => p.slug === planSlug)
       if (!plan) throw new Error("Plan no encontrado")
       return { plan, needsDialog: true }
     },
@@ -107,7 +107,7 @@ export function SubscriptionManager({ user }: { user: Session["user"] }) {
         window.open(data.checkoutUrl, "_blank")
         setTimeout(() => refetchSub(), 3000)
       } else if (data.needsDialog) {
-        setSelectedPlanSlug(data.plan.slug)
+        setSelectedPlan(data.plan)
         setCheckoutOpen(true)
       }
     },
@@ -297,7 +297,7 @@ export function SubscriptionManager({ user }: { user: Session["user"] }) {
                 ) : (
                   <Gem className="h-4 w-4 mr-2" />
                 )}
-                Pagar {formatPrice(pioneerPlan.priceInCents, pioneerPlan.currency)}/mes con Wompi
+                Pagar con Wompi · {formatPrice(pioneerPlan.priceInCents, pioneerPlan.currency)}/mes
               </Button>
               <Button
                 variant="outline"
@@ -341,15 +341,26 @@ export function SubscriptionManager({ user }: { user: Session["user"] }) {
                 </ul>
               )}
             </CardContent>
-            <CardFooter>
-              <Button className="w-full" onClick={() => checkoutMutation.mutate(plan.slug)} disabled={checkoutMutation.isPending}>
-                <CreditCard className="h-4 w-4 mr-2" />
-                Pagar con tarjeta
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-    </div>
-  )
-}
+<CardFooter>
+                  <Button className="w-full" onClick={() => checkoutMutation.mutate(plan.slug)} disabled={checkoutMutation.isPending}>
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Pagar con Wompi
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+
+          <CheckoutDialog
+            open={checkoutOpen}
+            onOpenChange={(open: boolean) => { setCheckoutOpen(open); if (!open) setSelectedPlan(null) }}
+            plans={selectedPlan ? [selectedPlan] : []}
+            onSuccess={() => {
+              setCheckoutOpen(false)
+              setSelectedPlan(null)
+              refetchSub()
+            }}
+          />
+        </div>
+      )
+    }
