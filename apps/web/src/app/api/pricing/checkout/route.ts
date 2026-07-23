@@ -16,7 +16,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "planSlug requerido" }, { status: 400 })
     }
 
-    const publicKey = process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY || process.env.WOMPI_PUBLIC_KEY || ""
+    const publicKey = process.env.NEXT_PUBLIC_WOMPI_PUB_KEY || process.env.WOMPI_PUB_KEY || ""
     const integrityKey = process.env.WOMPI_INTEGRITY_KEY || ""
 
     if (!publicKey || !integrityKey) {

@@ -1,8 +1,8 @@
 import { createHash } from "crypto"
 
 const WOMPI_API_URL = process.env.WOMPI_API_URL || "https://sandbox.wompi.co/v1"
-const WOMPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY || process.env.WOMPI_PUBLIC_KEY || ""
-const WOMPI_PRIVATE_KEY = process.env.WOMPI_PRIVATE_KEY || ""
+const WOMPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_WOMPI_PUB_KEY || process.env.WOMPI_PUB_KEY || ""
+const WOMPI_PRIVATE_KEY = process.env.WOMPI_PRIV_KEY || ""
 const WOMPI_EVENT_SECRET = process.env.WOMPI_EVENT_SECRET || ""
 const WOMPI_INTEGRITY_KEY = process.env.WOMPI_INTEGRITY_KEY || ""
 
