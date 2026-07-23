@@ -4,11 +4,16 @@ import { eq, and, inArray } from "drizzle-orm"
 import { generateIntegritySignature } from "@/lib/wompi"
 import { auth } from "@/lib/auth"
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
     const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
+    }
+
+    const { planSlug } = await request.json()
+    if (!planSlug) {
+      return NextResponse.json({ error: "planSlug requerido" }, { status: 400 })
     }
 
     const publicKey = process.env.NEXT_PUBLIC_WOMPI_PUBLIC_KEY || process.env.WOMPI_PUBLIC_KEY || ""
@@ -26,11 +31,11 @@ export async function POST() {
     const [plan] = await db
       .select()
       .from(subscriptionPlans)
-      .where(and(eq(subscriptionPlans.slug, "pioneer_cofounder"), eq(subscriptionPlans.isActive, true)))
+      .where(and(eq(subscriptionPlans.slug, planSlug), eq(subscriptionPlans.isActive, true)))
       .limit(1)
 
     if (!plan) {
-      return NextResponse.json({ error: "Plan premium no encontrado" }, { status: 404 })
+      return NextResponse.json({ error: "Plan no encontrado" }, { status: 404 })
     }
 
     const [existingSub] = await db
@@ -70,11 +75,7 @@ export async function POST() {
       integritySignature,
       amountInCents: plan.priceInCents,
       currency: plan.currency,
-      plan: {
-        name: plan.name,
-        priceInCents: plan.priceInCents,
-        currency: plan.currency,
-      },
+      plan: { name: plan.name, priceInCents: plan.priceInCents, currency: plan.currency },
     })
   } catch (error: any) {
     console.error("Checkout error:", error)
