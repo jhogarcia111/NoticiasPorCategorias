@@ -17,26 +17,26 @@ const heroSlides = [
   {
     headline: "Tu conocimiento merece ser visto.\nNosotros ponemos las palabras.",
     sub: "La IA escribe con tu estilo y tu voz. Tú solo elige las noticias que importan. Publica con confianza desde el día uno.",
-    img: "https://image.pollinations.ai/prompt/professional_corporate_employee_sitting_at_desk_modern_office_natural_lighting_looking_at_laptop_with_confident_satisfied_smile_glass_desk_ergonomic_chair_clean_professional_atmosphere_cinematic_shot_realistic_photography?width=800&height=600&nofeed=true",
-    alt: "Profesional satisfecho frente a su laptop en oficina moderna",
+    img: "https://image.pollinations.ai/prompt/premium_3d_clay_render_illustration_confident_professional_standing_beside_large_glowing_lightbulb_sharing_knowledge_with_audience_warm_trust_emotion_soft_studio_lighting_smooth_matte_surfaces_modern_saas_aesthetic_soft_blue_and_white_palette_clean_background_professional_composition_no_text?width=800&height=600&nofeed=true&seed=101",
+    alt: "Profesional compartiendo conocimiento con confianza",
   },
   {
     headline: "10 minutos al mes.\nContenido para todo el mes.",
     sub: "Conecta tus fuentes de noticias, la IA genera los posts, programa las publicaciones. Tu presencia en LinkedIn funciona sola.",
-    img: "https://image.pollinations.ai/prompt/confident_executive_presenting_in_meeting_room_modern_office_warm_lighting_colleagues_listening_attentively_leadership_body_language_business_dress_code_glass_walls_cinematic_shot_realistic_photography?width=800&height=600&nofeed=true",
-    alt: "Ejecutivo liderando reunión con su equipo",
+    img: "https://image.pollinations.ai/prompt/premium_3d_clay_render_illustration_relaxed_professional_drinking_coffee_beside_automated_machine_producing_calendar_cards_clock_with_free_time_symbolizing_hours_saved_soft_studio_lighting_smooth_matte_surfaces_modern_saas_aesthetic_blue_and_teal_palette_clean_background_professional_composition_no_text?width=800&height=600&nofeed=true&seed=102",
+    alt: "Tranquilidad y tiempo libre gracias a la automatización",
   },
   {
     headline: "Las noticias de tu industria + IA =\nTú sonando como el experto que eres.",
     sub: "La plataforma encuentra lo más relevante para tu nicho y lo transforma en posts optimizados. Sin pensar qué escribir.",
-    img: "https://image.pollinations.ai/prompt/professional_employee_receiving_award_trophy_applause_from_colleagues_modern_office_celebration_happy_proud_expression_team_recognizing_achievement_corporate_success_cinematic_shot_realistic?width=800&height=600&nofeed=true",
-    alt: "Profesional recibiendo reconocimiento de su equipo",
+    img: "https://image.pollinations.ai/prompt/premium_3d_clay_render_illustration_open_newspaper_transforming_into_glowing_gold_trophy_with_small_robot_brain_and_writing_tools_floating_around_metaphor_ai_generating_expert_content_soft_studio_lighting_smooth_matte_surfaces_modern_saas_aesthetic_blue_and_gold_palette_clean_background_professional_composition_no_text?width=800&height=600&nofeed=true&seed=103",
+    alt: "Noticias convertidas en reconocimiento experto por IA",
   },
   {
     headline: "Mientras tú trabajas,\ntu perfil trabaja por ti.",
     sub: "Programación inteligente, publicación automática, contenido consistente. El algoritmo de LinkedIn premia la frecuencia.",
-    img: "https://image.pollinations.ai/prompt/relaxed_professional_drinking_coffee_smiling_at_phone_modern_home_office_blurred_dashboard_with_growth_charts_in_background_career_success_satisfaction_warm_atmosphere_cinematic_shot_realistic?width=800&height=600&nofeed=true",
-    alt: "Profesional relajado viendo resultados con café",
+    img: "https://image.pollinations.ai/prompt/premium_3d_clay_render_illustration_professional_working_at_desk_while_futuristic_holographic_social_profile_card_with_growth_chart_and_rocket_automatically_publishing_in_background_metaphor_autopilot_presence_soft_studio_lighting_smooth_matte_surfaces_modern_saas_aesthetic_blue_palette_clean_background_professional_composition_no_text?width=800&height=600&nofeed=true&seed=104",
+    alt: "Tu perfil publica automáticamente mientras trabajas",
   },
 ]
 
@@ -45,43 +45,43 @@ const benefits = [
     icon: Newspaper,
     title: "De la noticia a tu perfil en 2 clics",
     desc: "Olvídate del bloqueo creativo. Selecciona las noticias que te interesan y la IA genera un post pulido y profesional. Tú solo das el visto bueno.",
-    img: "https://image.pollinations.ai/prompt/professional_employee_at_desk_dual_monitor_setup_split_screen_news_articles_and_linkedin_profile_expression_of_relief_and_satisfaction_modern_office_natural_lighting_ergonomic_chair_realistic?width=600&height=400&nofeed=true",
-    alt: "Profesional con dos pantallas: noticias y LinkedIn",
+    img: "https://image.pollinations.ai/prompt/premium_3d_clay_render_illustration_hand_pressing_large_glowing_button_transforming_news_article_into_polished_social_media_post_streamlined_arrow_flow_metaphor_two_clicks_to_success_soft_studio_lighting_smooth_matte_surfaces_modern_saas_aesthetic_blue_and_white_palette_clean_background_professional_composition_no_text?width=600&height=400&nofeed=true&seed=201",
+    alt: "Noticia transformada en post pulido con un clic",
   },
   {
     icon: MessageCircle,
     title: "Suena a ti, no a un robot",
     desc: "4 estilos de escritura: crítico, educativo, satírico, ejecutivo. La IA se adapta a tu personalidad. Tu audiencia sentirá que eres tú escribiendo.",
-    img: "https://image.pollinations.ai/prompt/two_diverse_professionals_conversing_animatedly_in_modern_office_cafeteria_coffee_cups_warm_atmosphere_positive_body_language_genuine_connection_smiling_colleagues_corporate_realistic?width=600&height=400&nofeed=true",
-    alt: "Dos profesionales conversando animadamente",
+    img: "https://image.pollinations.ai/prompt/premium_3d_clay_render_illustration_human_brain_with_heart_connected_to_warm_chat_bubble_with_personality_voice_next_to_friendly_robot_holding_pen_metaphor_authentic_ai_writing_in_your_style_soft_studio_lighting_smooth_matte_surfaces_modern_saas_aesthetic_warm_and_blue_palette_clean_background_professional_composition_no_text?width=600&height=400&nofeed=true&seed=202",
+    alt: "IA que escribe con tu voz y personalidad",
   },
   {
     icon: Calendar,
     title: "Publica sin publicar",
     desc: "Programa tu calendario una vez y olvídate. El sistema publica automáticamente en los horarios óptimos. Presencia 24/7 sin mover un dedo.",
-    img: "https://image.pollinations.ai/prompt/professional_presenting_growth_charts_in_boardroom_colleagues_attending_modern_glass_office_professional_attire_confident_presentation_skills_projected_data_screen_realistic?width=600&height=400&nofeed=true",
-    alt: "Profesional presentando en sala de juntas",
+    img: "https://image.pollinations.ai/prompt/premium_3d_clay_render_illustration_wall_calendar_automatically_filled_by_robotic_arm_while_professional_walks_away_relaxed_metaphor_scheduled_autopilot_publishing_soft_studio_lighting_smooth_matte_surfaces_modern_saas_aesthetic_blue_palette_clean_background_professional_composition_no_text?width=600&height=400&nofeed=true&seed=203",
+    alt: "Calendario se programa solo en modo piloto automático",
   },
   {
     icon: Award,
     title: "Conviértete en la referencia de tu industria",
     desc: "Contenido relevante y consistente atrae headhunters, clientes y oportunidades. Tu próximo ascenso puede empezar con un post.",
-    img: "https://image.pollinations.ai/prompt/professional_being_congratulated_by_colleagues_handshake_celebration_modern_office_diverse_team_happy_expressions_career_milestone_recognition_successful_corporate_environment_realistic?width=600&height=400&nofeed=true",
-    alt: "Profesional siendo felicitado por colegas",
+    img: "https://image.pollinations.ai/prompt/premium_3d_clay_render_illustration_professional_standing_on_podium_with_gold_medal_and_trophy_under_spotlight_audience_looking_up_from_below_metaphor_becoming_industry_reference_soft_studio_lighting_smooth_matte_surfaces_modern_saas_aesthetic_blue_and_gold_palette_clean_background_professional_composition_no_text?width=600&height=400&nofeed=true&seed=204",
+    alt: "Reconocimiento y estatus de experto en la industria",
   },
   {
     icon: Target,
     title: "Solo lo que importa para tu industria",
     desc: "Más de 10 categorías o crea las tuyas. La plataforma busca las noticias más relevantes para que no pierdas tiempo buscando.",
-    img: "https://image.pollinations.ai/prompt/focused_professional_reading_tablet_with_coffee_cup_cozy_modern_home_office_natural_lighting_concentrated_expression_relaxed_atmosphere_plant_decoration_realistic?width=600&height=400&nofeed=true",
-    alt: "Profesional concentrado leyendo en tablet",
+    img: "https://image.pollinations.ai/prompt/premium_3d_clay_render_illustration_funnel_filtering_pile_of_news_articles_into_single_perfect_news_card_with_green_checkmark_and_magnifying_glass_metaphor_curated_relevant_content_for_your_niche_soft_studio_lighting_smooth_matte_surfaces_modern_saas_aesthetic_blue_palette_clean_background_professional_composition_no_text?width=600&height=400&nofeed=true&seed=205",
+    alt: "Filtro de noticias que deja solo lo relevante para ti",
   },
   {
     icon: BarChart3,
     title: "Mira cómo crece tu impacto",
     desc: "Estadísticas claras de alcance, interacciones y crecimiento. Ver los resultados en números es el mejor combustible para seguir.",
-    img: "https://image.pollinations.ai/prompt/professional_pointing_at_dashboard_with_upward_charts_and_metrics_colleague_looking_with_interest_team_celebrating_business_results_modern_office_happy_employees_corporate_success_realistic?width=600&height=400&nofeed=true",
-    alt: "Equipo celebrando resultados frente a dashboard",
+    img: "https://image.pollinations.ai/prompt/premium_3d_clay_render_illustration_professional_admiring_large_dashboard_screen_with_rising_bar_charts_floating_rockets_and_growth_icons_metaphor_tracking_career_impact_soft_studio_lighting_smooth_matte_surfaces_modern_saas_aesthetic_blue_and_green_palette_clean_background_professional_composition_no_text?width=600&height=400&nofeed=true&seed=206",
+    alt: "Mirando crecer tu impacto en métricas ascendentes",
   },
 ]
 
@@ -631,8 +631,8 @@ export default function HomePage() {
             <div className="relative">
               <div className="relative overflow-hidden rounded-xl bg-white/10 shadow-lg backdrop-blur">
                 <img
-                  src="https://image.pollinations.ai/prompt/happy_professional_team_celebrating_success_modern_office_diverse_colleagues_laughing_toasting_with_coffee_cups_career_achievement_warm_lighting_corporate_culture_cinematic_realistic?width=800&height=600&nofeed=true"
-                  alt="Equipo profesional celebrando el éxito"
+                  src="https://image.pollinations.ai/prompt/premium_3d_clay_render_illustration_open_book_with_glowing_pen_writing_story_rising_rocket_and_sparkling_stars_spotlight_below_metaphor_professional_story_being_told_and_launched_soft_studio_lighting_smooth_matte_surfaces_modern_saas_aesthetic_blue_and_white_palette_clean_background_professional_composition_no_text?width=800&height=600&nofeed=true&seed=301"
+                  alt="Tu historia profesional escrita y lanzada al éxito"
                   className="h-full w-full object-cover aspect-[4/3] transition-transform duration-500 hover:scale-105"
                   loading="lazy"
                 />
