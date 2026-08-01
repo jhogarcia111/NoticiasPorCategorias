@@ -149,6 +149,13 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
     onNavigate?.("ai")
   }
 
+  const handleProcessNews = (newsId: number) => {
+    if (!selectedNewsIds.includes(newsId)) {
+      setSelectedNewsIds((prev) => [...prev, newsId])
+    }
+    onNavigate?.("ai")
+  }
+
   const handleSelectAll = () => {
     if (selectedNewsIds.length === filteredNews.length) setSelectedNewsIds([])
     else setSelectedNewsIds(filteredNews.map((item: any) => item.id))
@@ -438,7 +445,7 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <NewsList news={filteredNews} onNewsSelect={toggleNewsSelection} selectedNews={selectedNewsIds} />
+            <NewsList news={filteredNews} onNewsSelect={toggleNewsSelection} onProcess={handleProcessNews} selectedNews={selectedNewsIds} />
           )}
         </CardContent>
       </Card>

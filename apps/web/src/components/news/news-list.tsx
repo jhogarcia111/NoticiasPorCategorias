@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ExternalLink, Calendar, User, CheckCircle, Circle, ChevronDown, ChevronUp, Globe } from "lucide-react"
+import { ExternalLink, Calendar, User, CheckCircle, Circle, ChevronDown, ChevronUp, Globe, Sparkles } from "lucide-react"
 import { format, differenceInDays, isToday, isYesterday } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils"
 interface NewsListProps {
   news: any[]
   onNewsSelect?: (newsId: number) => void
+  onProcess?: (newsId: number) => void
   selectedNews?: number[]
 }
 
@@ -35,7 +36,7 @@ function dateLabel(pubDate: string | Date | null | undefined): string {
   return `${differenceInDays(new Date(), d)}d`
 }
 
-export function NewsList({ news, onNewsSelect, selectedNews = [] }: NewsListProps) {
+export function NewsList({ news, onNewsSelect, onProcess, selectedNews = [] }: NewsListProps) {
   const [expandedNews, setExpandedNews] = useState<Record<number, boolean>>({})
 
   const toggleExpanded = (newsId: number) => {
@@ -103,6 +104,17 @@ export function NewsList({ news, onNewsSelect, selectedNews = [] }: NewsListProp
                     <Badge variant={article.isProcessed ? "success" : "warning"} className="text-[10px] px-1.5 py-0 h-5 font-normal whitespace-nowrap">
                       {article.isProcessed ? "Procesada" : "Pendiente"}
                     </Badge>
+                    {isSelected(article.id) && onProcess && (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); onProcess(article.id) }}
+                        className="h-6 text-[10px] px-2 gap-1"
+                      >
+                        <Sparkles className="h-3 w-3" />
+                        Procesar con IA
+                      </Button>
+                    )}
                   </div>
                 </div>
 

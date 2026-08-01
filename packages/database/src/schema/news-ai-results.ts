@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, serial, integer, jsonb } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, serial, integer, jsonb, unique } from "drizzle-orm/pg-core"
 import { news } from "./news"
 
 export const newsAiResults = pgTable("news_ai_results", {
@@ -14,4 +14,6 @@ export const newsAiResults = pgTable("news_ai_results", {
   fullResponse: text("full_response"),
   headlines: text("headlines"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-})
+}, (t) => [
+  unique().on(t.newsId, t.templateId),
+])

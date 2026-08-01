@@ -26,6 +26,19 @@ export async function POST(request: Request) {
         fullResponse: fullResponse || null,
         headlines: headlines || null,
       })
+      .onConflictDoUpdate({
+        target: [newsAiResults.newsId, newsAiResults.templateId],
+        set: {
+          templateName: templateName || null,
+          language: language || "es",
+          summary: summary || null,
+          linkedinPost: linkedinPost || null,
+          hashtags: hashtags || null,
+          imagePrompt: imagePrompt || null,
+          fullResponse: fullResponse || null,
+          headlines: headlines || null,
+        },
+      })
       .returning()
 
     return NextResponse.json({ data: result })
