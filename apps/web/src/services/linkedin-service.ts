@@ -164,7 +164,13 @@ export async function postToLinkedIn(
     author: `urn:li:person:${profile.linkedinId}`,
     commentary,
     visibility: "PUBLIC",
+    distribution: {
+      feedDistribution: "MAIN_FEED",
+      targetEntities: [],
+      thirdPartyDistributionChannels: [],
+    },
     lifecycleState: "PUBLISHED",
+    isReshareDisabledByAuthor: false,
   }
 
   if (imageUrn) {
@@ -181,12 +187,13 @@ export async function postToLinkedIn(
 
   const bodyStr = JSON.stringify(body)
   console.error("LinkedIn post body:", bodyStr.substring(0, 2000))
-  const response = await fetch("https://api.linkedin.com/v2/posts", {
+  const response = await fetch("https://api.linkedin.com/rest/posts", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${profile.accessToken}`,
       "Content-Type": "application/json",
       "X-Restli-Protocol-Version": "2.0.0",
+      "Linkedin-Version": "202607",
     },
     body: bodyStr,
   })
