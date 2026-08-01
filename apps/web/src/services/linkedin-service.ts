@@ -91,18 +91,17 @@ export async function uploadImageToLinkedIn(profileId: number, imageUrlOrBase64:
     imageBody = await imageResp.arrayBuffer()
   }
 
-  const registerResp = await fetch("https://api.linkedin.com/v2/assets?action=registerUpload", {
+  const registerResp = await fetch("https://api.linkedin.com/rest/images?action=initializeUpload", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${profile.accessToken}`,
       "Content-Type": "application/json",
       "X-Restli-Protocol-Version": "2.0.0",
+      "Linkedin-Version": "202607",
     },
     body: JSON.stringify({
-      registerUploadRequest: {
+      initializeUploadRequest: {
         owner: `urn:li:person:${profile.linkedinId}`,
-        recipes: ["urn:li:digitalmediaRecipe:feedshare-image"],
-        supportedUploadMechanism: ["SYNCHRONOUS_UPLOAD"],
       },
     }),
   })
@@ -110,21 +109,17 @@ export async function uploadImageToLinkedIn(profileId: number, imageUrlOrBase64:
   const registerRaw = await registerResp.text()
   if (!registerResp.ok) {
     let msg: string
-    try { msg = `LinkedIn registerUpload failed (${registerResp.status}): ${JSON.parse(registerRaw).message}` } catch { msg = `LinkedIn registerUpload failed (${registerResp.status}): ${registerRaw || "empty response"}` }
+    try { msg = `LinkedIn initializeUpload failed (${registerResp.status}): ${JSON.parse(registerRaw).message}` } catch { msg = `LinkedIn initializeUpload failed (${registerResp.status}): ${registerRaw || "empty response"}` }
     console.error(msg)
     throw new Error(msg)
   }
 
   const registerData = JSON.parse(registerRaw)
-  const uploadMech = registerData.value?.uploadMechanism || {}
-  const mechKeys = Object.keys(uploadMech)
-  const firstKey = mechKeys[0]
-  const firstMech = firstKey ? uploadMech[firstKey] : null
-  const uploadUrl = firstMech?.uploadUrl || firstMech?.url || null
-  const assetUrn = registerData.value?.asset
+  const uploadUrl = registerData.value?.uploadUrl || null
+  const assetUrn = registerData.value?.image
 
   if (!uploadUrl || !assetUrn) {
-    throw new Error(`LinkedIn upload failed. Keys: ${JSON.stringify(mechKeys)}, Response: ${JSON.stringify(registerData).substring(0, 500)}`)
+    throw new Error(`LinkedIn upload failed. Response: ${JSON.stringify(registerData).substring(0, 500)}`)
   }
 
   const uploadResp = await fetch(uploadUrl, {
@@ -140,7 +135,34 @@ export async function uploadImageToLinkedIn(profileId: number, imageUrlOrBase64:
     throw new Error(msg)
   }
 
+  await waitForImageAvailable(profile.accessToken, assetUrn)
+
   return assetUrn
+}
+
+async function waitForImageAvailable(accessToken: string, imageUrn: string, maxAttempts = 20) {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const resp = await fetch(`https://api.linkedin.com/rest/images?ids=List(${encodeURIComponent(imageUrn)})`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "X-Restli-Protocol-Version": "2.0.0",
+        "Linkedin-Version": "202607",
+      },
+    })
+    if (!resp.ok) {
+      await sleep(1000)
+      continue
+    }
+    const data = await resp.json().catch(() => null)
+    const image = data?.results?.[imageUrn]?.value
+    if (image?.status === "AVAILABLE") return
+    await sleep(1000)
+  }
+  throw new Error(`LinkedIn image not AVAILABLE after ${maxAttempts}s`)
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 export async function postToLinkedIn(
