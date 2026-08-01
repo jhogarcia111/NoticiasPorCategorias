@@ -7,6 +7,7 @@ import { NewsManager } from "@/components/news/news-manager"
 import { AIManager } from "@/components/ai/ai-manager"
 import { LinkedInProfilesManager } from "@/components/linkedin/linkedin-profiles-manager"
 import { SourcesManager } from "@/components/sources/sources-manager"
+import { CategoryManager } from "@/components/categories/category-manager"
 import { CalendarView } from "@/components/scheduling/calendar-view"
 import { PublishedView } from "@/components/news/published-view"
 import { EmailTemplatesAdmin } from "./admin/email-templates-admin"
@@ -169,14 +170,20 @@ export default function DashboardClient({ user }: DashboardClientProps) {
       )}
 
       {activeTab === "config" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="space-y-6">
           <div>
-            <h3 className="text-sm font-semibold text-foreground mb-4">Perfiles LinkedIn</h3>
-            <LinkedInProfilesManager />
+            <h3 className="text-sm font-semibold text-foreground mb-4">Categorías</h3>
+            <CategoryManager />
           </div>
-          <div>
-            <h3 className="text-sm font-semibold text-foreground mb-4">Fuentes de Noticias</h3>
-            <SourcesManager />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-4">Perfiles LinkedIn</h3>
+              <LinkedInProfilesManager />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-4">Fuentes de Noticias</h3>
+              <SourcesManager />
+            </div>
           </div>
         </div>
       )}
