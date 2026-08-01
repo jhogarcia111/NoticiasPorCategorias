@@ -25,6 +25,9 @@ async function seed() {
     if (existing.length === 0) {
       await db.insert(categories).values(cat)
       console.log(`  Created category: ${cat.name}`)
+    } else {
+      await db.update(categories).set({ isActive: true }).where(eq(categories.name, cat.name))
+      console.log(`  Activated category: ${cat.name}`)
     }
   }
 
