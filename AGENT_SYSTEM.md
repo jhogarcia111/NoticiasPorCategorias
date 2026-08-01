@@ -200,6 +200,21 @@ Plataforma SaaS de automatización de contenido para LinkedIn. Recolecta noticia
 - Todos los colores clave: `#0A66C2` (LinkedIn blue), `#1DB954` (verde crecimiento).
 - El layout raíz ya incluye Navbar y FooterWrapper — las páginas nuevas se insertan vía children.
 
+## Directriz de Negocio: Generar Conversación (INNEGOCIABLE)
+
+El objetivo central de la aplicación NO es solo informar: es **generar conversación, engagement y viralidad** en la red social del usuario (LinkedIn). Toda salida de IA debe estar diseñada para que alguien que aún no ha leído la noticia quiera detenerse, hacer clic y comentar.
+
+### Aplicar en TODOS los modelos/plantillas de contenido:
+
+1. **Titulares (banner de imagen)**: Deben generar CURIOSIDAD y ganas de clic. Prohibido titular literal/descriptivo ("Calor en verano"). Usar ángulos psicológicos: pregunta intrigante, dato contraintuitivo, contradicción o giro inesperado. Máx 60 caracteres.
+2. **Post/descripción**: Debe cerrar SIEMPRE con una pregunta abierta que invite a comentar, debatir o compartir experiencia (ej: "¿Qué opinas? Déjamelo en los comentarios"). El cierre conversacional es obligatorio en todos los estilos (crítico, educativo, satírico, ejecutivo).
+3. **Modo educativo/divulgativo**: Además del cierre con pregunta, debe listar AL MENOS 2-3 creencias o mitos desmentidos por la noticia (no solo uno), y terminar invitando a la audiencia a compartir sus propias creencias ("¿Qué otras creencias tienes en mente que se han derribado?").
+4. **La imagen y el titular apoyan el post**: La imagen con titular debe ser capaz de generar conversación por sí sola, complementando la descripción. El conjunto (imagen + titular + descripción) busca que la comunidad converse incluso antes de abrir la noticia.
+
+### Implementación actual:
+- `generateHeadlines()` en `apps/web/src/services/ai-service.ts` — titulares con ángulos de curiosidad.
+- Templates en `apps/web/src/data/prompt-templates.ts` — cierre conversacional en los 4 estilos + 2-3 creencias en educativo.
+
 ## Rutas de Archivos Importantes
 
 ```

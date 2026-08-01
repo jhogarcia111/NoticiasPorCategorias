@@ -77,6 +77,7 @@ REGLAS ESTRICTAS (violarlas cancela tu respuesta):
 Noticias:
 ${newsText}
 El post debe tener un hook inicial, ser profesional, generar engagement, incluir call-to-action.
+OBJETIVO PRINCIPAL: GENERAR CONVERSACIÓN. Termina el post con una pregunta abierta que invite a la audiencia a comentar, debatir o compartir su experiencia (ej: "¿Qué opinas? Déjamelo en los comentarios").
 Incluye EMOJIS relevantes en cada párrafo (🔥💡📊🎯⚡💻🚀✅📢💬 etc.).
 Máximo ${maxLength} caracteres. Estilo: ${style}.
 ${langInstruction}
@@ -177,9 +178,19 @@ Devuelve SOLO un array JSON (sin markdown, sin texto adicional):
 }
 
 export async function generateHeadlines(title: string, summary: string): Promise<string[]> {
-  const prompt = `Genera 3 titulares cortos e impactantes (máximo 80 caracteres cada uno) para un banner de "BREAKING NEWS" en una imagen profesional de LinkedIn.
+  const prompt = `Eres un copywriter experto en contenido viral para LinkedIn. Tu misión es crear titulares para un banner de "BREAKING NEWS" en una imagen que acompañará una publicación.
 
-Cada titular debe ser diferente en tono o enfoque, todos relacionados a la noticia.
+OBJETIVO PRINCIPAL: Los titulares deben GENERAR CURIOSIDAD y ganas de hacer clic. Deben ser intrigantes, provocativos y con gancho emocional, NO descripciones literales del tema. Queremos que alguien que pase el dedo se detenga a leer, quiera abrir la noticia y comente en la publicación.
+
+REGLAS:
+- Máximo 60 caracteres por titular (son para un banner visual).
+- Basados SOLO en la noticia dada, sin inventar datos falsos.
+- Cada titular debe usar un ángulo psicológico distinto:
+  1. UNO con pregunta intrigante o "gancho de curiosidad" (ej: "¿Por qué seguimos creyendo esto?")
+  2. UNO con dato contraintuitivo o sorpresa (ej: "La ciencia lo acaba de desmentir")
+  3. UNO con contradicción o giro inesperado (ej: "Créelo o no: lo que pensabas está mal")
+- Deben sonar humanos, como titular de revista de divulgación, NO como noticia técnica.
+- NO uses comillas ni caracteres especiales que rompan el banner.
 
 Noticia: ${title}
 Resumen: ${summary}

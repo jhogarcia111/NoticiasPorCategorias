@@ -29,7 +29,7 @@ export const promptTemplates: PromptTemplate[] = [
 3. ESTRUCTURA DE LA COMUNICACIÓN: 
    - Ganchos (hooks) que inviten a pensar, no a hacer click por miedo.
    - Claridad en el valor añadido: ¿Por qué debería importarle esto a un profesional o a alguien interesado en tecnología?
-   - Cierre: Una invitación abierta a comentar o debatir.
+   - Cierre: Una invitación abierta a comentar o debatir (ej: "¿Qué opinas al respecto? Déjamelo en los comentarios"). El objetivo es GENERAR CONVERSACIÓN en la comunidad.
 
 ### TU TAREA:
 Devuelve tu respuesta en EXACTAMENTE este formato, sin desviaciones:
@@ -66,8 +66,10 @@ Termina con máximo 3 hashtags relevantes.]`,
 3. ESTRUCTURA:
    - Explicación del concepto clave en lenguaje cotidiano.
    - Por qué es importante (impacto en la vida diaria).
+   - MÚLTIPLES creencias o mitos que la noticia desmiente (al menos 2-3 ejemplos concretos, no solo uno). Ejemplo del formato: "Pensábamos que X... pero resulta que Y. También se creía que Z... y la realidad es W."
    - Datos curiosos o sorprendentes.
    - Conclusión práctica.
+   - CIERRE CONVERSACIONAL OBLIGATORIO: Termina el post con una pregunta abierta que invite a la audiencia a comentar, compartir su experiencia o dar su opinión (ej: "¿Qué otras creencias tienes en mente que se han derribado? Escríbelas en los comentarios"). El objetivo es GENERAR CONVERSACIÓN en la comunidad.
 
 ### FORMATO DE RESPUESTA:
 1. Traducción sencilla: Explica la noticia como si se la contaras a un amigo.
@@ -84,7 +86,7 @@ Devuelve tu respuesta en el siguiente formato dividido:
 3. Dato clave: [dato numérico o fecha relevante]
 
 ---POST---
-[SOLO el texto del post. Sin "Post para redes:" ni ningún label. Escrito como un post humano natural con EMOJIS en cada párrafo (🔬🧠💡📚🔍✨🎓 etc.), saltos de línea y fluidez. Máximo 3 hashtags.]`,
+[SOLO el texto del post. Sin "Post para redes:" ni ningún label. Escrito como un post humano natural con EMOJIS en cada párrafo (🔬🧠💡📚🔍✨🎓 etc.), saltos de línea y fluidez. Debe listar al menos 2-3 creencias desmentidas por la noticia y terminar con una pregunta abierta para generar comentarios. Máximo 3 hashtags.]`,
   },
   {
     id: "satirico-humoristico",
@@ -123,7 +125,7 @@ Devuelve tu respuesta en el siguiente formato dividido:
 3. Hashtags: [creativos y relevantes]
 
 ---POST---
-[SOLO el texto del post. Sin "Post para redes:" ni ningún label. Escrito como post humano con humor, EMOJIS en cada párrafo (😂🤡🔥💀🎭 etc.) y fluidez natural.]`,
+[SOLO el texto del post. Sin "Post para redes:" ni ningún label. Escrito como post humano con humor, EMOJIS en cada párrafo (😂🤡🔥💀🎭 etc.) y fluidez natural. Termina con una pregunta o invitación cómica que invite a comentar (ej: "¿Tú qué harías? Cuéntamelo en los comentarios"). El objetivo es GENERAR CONVERSACIÓN en la comunidad.]`,
   },
   {
     id: "ejecutivo-negocios",
@@ -145,6 +147,7 @@ Devuelve tu respuesta en el siguiente formato dividido:
    - Impacto en el mercado (datos, cifras).
    - Oportunidades y amenazas.
    - Recomendación estratégica.
+   - CIERRE CONVERSACIONAL OBLIGATORIO: Termina con una pregunta abierta a la audiencia (ej: "¿Cómo crees que esto afectará tu industria? Comparte tu visión en los comentarios"). El objetivo es GENERAR CONVERSACIÓN en la comunidad.
 
 ### FORMATO DE RESPUESTA:
 1. Resumen ejecutivo: 3 líneas con lo esencial.
@@ -161,6 +164,6 @@ Devuelve tu respuesta en el siguiente formato dividido:
 3. Players involucrados: [quién gana, quién pierde]
 
 ---POST---
-[SOLO el texto del post. Sin "Post para LinkedIn:" ni ningún label. Escrito como post profesional con tono ejecutivo, EMOJIS relevantes (📊💼📈🎯💡✅ etc.) y fluidez natural. Máximo 3 hashtags.]`,
+[SOLO el texto del post. Sin "Post para LinkedIn:" ni ningún label. Escrito como post profesional con tono ejecutivo, EMOJIS relevantes (📊💼📈🎯💡✅ etc.) y fluidez natural. Termina con una pregunta abierta que invite a los colegas del sector a comentar. Máximo 3 hashtags.]`,
   },
 ]
