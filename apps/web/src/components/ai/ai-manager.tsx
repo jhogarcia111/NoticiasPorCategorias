@@ -355,12 +355,19 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       }
 
       setImagePromptsUsed(prompts)
-      const POLLINATIONS_URL = "https://image.pollinations.ai/prompt"
-      const urls = prompts.map((p, idx) =>
-        `${POLLINATIONS_URL}/${encodeURIComponent(p)}?nocache=${Date.now()}&seed=${idx + 1}`
-      )
-      setImageOptions(urls)
       setImageLoadStates({})
+
+      const genRes = await fetch("/api/images/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompts }),
+      })
+      const genData = await genRes.json()
+      if (!genRes.ok) throw new Error(genData.error || "Error generando imágenes")
+      const urls: string[] = genData.data
+      if (!urls || urls.length === 0) throw new Error("No se generaron imágenes")
+
+      setImageOptions(urls)
 
       // generate headlines in parallel
       let headlinesArr: string[] = []
@@ -390,22 +397,14 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
         })
         .catch(() => {})
 
-      // load images sequentially
-      const loadNext = (idx: number) => {
-        if (idx >= urls.length) return
+      // load images
+      urls.forEach((url, idx) => {
         setImageLoadStates((prev) => ({ ...prev, [idx]: "loading" }))
         const img = new Image()
-        img.onload = () => {
-          setImageLoadStates((prev) => ({ ...prev, [idx]: "loaded" }))
-          setTimeout(() => loadNext(idx + 1), 1200)
-        }
-        img.onerror = () => {
-          setImageLoadStates((prev) => ({ ...prev, [idx]: "error" }))
-          setTimeout(() => loadNext(idx + 1), 800)
-        }
-        img.src = urls[idx]
-      }
-      loadNext(0)
+        img.onload = () => setImageLoadStates((prev) => ({ ...prev, [idx]: "loaded" }))
+        img.onerror = () => setImageLoadStates((prev) => ({ ...prev, [idx]: "error" }))
+        img.src = url
+      })
 
       // save generated images to gallery
       for (let i = 0; i < urls.length; i++) {
@@ -427,17 +426,32 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     }
   }
 
-  const handleRetryImage = (idx: number) => {
+  const handleRetryImage = async (idx: number) => {
     if (!imageOptions[idx]) return
-    const url = imageOptions[idx].replace(/&seed=\d+/, `&seed=${Date.now()}`)
-    const newUrls = [...imageOptions]
-    newUrls[idx] = url
-    setImageOptions(newUrls)
+    const prompt = imagePromptsUsed[idx]
+    if (!prompt) return
     setImageLoadStates((prev) => ({ ...prev, [idx]: "loading" }))
-    const img = new Image()
-    img.onload = () => setImageLoadStates((prev) => ({ ...prev, [idx]: "loaded" }))
-    img.onerror = () => setImageLoadStates((prev) => ({ ...prev, [idx]: "error" }))
-    img.src = url
+    try {
+      const res = await fetch("/api/images/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompts: [prompt] }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Error regenerando imagen")
+      const newUrl: string = data.data?.[0]
+      if (!newUrl) throw new Error("No se regeneró la imagen")
+      const newUrls = [...imageOptions]
+      newUrls[idx] = newUrl
+      setImageOptions(newUrls)
+      const img = new Image()
+      img.onload = () => setImageLoadStates((prev) => ({ ...prev, [idx]: "loaded" }))
+      img.onerror = () => setImageLoadStates((prev) => ({ ...prev, [idx]: "error" }))
+      img.src = newUrl
+    } catch (e: any) {
+      setImageLoadStates((prev) => ({ ...prev, [idx]: "error" }))
+      addToast("error", `Error al regenerar imagen: ${e.message}`)
+    }
   }
 
   const renderOverlay = (

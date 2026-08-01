@@ -1,17 +1,17 @@
-const DEEPSEEK_API_URL = "https://api.deepseek.com/v1"
-const DEEPSEEK_API_KEY = process.env.VITE_DEEPSEEK_API_KEY || process.env.DEEPSEEK_API_KEY
+const GROQ_API_URL = "https://api.groq.com/openai/v1"
+const GROQ_API_KEY = process.env.GROQ_API_KEY
 
-async function callDeepSeek(prompt: string, maxTokens = 300) {
-  if (!DEEPSEEK_API_KEY) throw new Error("DeepSeek API key not configured")
+async function callGroq(prompt: string, maxTokens = 300) {
+  if (!GROQ_API_KEY) throw new Error("Groq API key not configured")
 
-  const response = await fetch(`${DEEPSEEK_API_URL}/chat/completions`, {
+  const response = await fetch(`${GROQ_API_URL}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+      Authorization: `Bearer ${GROQ_API_KEY}`,
     },
     body: JSON.stringify({
-      model: "deepseek-chat",
+      model: "llama-3.3-70b-versatile",
       messages: [{ role: "user", content: prompt }],
       max_tokens: maxTokens,
       temperature: 0.7,
@@ -20,7 +20,7 @@ async function callDeepSeek(prompt: string, maxTokens = 300) {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}))
-    throw new Error(`DeepSeek API error: ${errorData.error?.message || response.statusText}`)
+    throw new Error(`Groq API error: ${errorData.error?.message || response.statusText}`)
   }
 
   const data = await response.json()
@@ -39,7 +39,7 @@ ${langInstruction}
 Noticia: ${content}
 Resumen:`
 
-  return callDeepSeek(prompt, 300)
+  return callGroq(prompt, 300)
 }
 
 export async function generateLinkedInPost(
@@ -61,7 +61,7 @@ export async function generateLinkedInPost(
   if (systemPrompt) {
     const extra = customPrompt ? `\n\nInstrucciones adicionales del usuario:\n${customPrompt}` : ""
     const prompt = `${systemPrompt}\n\n### NOTICIAS A PROCESAR:\n${newsText}\n${extra}\n\n${langInstruction}`
-    return callDeepSeek(prompt, 1000)
+    return callGroq(prompt, 1000)
   }
 
   const prompt = `Eres un experto en marketing de contenido para LinkedIn. 
@@ -82,7 +82,7 @@ Máximo ${maxLength} caracteres. Estilo: ${style}.
 ${langInstruction}
 Post para LinkedIn:`
 
-  return callDeepSeek(prompt, 500)
+  return callGroq(prompt, 500)
 }
 
 export async function generateHashtags(title: string, summary: string) {
@@ -92,7 +92,7 @@ Resumen: ${summary}
 Los hashtags deben ser populares en LinkedIn y relacionados con el contenido.
 Hashtags:`
 
-  const result = await callDeepSeek(prompt, 100)
+  const result = await callGroq(prompt, 100)
   if (!result) return []
   return result
     .split("\n")
@@ -121,7 +121,7 @@ Resumen: ${summary}
 
 Prompt para generación de imagen:`
 
-  return callDeepSeek(prompt, 300)
+  return callGroq(prompt, 300)
 }
 
 const VISUAL_SCENE_TEMPLATE = `"A professional, high-impact cinematic news graphic for a LinkedIn article header. 16:9 aspect ratio.
@@ -159,7 +159,7 @@ Devuelve SOLO un array JSON (sin markdown, sin texto adicional):
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const result = await callDeepSeek(prompt, 800)
+      const result = await callGroq(prompt, 800)
       if (!result) continue
 
       const jsonMatch = result.match(/\[[\s\S]*\]/)
@@ -188,7 +188,7 @@ Devuelve SOLO un array JSON:
 ["titular 1","titular 2","titular 3"]`
 
   try {
-    const result = await callDeepSeek(prompt, 400)
+    const result = await callGroq(prompt, 400)
     if (!result) return []
     const jsonMatch = result.match(/\[[\s\S]*\]/)
     if (!jsonMatch) return []
@@ -223,7 +223,7 @@ Ejemplo:
 2. [segundo prompt]
 3. [tercer prompt]`
 
-  const result = await callDeepSeek(prompt, 600)
+  const result = await callGroq(prompt, 600)
   if (!result) return []
 
   return result
