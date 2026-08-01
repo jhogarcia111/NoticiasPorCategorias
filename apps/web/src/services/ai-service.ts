@@ -182,20 +182,33 @@ export async function generateHeadlines(title: string, summary: string): Promise
 
 OBJETIVO PRINCIPAL: Los titulares deben GENERAR CURIOSIDAD y ganas de hacer clic. Deben ser intrigantes, provocativos y con gancho emocional, NO descripciones literales del tema. Queremos que alguien que pase el dedo se detenga a leer, quiera abrir la noticia y comente en la publicación.
 
+IMPORTANTE: Escribe titulares de ENTRE 5 Y 10 PALABRAS (no más cortos). Usa frases completas con verbo, no palabras sueltas ni listas de 3 palabras.
+
+Ejemplos de buen titular (con gancho de curiosidad):
+- "¿Por qué seguimos creyendo que el blanco es más fresco?"
+- "La ciencia acaba de desmentir una creencia que todos tenemos"
+- "Créelo o no: vestir de negro en el desierto es la jugada"
+- "Pensábamos que era obvio… y la ciencia dice lo contrario"
+
+Ejemplos de MAL titular (NO lo hagas, son cortos y literales):
+- "Calor en verano"
+- "Negro refrescante"
+- "Ropa blanca"
+
 REGLAS:
-- Máximo 60 caracteres por titular (son para un banner visual).
 - Basados SOLO en la noticia dada, sin inventar datos falsos.
 - Cada titular debe usar un ángulo psicológico distinto:
   1. UNO con pregunta intrigante o "gancho de curiosidad" (ej: "¿Por qué seguimos creyendo esto?")
   2. UNO con dato contraintuitivo o sorpresa (ej: "La ciencia lo acaba de desmentir")
   3. UNO con contradicción o giro inesperado (ej: "Créelo o no: lo que pensabas está mal")
+- Máximo 70 caracteres por titular.
 - Deben sonar humanos, como titular de revista de divulgación, NO como noticia técnica.
 - NO uses comillas ni caracteres especiales que rompan el banner.
 
 Noticia: ${title}
 Resumen: ${summary}
 
-Devuelve SOLO un array JSON:
+Devuelve SOLO un array JSON con 3 titulares:
 ["titular 1","titular 2","titular 3"]`
 
   try {
