@@ -5,6 +5,17 @@ import { eq, desc, and, sql, inArray } from "drizzle-orm"
 const NEWSAPI_BASE_URL = "https://newsapi.org/v2"
 const NEWSAPI_KEY = process.env.VITE_NEWSAPI_KEY || process.env.NEXT_PUBLIC_NEWSAPI_KEY
 
+// /top-headlines does not support a `language` param, so map category -> Spanish keywords for /everything
+const CATEGORY_QUERY_MAP: Record<string, string> = {
+  business: "negocios OR economía OR finanzas",
+  technology: "tecnología",
+  science: "ciencia",
+  health: "salud",
+  general: "noticias",
+  sports: "deportes",
+  entertainment: "entretenimiento",
+}
+
 export async function fetchNewsFromAPI(options: {
   category?: string
   country?: string
@@ -15,6 +26,18 @@ export async function fetchNewsFromAPI(options: {
 } = {}) {
   const { category = "technology", country = "", pageSize = 20, page = 1, query = "", language = "" } = options
 
+  // /top-headlines doesn't support language. When a language is requested without an explicit
+  // query, use /everything with a category keyword so Spanish-language results are returned.
+  if (!query && language && category) {
+    return fetchNewsFromAPI({
+      category: undefined,
+      query: CATEGORY_QUERY_MAP[category] || category,
+      pageSize,
+      page,
+      language,
+    })
+  }
+
   // Use /everything if query provided, otherwise /top-headlines
   const isTopHeadlines = !query
   const params = new URLSearchParams({
@@ -24,9 +47,10 @@ export async function fetchNewsFromAPI(options: {
   })
 
   if (category && isTopHeadlines) params.set("category", category)
-  if (country) params.set("country", country)
+  if (country && isTopHeadlines) params.set("country", country)
   if (query) params.set("q", query)
   if (language) params.set("language", language)
+  if (!isTopHeadlines) params.set("sortBy", "publishedAt")
 
   const endpoint = isTopHeadlines ? `${NEWSAPI_BASE_URL}/top-headlines` : `${NEWSAPI_BASE_URL}/everything`
 
