@@ -140,7 +140,7 @@ export async function uploadImageToLinkedIn(profileId: number, imageUrlOrBase64:
   return assetUrn
 }
 
-async function waitForImageAvailable(accessToken: string, imageUrn: string, maxAttempts = 20) {
+async function waitForImageAvailable(accessToken: string, imageUrn: string, maxAttempts = 30) {
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const resp = await fetch(`https://api.linkedin.com/rest/images?ids=List(${encodeURIComponent(imageUrn)})`, {
       headers: {
@@ -150,15 +150,23 @@ async function waitForImageAvailable(accessToken: string, imageUrn: string, maxA
       },
     })
     if (!resp.ok) {
-      await sleep(1000)
+      if (resp.status === 403 || resp.status === 401) {
+        console.error(`LinkedIn image status GET rejected (${resp.status}); proceeding optimistically after PUT`)
+        await sleep(3000)
+        return
+      }
+      await sleep(1500)
       continue
     }
     const data = await resp.json().catch(() => null)
-    const image = data?.results?.[imageUrn]?.value
+    const image = data?.results?.[imageUrn] ?? data?.results?.[imageUrn]?.value
     if (image?.status === "AVAILABLE") return
-    await sleep(1000)
+    if (image?.status === "PROCESSING_FAILED" || image?.status === "CLIENT_ERROR") {
+      throw new Error(`LinkedIn image ${image.status}: ${JSON.stringify(data).substring(0, 500)}`)
+    }
+    await sleep(1500)
   }
-  throw new Error(`LinkedIn image not AVAILABLE after ${maxAttempts}s`)
+  throw new Error(`LinkedIn image not AVAILABLE after ${maxAttempts * 1.5}s`)
 }
 
 function sleep(ms: number) {
