@@ -61,7 +61,7 @@ export async function generateLinkedInPost(
   if (systemPrompt) {
     const extra = customPrompt ? `\n\nInstrucciones adicionales del usuario:\n${customPrompt}` : ""
     const prompt = `${systemPrompt}\n\n### NOTICIAS A PROCESAR:\n${newsText}\n${extra}\n\n${langInstruction}`
-    return callGroq(prompt, 1000)
+    return callGroq(prompt, 2000)
   }
 
   const prompt = `Eres un experto en marketing de contenido para LinkedIn. 
@@ -83,7 +83,7 @@ Máximo ${maxLength} caracteres. Estilo: ${style}.
 ${langInstruction}
 Post para LinkedIn:`
 
-  return callGroq(prompt, 500)
+  return callGroq(prompt, 2000)
 }
 
 export async function generateHashtags(title: string, summary: string) {

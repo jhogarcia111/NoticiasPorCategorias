@@ -188,7 +188,11 @@ export async function postToLinkedIn(
     .limit(1)
   if (!profile) throw new Error("LinkedIn profile not found")
 
-  const commentary = sourceUrl && !content.includes(sourceUrl) ? `${content}\n\n${sourceUrl}` : content
+  let commentary = content
+  if (sourceUrl) {
+    commentary = commentary.replace(sourceUrl, "")
+    commentary = `${commentary.trim()}\n\nFuente: ${sourceUrl}`
+  }
 
   const body: any = {
     author: `urn:li:person:${profile.linkedinId}`,
