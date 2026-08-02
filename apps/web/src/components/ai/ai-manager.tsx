@@ -859,6 +859,24 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     { id: "analysis", label: "Análisis", content: parsedResult?.analysis || "" },
   ], [parsedResult, result])
 
+  const getLinkedInPostBody = (variation?: string) => {
+    const extra = [customText, variation].filter(Boolean).join("\n\n")
+    return {
+      type: "linkedin-post",
+      newsItems: activeNews.map((n: any) => ({
+        id: n.id,
+        title: n.title,
+        summary: n.summary || n.content,
+        source_url: n.sourceUrl,
+      })),
+      options: {
+        style: "custom",
+        systemPrompt: selectedTemplate.systemPrompt,
+        customPrompt: extra || undefined,
+      },
+    }
+  }
+
   const handleProcess = async () => {
     setProcessing(true)
     setResult(null)
@@ -867,30 +885,11 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     setImageOptions([])
     setImagePromptsUsed([])
 
-    const newsContent = activeNews.map((n: any, i: number) =>
-      `--- NOTICIA ${i + 1} ---\nTitulo: ${n.title}\nFuente: ${n.sourceName}\nFecha: ${n.publishedAt || ""}\nResumen: ${n.summary || ""}\nContenido: ${n.content || n.summary || "No disponible"}\nURL (incluye esta URL en el post): ${n.sourceUrl || ""}`
-    ).join("\n\n")
-
-    const fullPrompt = `${selectedTemplate.systemPrompt}\n\n### NOTICIAS A PROCESAR:\n${newsContent || customText || "(No hay contenido adicional)"}`
-
     try {
       const res = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "linkedin-post",
-          newsItems: activeNews.map((n: any) => ({
-            id: n.id,
-            title: n.title,
-            summary: n.summary || n.content,
-            source_url: n.sourceUrl,
-          })),
-          options: {
-            style: "custom",
-            systemPrompt: selectedTemplate.systemPrompt,
-            customPrompt: customText || undefined,
-          },
-        }),
+        body: JSON.stringify(getLinkedInPostBody()),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Error al procesar")
@@ -930,28 +929,15 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     setRegenerating(true)
     try {
       const variations = [
-        "Reescribe el post completo con un enfoque y estructura DIFERENTES al anterior. Cambia el hook inicial, el orden de las ideas y el cierre. Mantén los mismos hechos, pero redáctalo como si fuera la primera vez.",
-        "Genera una versión totalmente NUEVA del post. Varía el estilo, el tono, el gancho inicial y la pregunta final. No repitas la redacción anterior.",
-        "Crea otra redacción del post, con un ángulo distinto sobre la misma noticia. Usa emojis diferentes y una pregunta de cierre distinta.",
+        "Reescribe el post manteniendo TODAS las reglas, el tono, el enfoque en datos reales de la noticia y el formato del template. Cambia únicamente el gancho inicial, la redacción de los párrafos y la pregunta de cierre, con otro ángulo. No inventes datos.",
+        "Genera una nueva redacción del post con la MISMA estructura y reglas del template, pero con un enfoque distinto sobre los mismos hechos reales de la noticia. Varía el hook y el cierre. Mantén el tono profesional y los datos de la fuente.",
+        "Reescribe el post desde cero respetando las reglas del template y usando SOLO los datos reales de la noticia. Dales un giro diferente a la redacción: otro inicio, otra selección de datos destacados y otra pregunta final. No agregues información que no esté en la noticia.",
       ]
       const variation = variations[Math.floor(Math.random() * variations.length)]
       const res = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "linkedin-post",
-          newsItems: activeNews.map((n: any) => ({
-            id: n.id,
-            title: n.title,
-            summary: n.summary || n.content,
-            source_url: n.sourceUrl,
-          })),
-          options: {
-            style: "custom",
-            systemPrompt: `${selectedTemplate.systemPrompt}\n\nInstrucción de regeneración: ${variation}`,
-            customPrompt: customText || undefined,
-          },
-        }),
+        body: JSON.stringify(getLinkedInPostBody(variation)),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Error al regenerar")
