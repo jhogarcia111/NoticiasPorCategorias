@@ -923,9 +923,18 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
   }
 
   const handleRegeneratePost = async () => {
-    if (activeNews.length === 0) return
+    if (activeNews.length === 0) {
+      addToast("error", "Selecciona al menos una noticia para regenerar el post")
+      return
+    }
     setRegenerating(true)
     try {
+      const variations = [
+        "Reescribe el post completo con un enfoque y estructura DIFERENTES al anterior. Cambia el hook inicial, el orden de las ideas y el cierre. Mantén los mismos hechos, pero redáctalo como si fuera la primera vez.",
+        "Genera una versión totalmente NUEVA del post. Varía el estilo, el tono, el gancho inicial y la pregunta final. No repitas la redacción anterior.",
+        "Crea otra redacción del post, con un ángulo distinto sobre la misma noticia. Usa emojis diferentes y una pregunta de cierre distinta.",
+      ]
+      const variation = variations[Math.floor(Math.random() * variations.length)]
       const res = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -939,7 +948,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
           })),
           options: {
             style: "custom",
-            systemPrompt: selectedTemplate.systemPrompt,
+            systemPrompt: `${selectedTemplate.systemPrompt}\n\nInstrucción de regeneración: ${variation}`,
             customPrompt: customText || undefined,
           },
         }),
@@ -949,7 +958,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       const rawResponse = data.data || "Sin respuesta"
       setResult(rawResponse)
       setParsedResult(parseAIResponse(rawResponse))
-      addToast("success", "Post regenerado")
+      addToast("success", "Post regenerado con una nueva redacción")
     } catch (e: any) {
       addToast("error", `Error al regenerar: ${e.message}`)
     } finally {
