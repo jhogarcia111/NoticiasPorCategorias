@@ -55,6 +55,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
   const [recuperando, setRecuperando] = useState(false)
   const [posting, setPosting] = useState(false)
   const [scheduling, setScheduling] = useState(false)
+  const [regenerating, setRegenerating] = useState(false)
   const [profiles, setProfiles] = useState<any[]>([])
   const [selectedProfileId, setSelectedProfileId] = useState<number | null>(null)
   const [scheduleDateTime, setScheduleDateTime] = useState("")
@@ -240,7 +241,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
   const handleRecuperar = (saved: any) => {
     setRecuperando(true)
     setResult(saved.fullResponse || saved.linkedinPost || "")
-    setParsedResult(parseAIResponse(saved.fullResponse || saved.linkedinPost || ""))
+    setParsedResult(parseAIResponse(saved.linkedinPost || saved.fullResponse || ""))
 
     // auto-select template
     if (saved.templateName) {
@@ -291,6 +292,10 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     if (!result || activeNewsIds.length === 0) return
     setSaving(true)
     try {
+      const finalPost = parsedResult?.post || result
+      const finalFull = parsedResult?.analysis
+        ? `---ANALISIS---\n${parsedResult.analysis}\n\n---POST---\n${finalPost}`
+        : finalPost
       for (const newsId of activeNewsIds) {
         await fetch("/api/ai/save", {
           method: "POST",
@@ -300,8 +305,8 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
             templateId: selectedTemplateId,
             templateName: selectedTemplate.name,
             language: "es",
-            linkedinPost: parsedResult?.post || result,
-            fullResponse: result,
+            linkedinPost: finalPost,
+            fullResponse: finalFull,
             headlines: headlines.length > 0 ? JSON.stringify(headlines) : null,
           }),
         })
@@ -917,6 +922,41 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     }
   }
 
+  const handleRegeneratePost = async () => {
+    if (activeNews.length === 0) return
+    setRegenerating(true)
+    try {
+      const res = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "linkedin-post",
+          newsItems: activeNews.map((n: any) => ({
+            id: n.id,
+            title: n.title,
+            summary: n.summary || n.content,
+            source_url: n.sourceUrl,
+          })),
+          options: {
+            style: "custom",
+            systemPrompt: selectedTemplate.systemPrompt,
+            customPrompt: customText || undefined,
+          },
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Error al regenerar")
+      const rawResponse = data.data || "Sin respuesta"
+      setResult(rawResponse)
+      setParsedResult(parseAIResponse(rawResponse))
+      addToast("success", "Post regenerado")
+    } catch (e: any) {
+      addToast("error", `Error al regenerar: ${e.message}`)
+    } finally {
+      setRegenerating(false)
+    }
+  }
+
   const handleCopyPost = () => {
     const text = parsedResult?.post || result || ""
     if (text) {
@@ -1404,13 +1444,26 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-sm font-semibold">Vista previa LinkedIn</CardTitle>
-                        <button
-                          onClick={handleCopyPost}
-                          className="p-1.5 rounded-md hover:bg-muted transition-colors"
-                          title="Copiar post"
-                        >
-                          {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4 text-muted-foreground" />}
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            onClick={handleRegeneratePost}
+                            disabled={regenerating}
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 text-xs"
+                            title="Regenerar texto del post"
+                          >
+                            {regenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <RefreshCw className="h-3.5 w-3.5 mr-1" />}
+                            Regenerar
+                          </Button>
+                          <button
+                            onClick={handleCopyPost}
+                            className="p-1.5 rounded-md hover:bg-muted transition-colors"
+                            title="Copiar post"
+                          >
+                            {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4 text-muted-foreground" />}
+                          </button>
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent>
