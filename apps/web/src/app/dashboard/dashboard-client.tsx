@@ -15,11 +15,10 @@ import { AdminSubscriptions } from "@/components/admin/admin-subscriptions"
 import { SubscriptionManager } from "@/components/subscription/subscription-manager"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { useNews } from "@/hooks/use-news"
 import { cn } from "@/lib/utils"
 import {
   Newspaper, Brain, Calendar,
-  RefreshCw, CheckCircle2, Clock, ArrowRight, Gem,
+  RefreshCw, CheckCircle2, Clock, ArrowRight, Gem, PenSquare, ExternalLink,
 } from "lucide-react"
 
 interface DashboardClientProps {
@@ -32,12 +31,12 @@ const quickActions: { id: string; label: string; icon: any; tab: Tab }[] = [
   { id: "calendar", label: "Ver calendario", icon: Calendar, tab: "calendar" },
 ]
 
-function StatsCard({ icon: Icon, label, value, color, bg }: {
-  icon: any; label: string; value: string | number; color: string; bg: string
+function StatsCard({ icon: Icon, label, value, color, bg, onClick }: {
+  icon: any; label: string; value: string | number; color: string; bg: string; onClick?: () => void
 }) {
   return (
-    <Card>
-      <CardContent className="p-4">
+    <Card className={cn(onClick && "cursor-pointer hover:shadow-md hover:border-primary/30 transition-all")}>
+      <CardContent className="p-4" onClick={onClick}>
         <div className="flex items-center gap-3">
           <div className={cn("p-2.5 rounded-lg", bg)}>
             <Icon className={cn("h-5 w-5", color)} />
@@ -55,11 +54,16 @@ function StatsCard({ icon: Icon, label, value, color, bg }: {
 export default function DashboardClient({ user }: DashboardClientProps) {
   const { activeTab, setActiveTab, selectedNewsIds, setSelectedNewsIds, cachedNews, setCachedNews } = useDashboard()
 
-  const { data: allNewsData } = useNews({ limit: 1 })
-
-  const totalNews = allNewsData?.total ?? allNewsData?.data?.length ?? "—"
+  const [stats, setStats] = useState<{ totalNews: number; unprocessed: number; drafts: number; scheduled: number; publishedToday: number } | null>(null)
 
   const [usage, setUsage] = useState<{ used: number; limit: number; limitLabel: string; plan: string } | null>(null)
+
+  useEffect(() => {
+    fetch("/api/stats")
+      .then(r => r.json())
+      .then(d => setStats(d.data))
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (user?.id) {
@@ -93,10 +97,37 @@ export default function DashboardClient({ user }: DashboardClientProps) {
           </Card>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatsCard icon={Newspaper} label="Noticias totales" value={totalNews} color="text-blue-600" bg="bg-blue-50" />
-            <StatsCard icon={Clock} label="Por procesar" value="—" color="text-amber-600" bg="bg-amber-50" />
-            <StatsCard icon={Calendar} label="Programadas" value="—" color="text-purple-600" bg="bg-purple-50" />
-            <StatsCard icon={CheckCircle2} label="Publicadas hoy" value="—" color="text-green-600" bg="bg-green-50" />
+            <StatsCard icon={Newspaper} label="Noticias totales" value={stats?.totalNews ?? "—"} color="text-blue-600" bg="bg-blue-50" onClick={() => setActiveTab("news")} />
+            <StatsCard icon={Clock} label="Por procesar" value={stats?.unprocessed ?? "—"} color="text-amber-600" bg="bg-amber-50" onClick={() => setActiveTab("news")} />
+            <StatsCard icon={PenSquare} label="Borradores IA" value={stats?.drafts ?? "—"} color="text-sky-600" bg="bg-sky-50" onClick={() => setActiveTab("ai")} />
+            <StatsCard icon={CheckCircle2} label="Publicadas hoy" value={stats?.publishedToday ?? "—"} color="text-green-600" bg="bg-green-50" onClick={() => setActiveTab("published")} />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <button
+              onClick={() => setActiveTab("calendar")}
+              className="flex items-center justify-between p-4 rounded-lg border bg-card hover:shadow-md hover:border-primary/30 transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-lg bg-purple-50">
+                  <Calendar className="h-5 w-5 text-purple-600" />
+                </div>
+                <span className="text-sm font-medium">Programadas ({stats?.scheduled ?? "—"})</span>
+              </div>
+              <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+            </button>
+            <button
+              onClick={() => setActiveTab("ai")}
+              className="flex items-center justify-between p-4 rounded-lg border bg-card hover:shadow-md hover:border-primary/30 transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-lg bg-sky-50">
+                  <PenSquare className="h-5 w-5 text-sky-600" />
+                </div>
+                <span className="text-sm font-medium">Borradores de IA ({stats?.drafts ?? "—"})</span>
+              </div>
+              <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+            </button>
           </div>
 
           {usage && usage.limit !== Infinity && (
