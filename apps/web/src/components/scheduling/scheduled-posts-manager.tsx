@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { Button } from "@/components/ui/button"
@@ -45,6 +45,10 @@ export function ScheduledPostsManager() {
     profile: "",
     search: "",
   })
+
+  useEffect(() => {
+    fetch("/api/linkedin/publish-due", { method: "POST" }).catch(() => {})
+  }, [])
 
   const filteredPosts = (scheduledPosts || []).filter((post: any) => {
     if (filters.status && post.status !== filters.status) return false

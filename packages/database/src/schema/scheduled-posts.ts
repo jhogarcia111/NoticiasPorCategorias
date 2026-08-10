@@ -16,7 +16,7 @@ export const scheduledPosts = pgTable("scheduled_posts", {
   imageUrl: text("image_url"),
   scheduledTime: timestamp("scheduled_time", { withTimezone: true }).notNull(),
   scheduledAt: timestamp("scheduled_at", { withTimezone: true }),
-  timezone: text("timezone").default("America/Mexico_City"),
+  timezone: text("timezone").default("America/Bogota"),
   status: postStatusEnum("status").default("pending"),
   postedAt: timestamp("posted_at", { withTimezone: true }),
   linkedinPostId: text("linkedin_post_id"),

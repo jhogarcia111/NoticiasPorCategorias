@@ -3,5 +3,11 @@
   "buildCommand": "npx turbo build --filter=web",
   "installCommand": "npm install --legacy-peer-deps",
   "framework": "nextjs",
-  "outputDirectory": ".next"
+  "outputDirectory": ".next",
+  "crons": [
+    {
+      "path": "/api/linkedin/publish-due",
+      "schedule": "*/5 * * * *"
+    }
+  ]
 }

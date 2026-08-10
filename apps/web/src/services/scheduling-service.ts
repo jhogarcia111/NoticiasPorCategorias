@@ -1,6 +1,7 @@
 import { getDb } from "@/lib/db"
 import { schedulingConfigs, scheduledPosts } from "@noticias/database"
 import { eq, and, gte, lte, asc } from "drizzle-orm"
+import { postToLinkedIn, uploadImageToLinkedIn } from "@/services/linkedin-service"
 
 export async function getSchedulingConfigs(userId: string) {
   const db = getDb()
@@ -58,6 +59,7 @@ export async function schedulePost(userId: string, postData: any) {
       profileId: postData.profileId ?? linkedinProfileId,
       linkedinProfileId,
       scheduledTime: scheduledAt,
+      timezone: postData.timezone || "America/Bogota",
       ...postData,
       scheduledAt,
     })
@@ -86,6 +88,52 @@ export async function deleteScheduledPost(postId: number) {
   await db.delete(scheduledPosts).where(eq(scheduledPosts.id, postId))
 }
 
+export async function publishDueScheduledPosts(profileId?: number, maxPosts = 20) {
+  const db = getDb()
+  const dueCondition = lte(scheduledPosts.scheduledAt, new Date())
+  const conditions = [eq(scheduledPosts.status, "scheduled"), dueCondition]
+  if (profileId) conditions.push(eq(scheduledPosts.linkedinProfileId, profileId))
+
+  const duePosts = await db
+    .select()
+    .from(scheduledPosts)
+    .where(and(...conditions))
+    .orderBy(asc(scheduledPosts.scheduledAt))
+    .limit(maxPosts)
+
+  const results: any[] = []
+  for (const post of duePosts) {
+    try {
+      const pid = post.linkedinProfileId ?? post.profileId
+      let imageUrn: string | null = null
+      if (post.imageUrl) {
+        // imageUrl puede ser base64 (datos guardados) o url
+        if (post.imageUrl.startsWith("data:image")) {
+          const [meta, b64] = post.imageUrl.split(",")
+          const mime = meta.match(/data:(.*?);/)?.[1] || "image/jpeg"
+          imageUrn = await uploadImageToLinkedIn(pid, b64, true, mime)
+        } else {
+          imageUrn = await uploadImageToLinkedIn(pid, post.imageUrl)
+        }
+      }
+
+      const result = await postToLinkedIn(pid, post.content || post.postContent || "", post.title || undefined, undefined, imageUrn ?? undefined)
+
+      await updateScheduledPost(post.id, {
+        status: "published",
+        postedAt: new Date(),
+        linkedinPostId: String(result?.id || result || ""),
+        errorMessage: null,
+      })
+      results.push({ id: post.id, status: "published" })
+    } catch (error: any) {
+      await updateScheduledPost(post.id, { status: "failed", errorMessage: error.message })
+      results.push({ id: post.id, status: "failed", error: error.message })
+    }
+  }
+  return results
+}
+
 export async function scheduleMultiplePosts(
   userId: string,
   linkedinProfileId: number,
@@ -106,6 +154,7 @@ export async function scheduleMultiplePosts(
           content: item.content || item.summary,
           summary: item.summary,
           scheduledTime: dates[0],
+          timezone: config.timezone || "America/Bogota",
           status: "scheduled",
         })
         .returning()

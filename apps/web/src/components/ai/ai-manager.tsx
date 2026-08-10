@@ -865,6 +865,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
             content: parsedResult?.post || result,
             summary: activeNews[0]?.summary || "",
             scheduledAt: new Date(scheduleDateTime).toISOString(),
+            timezone: "America/Bogota",
             status: "scheduled",
           },
         }),
@@ -1602,6 +1603,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                         onChange={(e) => setScheduleDateTime(e.target.value)}
                         className="h-9 text-sm"
                       />
+                      <p className="text-[10px] text-muted-foreground text-right">Hora de Bogotá (CO)</p>
                     </CardContent>
                   </Card>
                 </div>
