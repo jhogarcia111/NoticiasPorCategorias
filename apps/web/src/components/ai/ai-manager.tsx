@@ -853,21 +853,29 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     if (!selectedProfileId || !scheduleDateTime || !result) return
     setScheduling(true)
     try {
+      const postData: any = {
+        linkedinProfileId: selectedProfileId,
+        title: activeNews[0]?.title || "Post generado por IA",
+        content: parsedResult?.post || result,
+        summary: activeNews[0]?.summary || "",
+        scheduledAt: new Date(scheduleDateTime).toISOString(),
+        timezone: "America/Bogota",
+        status: "scheduled",
+      }
+
+      // Guardar la imagen del post comprimida junto a la programacion
+      if (customImage?.startsWith("data:")) {
+        const compressed = await compressForLinkedIn(customImage)
+        postData.imageUrl = `data:image/jpeg;base64,${compressed.base64}`
+      }
+
       const res = await fetch("/api/scheduling", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: session?.user?.id,
           type: "post",
-          postData: {
-            linkedinProfileId: selectedProfileId,
-            title: activeNews[0]?.title || "Post generado por IA",
-            content: parsedResult?.post || result,
-            summary: activeNews[0]?.summary || "",
-            scheduledAt: new Date(scheduleDateTime).toISOString(),
-            timezone: "America/Bogota",
-            status: "scheduled",
-          },
+          postData,
         }),
       })
       const data = await res.json()

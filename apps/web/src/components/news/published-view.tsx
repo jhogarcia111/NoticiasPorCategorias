@@ -112,6 +112,11 @@ export function PublishedView() {
                     {post.title && (
                       <p className="text-sm font-semibold text-foreground mb-1">{post.title}</p>
                     )}
+                    {post.imageUrl && (
+                      <div className="rounded-lg overflow-hidden border border-gray-200 mb-2">
+                        <img src={post.imageUrl} alt={post.title || "Imagen del post"} className="w-full max-h-72 object-cover" />
+                      </div>
+                    )}
                     <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed line-clamp-4">
                       {post.content || post.postContent || "Sin contenido"}
                     </p>

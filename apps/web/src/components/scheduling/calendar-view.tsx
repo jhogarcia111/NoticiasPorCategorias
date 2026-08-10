@@ -264,6 +264,11 @@ export function CalendarView() {
                               : ""}
                           </span>
                         </div>
+                        {post.imageUrl && (
+                          <div className="rounded-md overflow-hidden border border-border">
+                            <img src={post.imageUrl} alt={post.title || "Imagen del post"} className="w-full max-h-36 object-cover" />
+                          </div>
+                        )}
                         <p className="text-sm text-foreground leading-relaxed line-clamp-3">
                           {post.content || post.postContent || "Sin contenido"}
                         </p>
