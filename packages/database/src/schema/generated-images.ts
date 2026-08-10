@@ -11,5 +11,7 @@ export const generatedImages = pgTable("generated_images", {
   newsTitle: text("news_title"),
   newsId: integer("news_id"),
   headlinesJson: text("headlines_json"),
+  selectedHeadline: text("selected_headline"),
+  labelConfig: text("label_config"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 })

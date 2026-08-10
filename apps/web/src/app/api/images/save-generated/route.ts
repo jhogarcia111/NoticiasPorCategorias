@@ -24,7 +24,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 })
     }
 
-    const { imageUrl, promptUsed, newsTitle, newsId, headlines } = await request.json()
+    const { imageUrl, promptUsed, newsTitle, newsId, headlines, selectedHeadline, labelConfig } = await request.json()
     if (!imageUrl) {
       return NextResponse.json({ error: "imageUrl requerida" }, { status: 400 })
     }
@@ -41,6 +41,8 @@ export async function POST(request: Request) {
         newsTitle: newsTitle || null,
         newsId: newsId || null,
         headlinesJson: headlines ? JSON.stringify(headlines) : null,
+        selectedHeadline: selectedHeadline || null,
+        labelConfig: labelConfig ? JSON.stringify(labelConfig) : null,
       })
       .returning()
 

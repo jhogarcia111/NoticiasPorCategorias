@@ -116,6 +116,47 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     return { text: labelPreset.text, style: labelPreset.style, color: undefined as string | undefined }
   }
 
+  const restoreImageMeta = (img: any) => {
+    let hasHeadlines = false
+    if (img.headlinesJson) {
+      try {
+        const hls = JSON.parse(img.headlinesJson)
+        if (Array.isArray(hls) && hls.length > 0) {
+          setHeadlines(hls)
+          hasHeadlines = true
+          if (img.selectedHeadline) {
+            const idx = hls.findIndex((x: string) => x === img.selectedHeadline)
+            if (idx >= 0) { setSelectedHeadlineIdx(idx); setCustomHeadline("") }
+            else { setCustomHeadline(img.selectedHeadline); setSelectedHeadlineIdx(null) }
+          } else {
+            setSelectedHeadlineIdx(0)
+            setCustomHeadline("")
+          }
+        }
+      } catch {}
+    }
+    if (!hasHeadlines) {
+      if (img.selectedHeadline) {
+        setCustomHeadline(img.selectedHeadline)
+        setSelectedHeadlineIdx(null)
+      }
+      ensureHeadlines()
+    }
+    if (img.labelConfig) {
+      try {
+        const lc = typeof img.labelConfig === "string" ? JSON.parse(img.labelConfig) : img.labelConfig
+        if (lc.presetIdx !== undefined && lc.presetIdx < LABEL_PRESETS.length && !(lc.customLabel && lc.customLabel.trim())) {
+          setLabelPresetIdx(lc.presetIdx)
+        }
+        if (lc.customLabel && lc.customLabel.trim()) {
+          setCustomLabel(lc.customLabel)
+          setLabelPresetIdx(0)
+        }
+        if (lc.labelColor) setLabelColor(lc.labelColor)
+      } catch {}
+    }
+  }
+
   // Overlay positions (percentages of container)
   const [labelX, setLabelX] = useState(2)
   const [labelY, setLabelY] = useState(84)
@@ -288,12 +329,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
             setCustomImage(img.imageUrl)
             setAssemblerImage(img.imageUrl)
             setFinalImageUrl(img.imageUrl)
-            if (img.headlinesJson) {
-              try {
-                const hls = JSON.parse(img.headlinesJson)
-                if (Array.isArray(hls)) setHeadlines(hls)
-              } catch {}
-            }
+            restoreImageMeta(img)
           }
         }).catch(() => {})
     }
@@ -337,6 +373,12 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
               newsTitle: activeNews.find((n: any) => n.id === newsId)?.title || "",
               newsId,
               headlines: headlines.length > 0 ? headlines : undefined,
+              selectedHeadline: finalHeadlineUsed || (selectedHeadlineIdx !== null ? headlines[selectedHeadlineIdx] : customHeadline.trim()) || undefined,
+              labelConfig: {
+                presetIdx: labelPresetIdx,
+                customLabel,
+                labelColor,
+              },
             }),
           }).catch(() => {})
         }
@@ -1704,17 +1746,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                         <button
                           onClick={() => {
                             setAssemblerImage(img.imageUrl)
-                            let hasHeadlines = false
-                            if (img.headlinesJson) {
-                              try {
-                                const hls = JSON.parse(img.headlinesJson)
-                                if (Array.isArray(hls) && hls.length > 0) {
-                                  setHeadlines(hls)
-                                  hasHeadlines = true
-                                }
-                              } catch {}
-                            }
-                            if (!hasHeadlines) ensureHeadlines()
+                            restoreImageMeta(img)
                             setCustomImage(img.imageUrl)
                             setFinalImageUrl(null)
                             setPhase(2)
