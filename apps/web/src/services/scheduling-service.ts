@@ -101,8 +101,24 @@ export async function publishDueScheduledPosts(profileId?: number, maxPosts = 20
     .orderBy(asc(scheduledPosts.scheduledAt))
     .limit(maxPosts)
 
+  return publishPosts(duePosts)
+}
+
+export async function publishScheduledPostById(postId: number) {
+  const db = getDb()
+  const [post] = await db
+    .select()
+    .from(scheduledPosts)
+    .where(and(eq(scheduledPosts.id, postId), eq(scheduledPosts.status, "scheduled")))
+    .limit(1)
+  if (!post) throw new Error("Post programado no encontrado")
+  const results = await publishPosts([post])
+  return results[0]
+}
+
+async function publishPosts(posts: any[]) {
   const results: any[] = []
-  for (const post of duePosts) {
+  for (const post of posts) {
     try {
       const pid = post.linkedinProfileId ?? post.profileId
       let imageUrn: string | null = null

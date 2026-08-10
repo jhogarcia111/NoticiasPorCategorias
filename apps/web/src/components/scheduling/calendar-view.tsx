@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import { ChevronLeft, ChevronRight, Clock, CheckCircle, XCircle, Edit3, ExternalLink, Loader2, Calendar } from "lucide-react"
+import { ChevronLeft, ChevronRight, Clock, CheckCircle, XCircle, Edit3, ExternalLink, Loader2, Calendar, Send } from "lucide-react"
 
 const MONTHS = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
 const DAYS = ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"]
@@ -35,6 +35,14 @@ const statusIcons: Record<string, any> = {
   pending: Clock,
 }
 
+const isOverdue = (p: any) =>
+  (p.status === "scheduled" || p.status === "pending") && new Date(p.scheduledAt || p.scheduledTime).getTime() <= Date.now()
+
+const postBadge = (p: any) => {
+  if (isOverdue(p)) return { color: "bg-orange-50 text-orange-700 border-orange-200", label: "Por publicar" }
+  return { color: statusColors[p.status] || "bg-gray-50", label: statusLabels[p.status] || p.status }
+}
+
 export function CalendarView() {
   const { data: session } = useSession()
   const [posts, setPosts] = useState<any[]>([])
@@ -45,6 +53,7 @@ export function CalendarView() {
   const [editingPost, setEditingPost] = useState<any>(null)
   const [editContent, setEditContent] = useState("")
   const [saving, setSaving] = useState(false)
+  const [publishingId, setPublishingId] = useState<number | null>(null)
 
   useEffect(() => {
     if (!session?.user?.id) return
@@ -84,6 +93,22 @@ export function CalendarView() {
   const handleEditPost = (post: any) => {
     setEditingPost(post)
     setEditContent(post.content || post.postContent || "")
+  }
+
+  const handlePublishPost = async (postId: number) => {
+    setPublishingId(postId)
+    try {
+      const res = await fetch(`/api/linkedin/publish-due?postId=${postId}`, { method: "POST" })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      const postsRes = await fetch(`/api/scheduling?userId=${session?.user?.id}&type=posts`)
+      const postsData = await postsRes.json()
+      setPosts(Array.isArray(postsData.data) ? postsData.data : [])
+    } catch (e: any) {
+      alert(`Error al publicar: ${e.message}`)
+    } finally {
+      setPublishingId(null)
+    }
   }
 
   const handleSaveEdit = async () => {
@@ -225,12 +250,13 @@ export function CalendarView() {
                 <div className="space-y-3 max-h-[500px] overflow-y-auto">
                   {dayPosts.map((post: any) => {
                     const StatusIcon = statusIcons[post.status] || Clock
+                    const badge = postBadge(post)
                     return (
                       <div key={post.id} className="p-3 border rounded-lg space-y-2 hover:border-muted-foreground/20 transition-colors">
                         <div className="flex items-center justify-between">
-                          <Badge variant="outline" className={cn("text-[10px] font-normal", statusColors[post.status] || "bg-gray-50")}>
+                          <Badge variant="outline" className={cn("text-[10px] font-normal", badge.color)}>
                             <StatusIcon className="h-3 w-3 mr-1" />
-                            {statusLabels[post.status] || post.status}
+                            {badge.label}
                           </Badge>
                           <span className="text-xs text-muted-foreground">
                             {post.scheduledAt
@@ -242,6 +268,18 @@ export function CalendarView() {
                           {post.content || post.postContent || "Sin contenido"}
                         </p>
                         <div className="flex gap-1 pt-1">
+                          {isOverdue(post) && (
+                            <button
+                              onClick={() => handlePublishPost(post.id)}
+                              disabled={publishingId === post.id}
+                              className="p-1.5 rounded hover:bg-orange-100 transition-colors"
+                              title="Publicar ahora"
+                            >
+                              {publishingId === post.id
+                                ? <Loader2 className="h-3.5 w-3.5 animate-spin text-orange-600" />
+                                : <Send className="h-3.5 w-3.5 text-orange-600" />}
+                            </button>
+                          )}
                           <button
                             onClick={() => handleEditPost(post)}
                             className="p-1.5 rounded hover:bg-muted transition-colors"
