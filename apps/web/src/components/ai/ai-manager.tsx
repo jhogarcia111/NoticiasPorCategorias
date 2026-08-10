@@ -78,6 +78,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
   const [loadingGallery, setLoadingGallery] = useState(false)
   const [showSavedAnalyses, setShowSavedAnalyses] = useState(false)
   const [savedAnalysesList, setSavedAnalysesList] = useState<any[]>([])
+  const [savedTotal, setSavedTotal] = useState(0)
   const [loadingSavedAnalyses, setLoadingSavedAnalyses] = useState(false)
   const [headlines, setHeadlines] = useState<string[]>([])
   const [selectedHeadlineIdx, setSelectedHeadlineIdx] = useState<number | null>(null)
@@ -106,6 +107,14 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
   const [labelPresetIdx, setLabelPresetIdx] = useState(0)
   const [labelStyle, setLabelStyle] = useState<"red" | "split" | "accent">("split")
   const labelPreset = LABEL_PRESETS[labelPresetIdx]
+  const [customLabel, setCustomLabel] = useState("")
+  const [labelColor, setLabelColor] = useState("#CC0000")
+
+  const effectiveLabel = () => {
+    const trimmed = customLabel.trim()
+    if (trimmed) return { text: trimmed, style: "red" as const, color: labelColor }
+    return { text: labelPreset.text, style: labelPreset.style, color: undefined as string | undefined }
+  }
 
   // Overlay positions (percentages of container)
   const [labelX, setLabelX] = useState(2)
@@ -149,9 +158,10 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       ctx.fillStyle = gradient
       ctx.fillRect(0, gradY, canvas.width, canvas.height - gradY)
 
-      renderOverlay(ctx, labelPreset.text, labelFontSz,
-        labelX, labelY, labelW, labelH, labelPreset.style,
-        canvas.width, canvas.height)
+      const el = effectiveLabel()
+      renderOverlay(ctx, el.text, labelFontSz,
+        labelX, labelY, labelW, labelH, el.style,
+        canvas.width, canvas.height, el.color)
 
       const headline = selectedHeadlineIdx !== null ? headlines[selectedHeadlineIdx] : customHeadline
       if (headline) {
@@ -171,7 +181,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       ctx.fillText("Error al cargar la imagen", 300, 150)
     }
     img.src = assemblerImage
-  }, [assemblerImage, phase, labelPresetIdx, labelPreset, labelX, labelY, labelW, labelH, labelFontSz,
+  }, [assemblerImage, phase, labelPresetIdx, customLabel, labelColor, labelPreset, labelX, labelY, labelW, labelH, labelFontSz,
       selectedHeadlineIdx, headlines, customHeadline, textX, textY, textW, textH, textFontSz])
 
   // Collapsible sidebar via context
@@ -206,6 +216,13 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
         .finally(() => setLoadingGallery(false))
     }
   }, [showGallery])
+
+  useEffect(() => {
+    fetch("/api/ai/saved-results")
+      .then((r) => r.json())
+      .then((d) => { setSavedTotal((d.data || []).length) })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (showSavedAnalyses) {
@@ -466,12 +483,14 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     x: number, y: number, w: number, h: number,
     style: "red" | "split" | "accent",
     cw: number, ch: number,
+    color?: string,
   ) => {
     const px = (pct: number, dim: number) => Math.round((pct / 100) * dim)
     const lx = px(x, cw), ly = px(y, ch), lw = px(w, cw), lh = px(h, ch)
     const fs = Math.max(10, Math.round(fontSz / 100 * lh))
     const words = label.split(" ")
-    const isSplit = style === "split" && words.length >= 2
+    const isSplit = style === "split" && words.length >= 2 && !color
+    const solidColor = color || (style === "accent" ? "#0066CC" : "#CC0000")
 
     if (isSplit) {
       const halfW = lw / words.length
@@ -496,7 +515,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
         ctx.fillText(word, wx + halfW / 2, ly + lh / 2)
       })
     } else {
-      ctx.fillStyle = style === "accent" ? "#0066CC" : "#CC0000"
+      ctx.fillStyle = solidColor
       ctx.beginPath()
       ctx.roundRect(lx, ly, lw, lh, 4)
       ctx.fill()
@@ -519,37 +538,45 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     const tx = px(x, cw), ty = px(y, ch), tw = px(w, cw), th = px(h, ch)
     const fs = Math.max(10, Math.round(fontSz / 100 * th))
 
-    ctx.fillStyle = "rgba(0,0,0,0.65)"
-    ctx.beginPath()
-    ctx.roundRect(tx - 4, ty - 2, tw + 8, th + 4, 4)
-    ctx.fill()
-
-    ctx.fillStyle = "white"
     ctx.font = `bold ${fs}px Arial, sans-serif`
-    ctx.textAlign = "left"
-    ctx.textBaseline = "top"
 
     const words = text.split(" ")
-    let line = "", lineY = ty + 4
+    const capLines: string[] = []
+    let line = ""
     const lineH = fs * 1.3
     for (const word of words) {
       const test = line ? line + " " + word : word
       if (ctx.measureText(test).width > tw - 8 && line) {
-        ctx.fillText(line, tx + 4, lineY)
+        capLines.push(line)
         line = word
-        lineY += lineH
       } else {
         line = test
       }
     }
-    if (line) ctx.fillText(line, tx + 4, lineY)
+    if (line) capLines.push(line)
+
+    const neededH = capLines.length * lineH + 8
+    const boxH = Math.max(th, neededH)
+
+    ctx.fillStyle = "rgba(0,0,0,0.65)"
+    ctx.beginPath()
+    ctx.roundRect(tx - 4, ty - 2, tw + 8, boxH + 4, 4)
+    ctx.fill()
+
+    ctx.fillStyle = "white"
+    ctx.textAlign = "left"
+    ctx.textBaseline = "top"
+
+    capLines.forEach((l, i) => {
+      ctx.fillText(l, tx + 4, ty + 4 + i * lineH)
+    })
   }
 
   const overlayTextOnImage = (
     imgSrc: string,
     headline: string,
     config: {
-      labelPreset: { text: string; style: "red" | "split" | "accent" }
+      labelPreset: { text: string; style: "red" | "split" | "accent"; color?: string }
       labelX: number; labelY: number; labelW: number; labelH: number; labelFontSz: number
       textX: number; textY: number; textW: number; textH: number; textFontSz: number
     }
@@ -575,7 +602,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
 
         renderOverlay(ctx, config.labelPreset.text, config.labelFontSz,
           config.labelX, config.labelY, config.labelW, config.labelH,
-          config.labelPreset.style, cw, ch)
+          config.labelPreset.style, cw, ch, config.labelPreset.color)
 
         renderText(ctx, headline, config.textFontSz,
           config.textX, config.textY, config.textW, config.textH, cw, ch)
@@ -993,6 +1020,13 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                 <Brain className="h-4 w-4 text-primary" />
                 Noticias seleccionadas ({selectedNewsIds.length})
               </CardTitle>
+              <button onClick={() => setShowSavedAnalyses(!showSavedAnalyses)}
+                className={cn("mt-1 w-full px-2 py-1 rounded-lg transition-all text-xs flex items-center justify-center gap-1.5",
+                  showSavedAnalyses ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                )}>
+                <FolderOpen className="h-3 w-3" />
+                Guardados ({savedTotal})
+              </button>
             </CardHeader>
             <CardContent>
               {selectedNewsIds.length === 0 ? (
@@ -1132,13 +1166,6 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                   phase === p.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
                 )}>{p.label}</button>
             ))}
-            <button onClick={() => setShowSavedAnalyses(!showSavedAnalyses)}
-              className={cn("px-3 py-1.5 rounded-full transition-all text-xs ml-auto",
-                showSavedAnalyses ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
-              )}>
-              <FolderOpen className="h-3 w-3 inline mr-0.5" />
-              Guardados
-            </button>
           </div>
 
           {showSavedAnalyses && (
@@ -1244,20 +1271,6 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                 </div>
               )}
 
-              {/* Phase indicator */}
-              <div className="flex gap-2 text-xs font-medium border-b pb-2">
-                {[
-                  { id: 1, label: "1. Noticia" },
-                  { id: 2, label: "2. Armar foto" },
-                  { id: 3, label: "3. Publicar" },
-                ].map((p) => (
-                  <button key={p.id} onClick={() => setPhase(p.id as 1|2|3)}
-                    className={cn("px-3 py-1 rounded-full transition-all",
-                      phase === p.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
-                    )}>{p.label}</button>
-                ))}
-              </div>
-
               {/* Always-mounted canvas (hidden outside phase 2) */}
               <div data-editor className={cn("rounded-lg overflow-hidden border bg-muted relative", phase === 2 && assemblerImage ? "" : "hidden")}>
                 <canvas ref={canvasRef} className="w-full h-auto block" />
@@ -1326,13 +1339,30 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                     <p className="text-[10px] text-muted-foreground mb-0.5">Etiqueta:</p>
                     <div className="flex gap-1 flex-wrap">
                       {LABEL_PRESETS.map((p, i) => (
-                        <button key={i} onClick={() => { setLabelPresetIdx(i); setLabelStyle(p.style) }}
+                        <button key={i} onClick={() => { setLabelPresetIdx(i); setLabelStyle(p.style); setCustomLabel("") }}
                           className={cn("px-1.5 py-0.5 rounded text-[9px] border font-medium transition-all",
-                            labelPresetIdx === i ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border hover:bg-muted"
+                            !customLabel.trim() && labelPresetIdx === i ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border hover:bg-muted"
                           )}>
                           {p.text}
                         </button>
                       ))}
+                    </div>
+                    <div className="flex gap-1 mt-1 items-center">
+                      <input
+                        value={customLabel}
+                        onChange={(e) => setCustomLabel(e.target.value)}
+                        placeholder="O escribe una propia..."
+                        className="flex-1 px-1.5 py-0.5 border rounded text-[9px] min-w-0"
+                      />
+                      <label className="relative flex items-center cursor-pointer border border-border rounded px-1 py-0.5 hover:bg-muted" title="Color de fondo">
+                        <input
+                          type="color"
+                          value={labelColor}
+                          onChange={(e) => setLabelColor(e.target.value)}
+                          className="h-3.5 w-3.5 cursor-pointer border-none bg-transparent p-0"
+                        />
+                        <span className="text-[8px] text-muted-foreground ml-0.5">Color</span>
+                      </label>
                     </div>
                   </div>
 
@@ -1377,7 +1407,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                   </div>
                   <div className="flex items-center gap-1">
                     <span className="text-[8px] text-muted-foreground w-4">H</span>
-                    <input type="range" min="4" max="20" value={textH} onChange={(e) => setTextH(Number(e.target.value))} className="flex-1 h-1" />
+                    <input type="range" min="8" max="60" value={textH} onChange={(e) => setTextH(Number(e.target.value))} className="flex-1 h-1" />
                     <span className="text-[8px] text-muted-foreground w-6">{textH}%</span>
                   </div>
                   <div className="flex items-center gap-1">
