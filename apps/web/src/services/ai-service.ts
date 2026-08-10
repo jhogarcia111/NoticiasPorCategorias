@@ -43,13 +43,19 @@ Resumen:`
 }
 
 export async function generateLinkedInPost(
-  newsItems: { title: string; summary?: string; source_url?: string }[],
+  newsItems: { title: string; summary?: string; fullContent?: string; source_url?: string }[],
   options: { language?: string; style?: string; maxLength?: number; systemPrompt?: string; customPrompt?: string } = {},
 ) {
   const { language = "es", style = "professional", maxLength = 1300, systemPrompt, customPrompt } = options
 
   const newsText = newsItems
-    .map((item, i) => `${i + 1}. ${item.title}\n   ${item.summary || ""}\n   Fuente: ${item.source_url || ""}`)
+    .map((item, i) => {
+      const original =
+        item.fullContent?.trim()
+          ? `\n   CONTENIDO ORIGINAL DE LA NOTICIA (ÚSALO COMO HILO NARRATIVO):\n   ${item.fullContent}`
+          : ""
+      return `${i + 1}. ${item.title}\n   Resumen: ${item.summary || ""}${original}\n   Fuente: ${item.source_url || ""}`
+    })
     .join("\n\n")
 
   const langInstruction =

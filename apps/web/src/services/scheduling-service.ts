@@ -49,9 +49,18 @@ export async function getScheduledPosts(userId: string, filters: any = {}) {
 
 export async function schedulePost(userId: string, postData: any) {
   const db = getDb()
+  const linkedinProfileId = postData.linkedinProfileId
+  const scheduledAt = postData.scheduledAt ? new Date(postData.scheduledAt) : new Date()
   const [post] = await db
     .insert(scheduledPosts)
-    .values({ userId, ...postData })
+    .values({
+      userId,
+      profileId: postData.profileId ?? linkedinProfileId,
+      linkedinProfileId,
+      scheduledTime: scheduledAt,
+      ...postData,
+      scheduledAt,
+    })
     .returning()
 
   return post

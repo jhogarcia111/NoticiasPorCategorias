@@ -893,7 +893,8 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       newsItems: activeNews.map((n: any) => ({
         id: n.id,
         title: n.title,
-        summary: n.summary || n.content,
+        summary: n.summary || n.aiSummary || "",
+        fullContent: n.content || "",
         source_url: n.sourceUrl,
       })),
       options: {
