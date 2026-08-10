@@ -26,10 +26,14 @@ export const promptTemplates: PromptTemplate[] = [
 2. LENGUAJE: Profesional, limpio y sofisticado. 
    - PROHIBIDO: Uso de lenguaje coloquial agresivo, insultos, términos vulgares o frases como "¿Quién diablos...?" o similares. 
    - PREFERIDO: Preguntas retóricas profundas, curiosidad intelectual, análisis de riesgos y oportunidades.
-3. ESTRUCTURA DE LA COMUNICACIÓN: 
-   - Ganchos (hooks) que inviten a pensar, no a hacer click por miedo.
-   - Claridad en el valor añadido: ¿Por qué debería importarle esto a un profesional o a alguien interesado en tecnología?
-   - Cierre: Una invitación abierta a comentar o debatir (ej: "¿Qué opinas al respecto? Déjamelo en los comentarios"). El objetivo es GENERAR CONVERSACIÓN en la comunidad.
+3. ESTRUCTURA NARRATIVA UNIDA (cada párrafo engancha con el anterior, como una historia, no notas sueltas):
+   - GANCHO DE REFLEXIÓN: Abre con una situación o creencia cotidiana en el mundo tech, seguida de un giro que invite a pensar.
+   - PREGUNTA DE INTRIGA: Plantea una pregunta que incomode supuestos y haga querer seguir leyendo.
+   - ORIGEN DE LA HISTORIA: Cuenta cómo se llegó al hallazgo (contexto del estudio, análisis o evento) para darle credibilidad.
+   - HALLAZGOS ENCADENADOS: Presenta 2-3 implicaciones o riesgos conectados entre sí, cada uno respaldado por el resumen original de la noticia.
+   - PUENTE AL LECTOR: Traduce el hallazgo a decisiones o riesgos reales para el profesional o la empresa.
+   - CIERRE CON URGENCIA: Termina con una invitación directa a debatir que haga sentir que su opinión falta en la conversación. Objetivo: GENERAR CONVERSACIÓN.
+4. CLARIDAD EN EL VALOR AÑADIDO: ¿Por qué debería importarle esto a un profesional o a alguien interesado en tecnología?
 
 ### TU TAREA:
 Devuelve tu respuesta en EXACTAMENTE este formato, sin desviaciones:
@@ -44,8 +48,8 @@ Devuelve tu respuesta en EXACTAMENTE este formato, sin desviaciones:
 ---POST---
 [SOLO el texto del post para LinkedIn. Debe verse como un post escrito por un humano.
 NO incluyas "Gancho:", "Hook:", "Contexto:", "Reflexión:", "Llamado:", "Post para redes:" ni ningún otro label.
-Incluye EMOJIS relevantes en cada párrafo (🔥💡📊🎯⚡💻🚀✅📢💬 etc.), saltos de línea, y fluidez natural.
-Termina con máximo 3 hashtags relevantes.]`,
+Estructura narrativa coherente entre párrafos, integrando el resumen original de la noticia como hilo conductor, con EMOJIS relevantes en cada párrafo (🔥💡📊🎯⚡💻🚀✅📢💬 etc.), saltos de línea, y fluidez natural.
+Incluye la URL de la fuente. Termina con pregunta directa y con máximo 3 hashtags relevantes.]`,
   },
   {
     id: "educativo-divulgativo",
@@ -106,11 +110,13 @@ Devuelve tu respuesta en el siguiente formato dividido:
 ### DIRECTRICES:
 1. TONO: Irónico, ingenioso, divertido pero inteligente. NUNCA ofensivo o vulgar.
 2. LENGUAJE: Coloquial con giros graciosos, comparaciones inesperadas, referencias pop.
-3. ESTRUCTURA:
-   - Apertura con gancho humorístico.
-   - Explicación del hecho real.
-   - Comentario satírico o comparación absurda.
-   - Remate con reflexión disfrazada de broma.
+3. ESTRUCTURA NARRATIVA UNIDA (cada párrafo engancha con el anterior, como una historia, no notas sueltas):
+   - GANCHO HUMORÍSTICO: Abre con una situación cotidiana absurda o creencia común que el lector reconozca, seguida de un giro gracioso.
+   - PREGUNTA DE INTRIGA: Plantea una pregunta cómica que incomode la intuición y haga querer seguir leyendo.
+   - ORIGEN DE LA HISTORIA: Cuenta cómo se llegó al hecho (contexto del estudio o evento) con comentario irónico.
+   - HALLAZGOS ENCADENADOS: Presenta 2-3 datos reales conectados entre sí, cada uno respaldado por el resumen original y sazonado con comparaciones absurdas.
+   - PUENTE AL LECTOR: Conecta el hecho con el mundo profesional o empresarial del lector de LinkedIn con giro satírico.
+   - REMATE CON URGENCIA: Termina con una invitación cómica directa que haga sentir que su anécdota o respuesta falta en la conversación. Objetivo: GENERAR CONVERSACIÓN.
 
 ### FORMATO DE RESPUESTA:
 1. El titular que te gustaría ver: Versión divertida del titular real.
@@ -127,7 +133,7 @@ Devuelve tu respuesta en el siguiente formato dividido:
 3. Hashtags: [creativos y relevantes]
 
 ---POST---
-[SOLO el texto del post. Sin "Post para redes:" ni ningún label. Escrito como post humano con humor, EMOJIS en cada párrafo (😂🤡🔥💀🎭 etc.) y fluidez natural. Termina con una pregunta o invitación cómica que invite a comentar (ej: "¿Tú qué harías? Cuéntamelo en los comentarios"). El objetivo es GENERAR CONVERSACIÓN en la comunidad.]`,
+[SOLO el texto del post. Sin "Post para redes:" ni ningún label. Escrito como post humano con humor y estructura narrativa coherente entre párrafos, integrando el resumen original de la noticia como hilo conductor, EMOJIS en cada párrafo (😂🤡🔥💀🎭 etc.) y fluidez natural. Termina con una pregunta o invitación cómica directa que genere urgencia por comentar (ej: "¿Tú qué harías? Cuéntamelo en los comentarios"). Incluye la URL de la fuente. El objetivo es GENERAR CONVERSACIÓN en la comunidad.]`,
   },
   {
     id: "ejecutivo-negocios",
@@ -145,11 +151,13 @@ Devuelve tu respuesta en el siguiente formato dividido:
 ### DIRECTRICES:
 1. TONO: Profesional, directo, basado en datos.
 2. LENGUAJE: Técnico de negocios pero accesible.
-3. ESTRUCTURA:
-   - Impacto en el mercado (datos, cifras).
-   - Oportunidades y amenazas.
-   - Recomendación estratégica.
-   - CIERRE CONVERSACIONAL OBLIGATORIO: Termina con una pregunta abierta a la audiencia (ej: "¿Cómo crees que esto afectará tu industria? Comparte tu visión en los comentarios"). El objetivo es GENERAR CONVERSACIÓN en la comunidad.
+3. ESTRUCTURA NARRATIVA UNIDA (cada párrafo engancha con el anterior, como una historia de mercado, no notas sueltas):
+   - GANCHO DE MERCADO: Abre con una situación o supuesto común en la industria, seguido de un giro de datos que despierte atención.
+   - PREGUNTA DE INTRIGA: Plantea una pregunta ejecutiva que incomode supuestos estratégicos y haga querer seguir leyendo.
+   - ORIGEN DE LA HISTORIA: Cuenta cómo se llegó al hallazgo (contexto del estudio, reporte o evento de mercado) para darle credibilidad.
+   - HALLAZGOS ENCADENADOS: Presenta 2-3 datos o tendencias conectados entre sí (impacto en mercado, oportunidades, amenazas), cada uno respaldado por el resumen original de la noticia.
+   - PUENTE AL LECTOR: Traduce el hallazgo a decisión estratégica, ROI o agenda del ejecutivo.
+   - CIERRE CON URGENCIA: Termina con una pregunta directa que haga sentir que su visión o caso falta en la conversación. Objetivo: GENERAR CONVERSACIÓN.
 
 ### FORMATO DE RESPUESTA:
 1. Resumen ejecutivo: 3 líneas con lo esencial.
@@ -166,6 +174,6 @@ Devuelve tu respuesta en el siguiente formato dividido:
 3. Players involucrados: [quién gana, quién pierde]
 
 ---POST---
-[SOLO el texto del post. Sin "Post para LinkedIn:" ni ningún label. Escrito como post profesional con tono ejecutivo, EMOJIS relevantes (📊💼📈🎯💡✅ etc.) y fluidez natural. Termina con una pregunta abierta que invite a los colegas del sector a comentar. Máximo 3 hashtags.]`,
+[SOLO el texto del post. Sin "Post para LinkedIn:" ni ningún label. Escrito como post profesional con tono ejecutivo y estructura narrativa coherente entre párrafos, integrando el resumen original de la noticia como hilo conductor, EMOJIS relevantes (📊💼📈🎯💡✅ etc.) y fluidez natural. Incluye la URL de la fuente. Termina con una pregunta directa que invite a los colegas del sector a compartir su visión. Máximo 3 hashtags.]`,
   },
 ]
