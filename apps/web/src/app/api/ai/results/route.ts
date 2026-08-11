@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server"
 import { getDb, newsAiResults } from "@noticias/database"
-import { eq, inArray } from "drizzle-orm"
+import { and, eq, inArray } from "drizzle-orm"
+import { auth } from "@/lib/auth"
 
 export async function GET(request: Request) {
   try {
+    const session = await auth()
+    const userId = session?.user?.id
+    if (!userId) return NextResponse.json({ data: [] })
+
     const { searchParams } = new URL(request.url)
     const newsIdsParam = searchParams.get("newsIds")
     if (!newsIdsParam) return NextResponse.json({ data: [] })
@@ -15,7 +20,7 @@ export async function GET(request: Request) {
     const results = await db
       .select()
       .from(newsAiResults)
-      .where(inArray(newsAiResults.newsId, newsIds))
+      .where(and(eq(newsAiResults.userId, userId), inArray(newsAiResults.newsId, newsIds)))
       .orderBy(newsAiResults.createdAt)
 
     return NextResponse.json({ data: results })

@@ -10,10 +10,15 @@ import {
 } from "@/services/ai-service"
 import { getDb } from "@/lib/db"
 import { news } from "@noticias/database"
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
+import { auth } from "@/lib/auth"
 
 export async function POST(request: Request) {
   try {
+    const session = await auth()
+    const userId = session?.user?.id
+    if (!userId) return NextResponse.json({ error: "No autenticado" }, { status: 401 })
+
     const body = await request.json()
     const { type } = body
 
@@ -51,14 +56,14 @@ export async function POST(request: Request) {
         const [item] = await db
           .select()
           .from(news)
-          .where(eq(news.id, body.newsId))
+          .where(and(eq(news.id, body.newsId), eq(news.userId, userId)))
           .limit(1)
         if (!item) return NextResponse.json({ error: "News not found" }, { status: 404 })
         const summary = await generateNewsSummary(item.summary || item.title || "", "es")
         await db
           .update(news)
           .set({ aiSummary: summary, isProcessed: true })
-          .where(eq(news.id, body.newsId))
+          .where(and(eq(news.id, body.newsId), eq(news.userId, userId)))
         return NextResponse.json({ data: { id: body.newsId, aiSummary: summary } })
       }
       case "process-multiple": {
@@ -68,14 +73,14 @@ export async function POST(request: Request) {
           const [item] = await db
             .select()
             .from(news)
-            .where(eq(news.id, id))
+            .where(and(eq(news.id, id), eq(news.userId, userId)))
             .limit(1)
           if (!item) continue
           const summary = await generateNewsSummary(item.summary || item.title || "", "es")
           await db
             .update(news)
             .set({ aiSummary: summary, isProcessed: true })
-            .where(eq(news.id, id))
+            .where(and(eq(news.id, id), eq(news.userId, userId)))
           results.push({ id, aiSummary: summary })
         }
         return NextResponse.json({ data: results })

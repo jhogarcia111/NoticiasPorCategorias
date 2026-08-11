@@ -3,6 +3,7 @@ import { getDb } from "@/lib/db"
 import { categories, newsSources } from "@noticias/database"
 import { eq } from "drizzle-orm"
 import { fetchNewsFromAPI, processAndSaveNews, searchNewsEverything } from "@/services/news-service"
+import { auth } from "@/lib/auth"
 
 const NEWSAPI_KEY = process.env.VITE_NEWSAPI_KEY || process.env.NEXT_PUBLIC_NEWSAPI_KEY
 
@@ -108,6 +109,12 @@ async function fetchRSSFeed(url: string, limit: number = 10) {
 
 export async function POST(request: Request) {
   try {
+    const session = await auth()
+    const userId = session?.user?.id
+    if (!userId) {
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 })
+    }
+
     const { categoryId, query, discover, pageSize: reqPageSize, language: collectLanguage } = await request.json().catch(() => ({}))
     const db = getDb()
 
@@ -191,7 +198,7 @@ export async function POST(request: Request) {
                 language: "es",
               })
               if (articles.length > 0) {
-                const processed = await processAndSaveNews(articles, cat.id, "es")
+                const processed = await processAndSaveNews(articles, cat.id, "es", userId)
                 catResult.collected += processed.length
                 catResult.total += articles.length
                 catResult.sources.push("NewsAPI (es)")
@@ -205,7 +212,7 @@ export async function POST(request: Request) {
           try {
             const rssArticles = await fetchRSSFeed(cat.rssFeedUrl)
             if (rssArticles.length > 0) {
-              const processed = await processAndSaveNews(rssArticles, cat.id, "es")
+              const processed = await processAndSaveNews(rssArticles, cat.id, "es", userId)
               catResult.collected += processed.length
               catResult.total += rssArticles.length
               catResult.sources.push("RSS")
@@ -221,7 +228,7 @@ export async function POST(request: Request) {
             try {
               const rssArticles = await fetchRSSFeed(source.url)
               if (rssArticles.length > 0) {
-                const processed = await processAndSaveNews(rssArticles, cat.id, source.language || "es")
+                const processed = await processAndSaveNews(rssArticles, cat.id, source.language || "es", userId)
                 catResult.collected += processed.length
                 catResult.total += rssArticles.length
                 catResult.sources.push(source.name)
@@ -258,7 +265,7 @@ export async function POST(request: Request) {
           if (rssArticles.length > 0) {
             const firstCatId = cats[0]?.id
             if (firstCatId) {
-              const processed = await processAndSaveNews(rssArticles, firstCatId, source.language || "es")
+              const processed = await processAndSaveNews(rssArticles, firstCatId, source.language || "es", userId)
               catResult.collected = processed.length
               catResult.total = rssArticles.length
             }

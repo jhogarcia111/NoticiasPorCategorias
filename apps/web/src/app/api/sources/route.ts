@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getDb, newsSources, news } from "@noticias/database"
-import { eq, desc, sql } from "drizzle-orm"
+import { and, eq, desc, sql } from "drizzle-orm"
+import { auth } from "@/lib/auth"
 
 export async function GET() {
   try {
@@ -52,6 +53,10 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  const session = await auth()
+  const userId = session?.user?.id
+  if (!userId) return NextResponse.json({ error: "No autenticado" }, { status: 401 })
+
   const { searchParams } = new URL(request.url)
   const id = parseInt(searchParams.get("id") || "")
   const cleanup = searchParams.get("cleanup") === "true"
@@ -68,12 +73,12 @@ export async function DELETE(request: Request) {
     // Optionally delete news in the same category
     let newsDeleted = 0
     if (cleanup && source.categoryId) {
-      await db.delete(news).where(eq(news.categoryId, source.categoryId))
+      await db.delete(news).where(and(eq(news.userId, userId), eq(news.categoryId, source.categoryId)))
       newsDeleted = -1 // indicate that cleanup happened
     } else if (cleanup && !source.categoryId) {
       try {
         const domain = new URL(source.url).hostname
-        await db.delete(news).where(sql`${news.sourceUrl} ILIKE ${'%' + domain + '%'}`)
+        await db.delete(news).where(and(eq(news.userId, userId), sql`${news.sourceUrl} ILIKE ${'%' + domain + '%'}`))
         newsDeleted = -1
       } catch { /* ignore URL parse errors */ }
     }

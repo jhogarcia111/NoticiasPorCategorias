@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server"
 import { getDb, newsAiResults, news } from "@noticias/database"
-import { desc, sql } from "drizzle-orm"
+import { desc, eq, and, sql } from "drizzle-orm"
+import { auth } from "@/lib/auth"
 
 export async function GET() {
   try {
+    const session = await auth()
+    const userId = session?.user?.id
+    if (!userId) return NextResponse.json({ data: [] })
+
     const db = getDb()
     const results = await db
       .select({
@@ -20,6 +25,7 @@ export async function GET() {
       })
       .from(newsAiResults)
       .leftJoin(news, sql`${newsAiResults.newsId} = ${news.id}`)
+      .where(and(eq(newsAiResults.userId, userId), eq(news.userId, userId)))
       .orderBy(desc(newsAiResults.createdAt))
       .limit(100)
 

@@ -1,8 +1,10 @@
 import { pgTable, text, timestamp, serial, integer, jsonb, unique } from "drizzle-orm/pg-core"
 import { news } from "./news"
+import { profiles } from "./profiles"
 
 export const newsAiResults = pgTable("news_ai_results", {
   id: serial("id").primaryKey(),
+  userId: text("user_id").references(() => profiles.id, { onDelete: "cascade" }),
   newsId: integer("news_id").references(() => news.id, { onDelete: "cascade" }).notNull(),
   templateId: text("template_id").default("default"),
   templateName: text("template_name"),

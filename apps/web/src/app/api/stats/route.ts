@@ -10,18 +10,27 @@ export async function GET() {
 
     const db = getDb()
 
+    const newsConds = []
+    const draftsConds = []
+    if (userId) {
+      newsConds.push(eq(news.userId, userId))
+      draftsConds.push(eq(newsAiResults.userId, userId))
+    }
+
     const [newsRow] = await db
       .select({ value: count() })
       .from(news)
+      .where(newsConds.length > 0 ? and(...newsConds) : undefined)
 
     const [unprocessedRow] = await db
       .select({ value: count() })
       .from(news)
-      .where(eq(news.isProcessed, false))
+      .where(and(...newsConds, eq(news.isProcessed, false)))
 
     const [draftsRow] = await db
       .select({ value: count(sql`DISTINCT ${newsAiResults.newsId}`) })
       .from(newsAiResults)
+      .where(draftsConds.length > 0 ? and(...draftsConds) : undefined)
 
     const publishedConds = [eq(scheduledPosts.status, "published"), sql`${scheduledPosts.postedAt}::date = CURRENT_DATE`]
     const scheduledConds = [eq(scheduledPosts.status, "scheduled")]

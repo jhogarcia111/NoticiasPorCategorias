@@ -1,8 +1,10 @@
 import { pgTable, text, timestamp, serial, boolean, jsonb } from "drizzle-orm/pg-core"
 import { categories } from "./categories"
+import { profiles } from "./profiles"
 
 export const news = pgTable("news", {
   id: serial("id").primaryKey(),
+  userId: text("user_id").references(() => profiles.id, { onDelete: "cascade" }),
   categoryId: serial("category_id").references(() => categories.id).notNull(),
   title: text("title").notNull(),
   summary: text("summary"),

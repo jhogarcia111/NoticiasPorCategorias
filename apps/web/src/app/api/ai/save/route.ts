@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server"
 import { getDb } from "@/lib/db"
 import { newsAiResults } from "@noticias/database"
+import { auth } from "@/lib/auth"
 
 export async function POST(request: Request) {
   try {
+    const session = await auth()
+    const userId = session?.user?.id
+    if (!userId) return NextResponse.json({ error: "No autenticado" }, { status: 401 })
+
     const body = await request.json()
     const { newsId, templateId, templateName, language, summary, linkedinPost, hashtags, imagePrompt, fullResponse, headlines } = body
 
@@ -15,6 +20,7 @@ export async function POST(request: Request) {
     const [result] = await db
       .insert(newsAiResults)
       .values({
+        userId,
         newsId,
         templateId: templateId || "default",
         templateName: templateName || null,

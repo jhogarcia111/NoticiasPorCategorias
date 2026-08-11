@@ -80,14 +80,16 @@ export async function searchNewsEverything(query: string, pageSize: number = 20,
 }
 
 export async function getNewsFromDatabase(options: {
+  userId?: string | null
   categoryId?: number | null
   limit?: number
   offset?: number
   processed?: boolean | null
 } = {}) {
-  const { categoryId = null, limit = 20, offset = 0, processed = true } = options
+  const { userId = null, categoryId = null, limit = 20, offset = 0, processed = true } = options
 
   const conditions = []
+  if (userId) conditions.push(eq(news.userId, userId))
   if (categoryId) conditions.push(eq(news.categoryId, categoryId))
   if (processed !== null) conditions.push(eq(news.isProcessed, processed))
 
@@ -105,7 +107,7 @@ export async function getNewsFromDatabase(options: {
   return result.map((r) => ({ ...r.news, category: r.categories }))
 }
 
-export async function processAndSaveNews(articles: any[], categoryId: number, language?: string) {
+export async function processAndSaveNews(articles: any[], categoryId: number, language?: string, userId?: string) {
   const db = getDb()
   const processedNews = []
 
@@ -113,7 +115,9 @@ export async function processAndSaveNews(articles: any[], categoryId: number, la
     const existing = await db
       .select({ id: news.id })
       .from(news)
-      .where(eq(news.sourceUrl, article.url))
+      .where(userId
+        ? and(eq(news.userId, userId), eq(news.sourceUrl, article.url))
+        : eq(news.sourceUrl, article.url))
       .limit(1)
 
     if (existing.length > 0) continue
@@ -121,6 +125,7 @@ export async function processAndSaveNews(articles: any[], categoryId: number, la
     const [inserted] = await db
       .insert(news)
       .values({
+        userId: userId || null,
         categoryId,
         title: article.title || "Sin título",
         sourceUrl: article.url,
@@ -139,17 +144,24 @@ export async function processAndSaveNews(articles: any[], categoryId: number, la
   return processedNews
 }
 
-export async function markNewsAsProcessed(newsIds: number[]) {
+export async function markNewsAsProcessed(newsIds: number[], userId?: string) {
   const db = getDb()
   await db
     .update(news)
     .set({ isProcessed: true })
-    .where(inArray(news.id, newsIds))
+    .where(userId
+      ? and(eq(news.userId, userId), inArray(news.id, newsIds))
+      : inArray(news.id, newsIds))
 }
 
-export async function deleteAllNews() {
+export async function deleteUserNews(userId: string) {
   const db = getDb()
-  await db.delete(news)
+  await db.delete(news).where(eq(news.userId, userId))
+}
+
+export async function deleteUserNewsByCategory(userId: string, categoryId: number) {
+  const db = getDb()
+  await db.delete(news).where(and(eq(news.userId, userId), eq(news.categoryId, categoryId)))
 }
 
 export async function getPublishedNewsIds(): Promise<number[]> {
