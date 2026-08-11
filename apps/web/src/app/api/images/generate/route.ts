@@ -4,9 +4,63 @@ export const maxDuration = 60
 
 const FAL_KEY = process.env.FAL_KEY
 const STABILITY_API_KEY = process.env.STABILITY_API_KEY
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY
 
 interface FalResult {
   images?: { url?: string }[]
+}
+
+interface GeminiResult {
+  candidates?: {
+    content?: {
+      parts?: { inlineData?: { mimeType?: string; data?: string } }[]
+    }
+  }[]
+}
+
+async function generateWithGemini(prompt: string): Promise<string> {
+  if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY no configurada")
+
+  const models = ["gemini-2.5-flash-image", "gemini-2.0-flash-exp-image-generation"]
+  let lastError: any = null
+
+  for (const model of models) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": GEMINI_API_KEY,
+          },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { responseModalities: ["IMAGE"] },
+          }),
+        },
+      )
+
+      if (!response.ok) {
+        const errorData = await response.text().catch(() => "")
+        lastError = new Error(`Gemini ${model} error: ${response.status} ${errorData.slice(0, 300)}`)
+        continue
+      }
+
+      const data = (await response.json()) as GeminiResult
+      const part = data.candidates?.[0]?.content?.parts?.find((p) => p.inlineData)
+      if (!part?.inlineData?.data) {
+        lastError = new Error(`Gemini ${model} no devolvió imagen`)
+        continue
+      }
+      const mime = part.inlineData.mimeType || "image/png"
+      return `data:${mime};base64,${part.inlineData.data}`
+    } catch (err: any) {
+      lastError = err
+    }
+  }
+
+  throw lastError || new Error("Gemini image generation failed")
 }
 
 async function generateWithFal(prompt: string): Promise<string> {
@@ -77,6 +131,15 @@ export async function POST(request: Request) {
 
     const results: string[] = await Promise.all(
       list.map(async (p) => {
+        let geminiError: Error | null = null
+        if (GEMINI_API_KEY) {
+          try {
+            return await generateWithGemini(p)
+          } catch (err: any) {
+            geminiError = err
+            console.error("Gemini falló, intentando FAL:", err.message)
+          }
+        }
         try {
           return await generateWithFal(p)
         } catch (falError: any) {
@@ -85,7 +148,7 @@ export async function POST(request: Request) {
             return await generateWithStability(p)
           } catch (stabilityError: any) {
             console.error("Stability también falló:", stabilityError.message)
-            throw new Error(`Ambos proveedores fallaron: FAL: ${falError.message} | Stability: ${stabilityError.message}`)
+            throw new Error(`Todos los proveedores fallaron: Gemini: ${geminiError?.message ?? "-"} | FAL: ${falError.message} | Stability: ${stabilityError.message}`)
           }
         }
       }),

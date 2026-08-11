@@ -3,11 +3,12 @@
 import { useState } from "react"
 import { useSession, signOut } from "next-auth/react"
 import { DashboardProvider, useDashboard, type Tab } from "./dashboard-context"
+import { OnboardingGate } from "@/components/onboarding/OnboardingGate"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard, Newspaper, Brain, Calendar, Settings,
   Menu, X, LogOut, Linkedin, Shield, Gem,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, HelpCircle,
 } from "lucide-react"
 
 function getNavItems(role?: string): { id: Tab; label: string; icon: any }[] {
@@ -78,12 +79,13 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           </button>
         )}
 
-        <nav className={cn("flex-1 py-4 space-y-1 overflow-y-auto", navCollapsed ? "px-2" : "px-3")}>
+        <nav id="nav-sidebar" className={cn("flex-1 py-4 space-y-1 overflow-y-auto", navCollapsed ? "px-2" : "px-3")}>
           {navItems.map((item) => {
             const Icon = item.icon
             return (
               <button
                 key={item.id}
+                id={`nav-${item.id}`}
                 onClick={() => { setActiveTab(item.id); setSidebarOpen(false) }}
                 className={cn(
                   "w-full flex items-center gap-3 rounded-lg text-sm font-medium transition-colors",
@@ -130,6 +132,14 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             </h1>
           <div className="flex items-center gap-3">
             <button
+              onClick={() => window.dispatchEvent(new Event("np:start-tour"))}
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              title="Volver a ver el recorrido"
+            >
+              <HelpCircle className="h-4 w-4" />
+              <span className="hidden sm:inline">Recorrido</span>
+            </button>
+            <button
               onClick={() => signOut()}
               className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
@@ -151,6 +161,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <DashboardProvider>
       <DashboardShell>{children}</DashboardShell>
+      <OnboardingGate />
     </DashboardProvider>
   )
 }

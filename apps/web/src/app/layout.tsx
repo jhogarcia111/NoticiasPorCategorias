@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import "./globals.css"
+import "intro.js/introjs.css"
 import { Providers } from "@/components/providers"
 import { Navbar } from "@/components/navbar"
 import { FooterWrapper } from "@/components/footer-wrapper"

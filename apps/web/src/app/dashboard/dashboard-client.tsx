@@ -78,7 +78,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     <>
       {activeTab === "home" && (
         <div className="space-y-6">
-          <Card>
+          <Card id="dash-welcome">
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div>
@@ -96,7 +96,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div id="dash-stats" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatsCard icon={Newspaper} label="Noticias totales" value={stats?.totalNews ?? "—"} color="text-blue-600" bg="bg-blue-50" onClick={() => setActiveTab("news")} />
             <StatsCard icon={Clock} label="Por procesar" value={stats?.unprocessed ?? "—"} color="text-amber-600" bg="bg-amber-50" onClick={() => setActiveTab("news")} />
             <StatsCard icon={PenSquare} label="Borradores IA" value={stats?.drafts ?? "—"} color="text-sky-600" bg="bg-sky-50" onClick={() => setActiveTab("ai")} />
@@ -202,7 +202,7 @@ export default function DashboardClient({ user }: DashboardClientProps) {
 
       {activeTab === "config" && (
         <div className="space-y-6">
-          <div>
+          <div id="cat-manager">
             <h3 className="text-sm font-semibold text-foreground mb-4">Categorías</h3>
             <CategoryManager />
           </div>

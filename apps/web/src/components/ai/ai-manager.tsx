@@ -1059,8 +1059,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
   const selectedProfile = profiles.find((p: any) => p.id === selectedProfileId)
 
   return (
-    <div className="space-y-6">
-
+    <div id="ai-panel" className="space-y-6">
       <div className={cn("grid gap-6 transition-all duration-300",
         "grid-cols-1",
         sidebarOpen ? "xl:grid-cols-[380px_1fr]" : "xl:grid-cols-[0_1fr]"

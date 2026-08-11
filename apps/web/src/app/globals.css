@@ -35,3 +35,63 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ===== intro.js branding ===== */
+.introjs-helperLayer {
+  border-radius: 0.75rem !important;
+  box-shadow: rgb(10 102 194 / 0.4) 0 0 0 9999999px, rgb(10 102 194 / 0.45) 0 0 1px, 0 0 12px 4px rgb(10 102 194 / 0.5) !important;
+}
+
+.introjs-tooltip.np-intro-tooltip {
+  border-radius: 1rem;
+  box-shadow: 0 18px 50px rgb(0 0 0 / 0.18);
+  max-width: 360px;
+}
+
+.introjs-tooltip.np-intro-tooltip .introjs-tooltip-header {
+  padding-bottom: 0;
+}
+
+.introjs-tooltip.np-intro-tooltip .introjs-tooltiptext {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--muted-foreground);
+}
+
+.introjs-tooltip.np-intro-tooltip .introjs-tooltip-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.introjs-tooltip.np-intro-tooltip .introjs-button {
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: #fff;
+  color: var(--foreground);
+  padding: 0.5rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.introjs-tooltip.np-intro-tooltip .introjs-button:hover {
+  background: var(--secondary);
+}
+
+.introjs-tooltip.np-intro-tooltip .introjs-nextbutton,
+.introjs-tooltip.np-intro-tooltip .introjs-donebutton {
+  background: #0a66c2;
+  border-color: #0a66c2;
+  color: #fff;
+}
+
+.introjs-tooltip.np-intro-tooltip .introjs-nextbutton:hover,
+.introjs-tooltip.np-intro-tooltip .introjs-donebutton:hover {
+  background: #0055a4;
+  border-color: #0055a4;
+}
+
+.introjs-tooltip.np-intro-tooltip .introjs-progressbar {
+  background: #0a66c2;
+}

@@ -23,7 +23,7 @@ export function useProfile(userId?: string | null) {
 export function useUpdateProfile() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (data: { userId: string; username?: string; avatarUrl?: string }) =>
+    mutationFn: (data: { userId: string; username?: string; avatarUrl?: string; onboardingDone?: boolean; welcomeSeenAt?: string }) =>
       fetchJson("/api/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },

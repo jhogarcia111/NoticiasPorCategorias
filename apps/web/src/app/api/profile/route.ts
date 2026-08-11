@@ -18,12 +18,14 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const { userId, username, avatarUrl } = await request.json()
+    const { userId, username, avatarUrl, onboardingDone, welcomeSeenAt } = await request.json()
     if (!userId) return NextResponse.json({ error: "userId required" }, { status: 400 })
     const db = getDb()
     const updates: Record<string, any> = { updatedAt: new Date() }
     if (username !== undefined) updates.username = username
     if (avatarUrl !== undefined) updates.avatarUrl = avatarUrl
+    if (onboardingDone !== undefined) updates.onboardingDone = onboardingDone
+    if (welcomeSeenAt !== undefined) updates.welcomeSeenAt = welcomeSeenAt
     const [profile] = await db.update(profiles).set(updates).where(eq(profiles.id, userId)).returning()
     return NextResponse.json({ data: profile })
   } catch (error: any) {

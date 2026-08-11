@@ -259,7 +259,7 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
               </Button>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <Button size="sm" onClick={handleCollectNews} disabled={collectMutation.isPending} className="h-9">
+              <Button id="btn-collect" size="sm" onClick={handleCollectNews} disabled={collectMutation.isPending} className="h-9">
                 <RefreshCw className={cn("h-4 w-4 mr-1.5", collectMutation.isPending && "animate-spin")} />
                 Recolectar
               </Button>
@@ -425,7 +425,7 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
         </CardContent>
       </Card>
 
-      <Card>
+      <Card id="news-list">
         <div className="p-4 border-b flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h3 className="text-sm font-semibold">Noticias</h3>
