@@ -34,6 +34,14 @@ export const tourSteps: OnboardingStep[] = [
     position: "right",
   },
   {
+    tab: "home",
+    element: "#nav-config",
+    title: "Menú Configuración",
+    intro:
+      "Para configurar las categorías de noticias que deseas importar, dirígete al menú Configuración. Aquí activas las que te interesan y creas las tuyas.",
+    position: "right",
+  },
+  {
     tab: "config",
     element: "#cat-manager",
     title: "Configura tus categorías",
