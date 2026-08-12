@@ -9,7 +9,14 @@ interface OnboardingTourProps {
   onComplete?: () => void
 }
 
-const MAX_MOUNT_RETRIES = 60
+const MAX_MOUNT_RETRIES = 90
+
+function isVisible(el: Element | null): boolean {
+  if (!el) return false
+  if (el instanceof HTMLElement && el.offsetParent !== null) return true
+  const rect = el.getBoundingClientRect()
+  return rect.width > 0 && rect.height > 0
+}
 
 export function OnboardingTour({ start, onComplete }: OnboardingTourProps) {
   const { activeTab, setActiveTab } = useDashboard()
@@ -49,19 +56,25 @@ export function OnboardingTour({ start, onComplete }: OnboardingTourProps) {
         highlightClass: "np-intro-highlight",
       })
 
-      // Al pasar a un paso de otra tab: bloquea el avance, cambia la tab,
-      // espera a que el elemento diana exista y tenga layout, y reanuda.
+      // Al pasar a un paso de otra tab: bloquea el avance, hace clic real en el
+      // menú para abrir la sección, espera a que el elemento diana esté visible
+      // y recién entonces reanuda para mostrar la leyenda sobre el escenario ya abierto.
       intro.onBeforeChange((_target: any, _currentStep: number, nextStepIndex: number) => {
         const nextStep = tourSteps[nextStepIndex]
         if (!nextStep?.tab || nextStep.tab === activeTabRef.current || switching) return true
 
         switching = true
-        setActiveTab(nextStep.tab)
+        const navBtn = document.querySelector(`#nav-${nextStep.tab}`) as HTMLElement | null
+        if (navBtn) {
+          navBtn.click()
+        } else {
+          setActiveTab(nextStep.tab)
+        }
 
         const resolveAfterMount = (retries = 0) => {
           if (disposed) return
           const el = nextStep.element ? document.querySelector(nextStep.element) : document.body
-          if (!el) {
+          if (!isVisible(el)) {
             if (retries >= MAX_MOUNT_RETRIES) {
               switching = false
               return
@@ -77,7 +90,7 @@ export function OnboardingTour({ start, onComplete }: OnboardingTourProps) {
               setTimeout(() => {
                 if (disposed) return
                 intro?.next()
-              }, 150)
+              }, 200)
             }),
           )
         }
