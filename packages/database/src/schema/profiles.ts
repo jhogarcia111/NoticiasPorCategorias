@@ -5,6 +5,7 @@ export const roleEnum = pgEnum("role", ["admin", "user", "subscriber"])
 export const profiles = pgTable("profiles", {
   id: text("id").primaryKey(),
   username: text("username"),
+  email: text("email"),
   avatarUrl: text("avatar_url"),
   role: roleEnum("role").default("user"),
   onboardingDone: boolean("onboarding_done").default(false).notNull(),

@@ -3,7 +3,7 @@ import type { NextAuthConfig } from "next-auth"
 import LinkedIn from "next-auth/providers/linkedin"
 import Google from "next-auth/providers/google"
 import { getDb, profiles, linkedinProfiles, subscriptions } from "@noticias/database"
-import { eq, and, inArray } from "drizzle-orm"
+import { eq, and, inArray, sql } from "drizzle-orm"
 
 export const authConfig: NextAuthConfig = {
   providers: [
@@ -52,25 +52,56 @@ export const authConfig: NextAuthConfig = {
       if (!user.email || !user.id) return true
 
       const db = getDb()
+      const email = user.email.toLowerCase().trim()
+      const emailPrefix = user.email.split("@")[0]
 
-      // Buscar perfil existente por email (no por id) para evitar duplicados
-      // cuando un mismo usuario usa Google, LinkedIn o email/password
-      const [existingByEmail] = await db
+      // Buscar perfil por email primero (columna canónica), luego por username.
+      // Evita duplicar cuentas cuando el mismo usuario usa Google/LinkedIn/email-password.
+      let [profile] = await db
         .select()
         .from(profiles)
-        .where(eq(profiles.username, user.email.split("@")[0]))
+        .where(sql`lower(coalesce(${profiles.email}, '')) = ${email}`)
         .limit(1)
 
-      let profileId = existingByEmail?.id
+      if (!profile) {
+        // Fallback: username = prefijo del email (cuentas viejas sin email registrado)
+        ;[profile] = await db
+          .select()
+          .from(profiles)
+          .where(eq(profiles.username, emailPrefix))
+          .limit(1)
+      }
+
+      if (!profile && user.name) {
+        // Fallback 2: coincidencia por nombre mostrado (ej. perfiles creados por Google)
+        const matches = await db
+          .select({ profile: profiles, hasActiveSub: sql<boolean>`exists(select 1 from subscriptions s where s.user_id = ${profiles.id} and s.status in ('active','trialing'))` })
+          .from(profiles)
+          .where(sql`lower(trim(${profiles.username})) = ${user.name.toLowerCase().trim()}`)
+          .orderBy(sql`case when exists(select 1 from subscriptions s where s.user_id = ${profiles.id} and s.status in ('active','trialing')) then 0 else 1 end, ${profiles.createdAt} asc`)
+          .limit(1)
+        profile = matches[0]?.profile
+      }
+
+      let profileId = profile?.id
 
       if (!profileId) {
-        // No hay perfil con este email — crear uno nuevo
-        await db.insert(profiles).values({
-          id: user.id,
-          username: user.name || user.email.split("@")[0],
-          role: "user",
-        })
-        profileId = user.id
+        // No hay perfil para este usuario — crear uno nuevo
+        const [created] = await db
+          .insert(profiles)
+          .values({
+            id: user.id,
+            username: user.name || emailPrefix,
+            email,
+            role: "user",
+          })
+          .returning()
+        profileId = created.id
+      } else {
+        // Asegurar que el perfil canónico tenga el email para futuras coincidencias
+        if (!profile.email) {
+          await db.update(profiles).set({ email }).where(eq(profiles.id, profileId))
+        }
       }
 
       // Si el perfil existente tiene id distinto al user.id del provider,

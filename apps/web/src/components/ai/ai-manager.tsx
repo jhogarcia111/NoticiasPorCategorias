@@ -782,7 +782,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     }
   }
 
-  const editorMouseDown = (type: "label" | "text", e: React.MouseEvent, corner?: string) => {
+  const editorMouseDown = (type: "label" | "text", e: React.PointerEvent, corner?: string) => {
     e.preventDefault()
     const rect = e.currentTarget.closest("[data-editor]")?.getBoundingClientRect()
     if (!rect) return
@@ -791,7 +791,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       ? [labelX, labelY, labelW, labelH] : [textX, textY, textW, textH]
     dragRef.current = { type, startX, startY, origX: ox, origY: oy, origW: ow, origH: oh, corner }
 
-    const onMove = (ev: MouseEvent) => {
+    const onMove = (ev: PointerEvent) => {
       if (!dragRef.current) return
       const dx = ((ev.clientX - startX) / rect.width) * 100
       const dy = ((ev.clientY - startY) / rect.height) * 100
@@ -806,9 +806,9 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
         else { setTextX(Math.max(0, Math.min(100 - textW, ox2 + dx))); setTextY(Math.max(0, Math.min(100 - textH, oy2 + dy))) }
       }
     }
-    const onUp = () => { dragRef.current = null; window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp) }
-    window.addEventListener("mousemove", onMove)
-    window.addEventListener("mouseup", onUp)
+    const onUp = () => { dragRef.current = null; window.removeEventListener("pointermove", onMove); window.removeEventListener("pointerup", onUp) }
+    window.addEventListener("pointermove", onMove)
+    window.addEventListener("pointerup", onUp)
   }
 
   const resizeFromCorner = (corner: string, ox: number, oy: number, ow: number, oh: number, dx: number, dy: number): [number, number, number, number] => {
@@ -1329,32 +1329,34 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
                   <div className="absolute inset-0">
                     {/* Label hit area */}
                     <div className="absolute cursor-move group"
-                      style={{ left: `${labelX}%`, top: `${labelY}%`, width: `${labelW}%`, height: `${labelH}%` }}
-                      onMouseDown={(e) => editorMouseDown("label", e)}>
-                      <div className="w-full h-full border-2 border-dashed border-white/40 rounded opacity-0 group-hover:opacity-100 transition-opacity" />
+                      style={{ left: `${labelX}%`, top: `${labelY}%`, width: `${labelW}%`, height: `${labelH}%`, touchAction: "none" }}
+                      onPointerDown={(e) => editorMouseDown("label", e)}>
+                      <div className="w-full h-full border-2 border-dashed border-white/40 rounded opacity-0 group-hover:opacity-100 max-sm:opacity-50 max-sm:group-hover:opacity-100 transition-opacity" />
                       {["nw", "ne", "sw", "se"].map((c) => (
                         <div key={c} className="absolute w-3 h-3 bg-white border border-gray-400 rounded-sm opacity-0 group-hover:opacity-100 z-10"
                           style={{
                             cursor: `${c}-resize`,
+                            touchAction: "none",
                             ...(c.includes("n") ? { top: "-4px" } : { bottom: "-4px" }),
                             ...(c.includes("w") ? { left: "-4px" } : { right: "-4px" }),
                           }}
-                          onMouseDown={(e) => { e.stopPropagation(); editorMouseDown("label", e, c) }} />
+                          onPointerDown={(e) => { e.stopPropagation(); editorMouseDown("label", e, c) }} />
                       ))}
                     </div>
                     {/* Text hit area */}
                     <div className="absolute cursor-move group"
-                      style={{ left: `${textX}%`, top: `${textY}%`, width: `${textW}%`, height: `${textH}%` }}
-                      onMouseDown={(e) => editorMouseDown("text", e)}>
-                      <div className="w-full h-full border-2 border-dashed border-white/60 rounded opacity-0 group-hover:opacity-100 transition-opacity" />
+                      style={{ left: `${textX}%`, top: `${textY}%`, width: `${textW}%`, height: `${textH}%`, touchAction: "none" }}
+                      onPointerDown={(e) => editorMouseDown("text", e)}>
+                      <div className="w-full h-full border-2 border-dashed border-white/60 rounded opacity-0 group-hover:opacity-100 max-sm:opacity-50 max-sm:group-hover:opacity-100 transition-opacity" />
                       {["nw", "ne", "sw", "se"].map((c) => (
                         <div key={c} className="absolute w-3 h-3 bg-white border border-gray-400 rounded-sm opacity-0 group-hover:opacity-100 z-10"
                           style={{
                             cursor: `${c}-resize`,
+                            touchAction: "none",
                             ...(c.includes("n") ? { top: "-4px" } : { bottom: "-4px" }),
                             ...(c.includes("w") ? { left: "-4px" } : { right: "-4px" }),
                           }}
-                          onMouseDown={(e) => { e.stopPropagation(); editorMouseDown("text", e, c) }} />
+                          onPointerDown={(e) => { e.stopPropagation(); editorMouseDown("text", e, c) }} />
                       ))}
                 </div>
               </div>
