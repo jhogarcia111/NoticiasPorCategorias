@@ -73,14 +73,29 @@ export const authConfig: NextAuthConfig = {
       }
 
       if (!profile && user.name) {
-        // Fallback 2: coincidencia por nombre mostrado (ej. perfiles creados por Google)
-        const matches = await db
-          .select({ profile: profiles, hasActiveSub: sql<boolean>`exists(select 1 from subscriptions s where s.user_id = ${profiles.id} and s.status in ('active','trialing'))` })
+        // Fallback 2: coincidencia por nombre mostrado (ej. perfiles creados por Google).
+        // Prefiere el perfil con suscripción activa; si hay varios, el más antiguo.
+        const candidates = await db
+          .select()
           .from(profiles)
           .where(sql`lower(trim(${profiles.username})) = ${user.name.toLowerCase().trim()}`)
-          .orderBy(sql`case when exists(select 1 from subscriptions s where s.user_id = ${profiles.id} and s.status in ('active','trialing')) then 0 else 1 end, ${profiles.createdAt} asc`)
-          .limit(1)
-        profile = matches[0]?.profile
+          .limit(10)
+        if (candidates.length > 0) {
+          const activeIds = new Set(
+            (
+              await db
+                .select({ userId: subscriptions.userId })
+                .from(subscriptions)
+                .where(inArray(subscriptions.status, ["active", "trialing"]))
+            ).map((row) => row.userId),
+          )
+          const withActive = candidates.filter((c) => activeIds.has(c.id))
+          const pool = withActive.length > 0 ? withActive : candidates
+          pool.sort(
+            (a, b) => (a.createdAt?.getTime() ?? 0) - (b.createdAt?.getTime() ?? 0),
+          )
+          profile = pool[0]
+        }
       }
 
       let profileId = profile?.id
