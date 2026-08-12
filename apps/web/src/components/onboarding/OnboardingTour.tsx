@@ -32,9 +32,9 @@ export function OnboardingTour({ start, onComplete }: OnboardingTourProps) {
 
     const load = async () => {
       if (disposed) return
-      const { default: introJs } = await import("intro.js")
+      const mod = await import("intro.js")
       if (disposed) return
-
+      const introJs = mod.default.tour || mod.default
       intro = introJs()
       intro.setOptions({
         steps: tourSteps.map((s) => ({
@@ -59,9 +59,11 @@ export function OnboardingTour({ start, onComplete }: OnboardingTourProps) {
       // Al pasar a un paso de otra tab: bloquea el avance, hace clic real en el
       // menú para abrir la sección, espera a que el elemento diana esté visible
       // y recién entonces reanuda para mostrar la leyenda sobre el escenario ya abierto.
-      intro.onBeforeChange((_target: any, _currentStep: number, nextStepIndex: number) => {
-        const nextStep = tourSteps[nextStepIndex]
-        if (!nextStep?.tab || nextStep.tab === activeTabRef.current || switching) return true
+      intro.onBeforeChange((_target: HTMLElement, _currentStep: number, direction: "backward" | "forward") => {
+        if (direction !== "forward" || switching) return true
+        const currentStep = intro.getCurrentStep() ?? 0
+        const nextStep = tourSteps[currentStep + 1]
+        if (!nextStep?.tab || nextStep.tab === activeTabRef.current) return true
 
         switching = true
         const navBtn = document.querySelector(`#nav-${nextStep.tab}`) as HTMLElement | null
