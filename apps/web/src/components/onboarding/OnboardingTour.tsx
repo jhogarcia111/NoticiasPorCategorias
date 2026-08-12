@@ -9,6 +9,8 @@ interface OnboardingTourProps {
   onComplete?: () => void
 }
 
+const MAX_MOUNT_RETRIES = 60
+
 export function OnboardingTour({ start, onComplete }: OnboardingTourProps) {
   const { activeTab, setActiveTab } = useDashboard()
   const activeTabRef = useRef(activeTab)
@@ -19,6 +21,7 @@ export function OnboardingTour({ start, onComplete }: OnboardingTourProps) {
 
     let disposed = false
     let intro: any = null
+    let switching = false
 
     const load = async () => {
       if (disposed) return
@@ -46,13 +49,41 @@ export function OnboardingTour({ start, onComplete }: OnboardingTourProps) {
         highlightClass: "np-intro-highlight",
       })
 
-      intro.onBeforeChange((_: any, currentStep: number) => {
-        const step = tourSteps[currentStep]
-        if (step?.tab && step.tab !== activeTabRef.current) {
-          setActiveTab(step.tab)
-          window.setTimeout(() => intro.refresh(true), 500)
+      // Al pasar a un paso de otra tab: bloquea el avance, cambia la tab,
+      // espera a que el elemento diana exista y tenga layout, y reanuda.
+      intro.onBeforeChange((_target: any, _currentStep: number, nextStepIndex: number) => {
+        const nextStep = tourSteps[nextStepIndex]
+        if (!nextStep?.tab || nextStep.tab === activeTabRef.current || switching) return true
+
+        switching = true
+        setActiveTab(nextStep.tab)
+
+        const resolveAfterMount = (retries = 0) => {
+          if (disposed) return
+          const el = nextStep.element ? document.querySelector(nextStep.element) : document.body
+          if (!el) {
+            if (retries >= MAX_MOUNT_RETRIES) {
+              switching = false
+              return
+            }
+            requestAnimationFrame(() => resolveAfterMount(retries + 1))
+            return
+          }
+          // Doble rAF: deja que imágenes/layout terminen de posicionar el target
+          requestAnimationFrame(() =>
+            requestAnimationFrame(() => {
+              if (disposed) return
+              switching = false
+              setTimeout(() => {
+                if (disposed) return
+                intro?.next()
+              }, 150)
+            }),
+          )
         }
-        return true
+
+        resolveAfterMount()
+        return false
       })
 
       intro.onComplete(() => onComplete?.())
