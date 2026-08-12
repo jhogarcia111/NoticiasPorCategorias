@@ -1,6 +1,6 @@
 # Diseño: Onboarding de la aplicación — Splash Screen + Tour intro.js
 
-Estado: **DISEÑO — pendiente de aprobación** (no se ha modificado código).
+Estado: **IMPLEMENTADO** (commits `8c5260f` onboarding visual + `22e9628` scoping por usuario).
 
 ## 1. Objetivo
 
@@ -166,7 +166,9 @@ El usuario reportó: *"Aparecen las noticias y borradores de todos... deben ser 
 
 ## 7. Preguntas abiertas para el usuario
 
-1. ¿Las noticias recolectadas deben ser **solo del usuario** o **compartidas** (dedupe global) pero con borradores IA propios? (Recomendado: noticias por usuario + dedupe global por `source_url`.)
-2. ¿El splash se muestra solo a **usuarios nuevos** (post-registro) o también a usuarios existentes que nunca lo vieron? (Recomendado: nuevos + existentes sin flag.)
-3. ¿Imágenes finales de Unsplash o generadas con pollinations.ai?
-4. ¿El tour debe **auto-iniciarse** tras el splash siempre, o solo si el usuario pulsa "Comenzar tour"?
+Resueltas durante la implementación:
+
+1. **Noticias por usuario**: se implementó colección por usuario con dedupe por `(user_id, source_url)` (Fase B).
+2. **Splash**: se muestra a usuarios nuevos y a existentes sin flag (`onboarding_done=false`); doble persistencia DB + localStorage.
+3. **Imágenes**: las 4 cards usan Unsplash (URLs del doc, mismas de la landing). Reemplazables por generadas con `scripts/generate-splash-images.mjs` (requiere `GEMINI_API_KEY`).
+4. **Tour**: se lanza al pulsar "Comenzar tour" desde el splash, y siempre desde el botón "Recorrido" del header.

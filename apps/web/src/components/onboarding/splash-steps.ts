@@ -24,7 +24,7 @@ export const splashSteps: SplashStep[] = [
       "Búsqueda personalizada por tema",
     ],
     icon: Newspaper,
-    image: "/splash/import.png",
+    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80",
     alt: "Panel digital con feeds de noticias de la industria",
   },
   {
@@ -39,7 +39,7 @@ export const splashSteps: SplashStep[] = [
       "Tú siempre das el visto bueno final",
     ],
     icon: Brain,
-    image: "/splash/ai.png",
+    image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&auto=format&fit=crop&q=80",
     alt: "Entorno digital con inteligencia artificial generando contenido",
   },
   {
@@ -54,7 +54,7 @@ export const splashSteps: SplashStep[] = [
       "10 minutos al mes para todo el contenido",
     ],
     icon: Calendar,
-    image: "/splash/schedule.png",
+    image: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&auto=format&fit=crop&q=80",
     alt: "Calendario digital automatizado con programación de publicaciones",
   },
   {
@@ -69,7 +69,7 @@ export const splashSteps: SplashStep[] = [
       "Tu próximo ascenso puede empezar con un post",
     ],
     icon: Award,
-    image: "/splash/grow.png",
+    image: "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?w=800&auto=format&fit=crop&q=80",
     alt: "Analítica de crecimiento digital mostrando impacto y alcance",
   },
 ]
