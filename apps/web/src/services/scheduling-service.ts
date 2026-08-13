@@ -2,6 +2,7 @@ import { getDb } from "@/lib/db"
 import { schedulingConfigs, scheduledPosts } from "@noticias/database"
 import { eq, and, gte, lte, asc } from "drizzle-orm"
 import { postToLinkedIn, uploadImageToLinkedIn } from "@/services/linkedin-service"
+import { recordPostMetricsSnapshot } from "@/services/analytics-service"
 
 export async function getSchedulingConfigs(userId: string) {
   const db = getDb()
@@ -141,6 +142,21 @@ async function publishPosts(posts: any[]) {
         linkedinPostId: String(result?.id || result || ""),
         errorMessage: null,
       })
+
+      // Snapshot inicial (día 0) para arrancar el seguimiento de métricas
+      try {
+        await recordPostMetricsSnapshot({
+          scheduledPostId: post.id,
+          userId: post.userId,
+          profileId: pid,
+          linkedinPostId: String(result?.id || result || ""),
+          snapshotDay: 0,
+          metrics: { impressions: 0, likes: 0, comments: 0, shares: 0, source: "pending" },
+        })
+      } catch (e) {
+        console.error(`[analytics] snapshot inicial del post ${post.id} fallo:`, e)
+      }
+
       results.push({ id: post.id, status: "published" })
     } catch (error: any) {
       await updateScheduledPost(post.id, { status: "failed", errorMessage: error.message })

@@ -40,7 +40,17 @@ export async function POST(request: Request) {
     const tokens = await exchangeCodeForTokens(code)
     const profileData = await getLinkedInProfile(tokens.access_token)
     const saved = await saveLinkedInProfile(profileData, tokens, userId)
-    return NextResponse.json({ data: saved })
+
+    // Baseline de analíticas: captura el snapshot inicial del perfil
+    const { captureProfileBaseline } = await import("@/services/analytics-service")
+    let baseline = null
+    try {
+      baseline = await captureProfileBaseline(saved.id)
+    } catch (e) {
+      console.error("Baseline capture failed:", e)
+    }
+
+    return NextResponse.json({ data: saved, baseline })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }

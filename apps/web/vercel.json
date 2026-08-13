@@ -8,6 +8,10 @@
     {
       "path": "/api/linkedin/publish-due",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/analytics/cron",
+      "schedule": "30 12 * * *"
     }
   ]
 }

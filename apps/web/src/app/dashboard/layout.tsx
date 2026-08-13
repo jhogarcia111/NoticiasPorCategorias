@@ -7,7 +7,7 @@ import { OnboardingGate } from "@/components/onboarding/OnboardingGate"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard, Newspaper, Brain, Calendar, Settings,
-  Menu, X, LogOut, Linkedin, Shield, Gem,
+  Menu, X, LogOut, Linkedin, Shield, Gem, BarChart3,
   ChevronLeft, ChevronRight, HelpCircle,
 } from "lucide-react"
 
@@ -18,6 +18,7 @@ function getNavItems(role?: string): { id: Tab; label: string; icon: any }[] {
     { id: "ai", label: "IA", icon: Brain },
     { id: "calendar", label: "Calendario", icon: Calendar },
     { id: "published", label: "Publicadas", icon: Linkedin },
+    { id: "analytics", label: "Impacto & Estadisticas", icon: BarChart3 },
     { id: "config", label: "Configuración", icon: Settings },
   ]
   items.push({ id: "subscription", label: "Premium", icon: Gem })

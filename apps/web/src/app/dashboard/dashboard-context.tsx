@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, type Dispatch, type SetStateAction } from "react"
 
-export type Tab = "home" | "news" | "ai" | "calendar" | "config" | "published" | "subscription" | "admin"
+export type Tab = "home" | "news" | "ai" | "calendar" | "config" | "published" | "analytics" | "subscription" | "admin"
 export type ConfigSubTab = "linkedin" | "sources"
 export type ContentTypeId = "linkedin-post" | "blog" | "video" | "social"
 export type SourceMode = "news" | "scientific" | "patents" | "url"

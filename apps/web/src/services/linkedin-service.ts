@@ -233,6 +233,7 @@ export async function postToLinkedIn(
   })
 
   const raw = await response.text()
+  const restliId = response.headers.get("x-restli-id")
 
   if (!response.ok) {
     let msg: string
@@ -241,7 +242,12 @@ export async function postToLinkedIn(
     throw new Error(msg)
   }
 
-  return raw ? JSON.parse(raw) : { id: null }
+  const parsed = raw ? JSON.parse(raw) : { id: null }
+  if (restliId) {
+    parsed.id = restliId
+    parsed.urn = restliId
+  }
+  return parsed
 }
 
 export async function getLinkedInProfiles(userId: string) {
