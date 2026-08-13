@@ -9,9 +9,10 @@ import { Badge } from "@/components/ui/badge"
 import { NewsList } from "./news-list"
 import { useNews, useCollectNews, useMarkNewsAsProcessed } from "@/hooks/use-news"
 import { useCategories, useToggleCategory, useCreateCategory } from "@/hooks/use-categories"
+import { useCollectFromProvider, useProviderStatus } from "@/hooks/use-provider"
 import {
   Search, RefreshCw, CheckCircle, Circle, Download, Plus, Trash2, Globe, X, Loader2,
-  Sparkles, Newspaper, Clock, BarChart3, Filter, ChevronDown,
+  Sparkles, Newspaper, Clock, BarChart3, Filter, ChevronDown, FlaskConical, Link2, Rocket,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -30,6 +31,9 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
   const [internalSelectedIds, setInternalSelectedIds] = useState<number[]>([])
   const [showFilters, setShowFilters] = useState(false)
   const [showDangerZone, setShowDangerZone] = useState(false)
+  const [sourceMode, setSourceMode] = useState<"news" | "scientific" | "patents" | "url">("news")
+  const [providerQuery, setProviderQuery] = useState("")
+  const [providerUrl, setProviderUrl] = useState("")
 
   const selectedNewsIds = externalIds ?? internalSelectedIds
   const setSelectedNewsIds = (ids: number[] | ((prev: number[]) => number[])) => {
@@ -68,6 +72,9 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
 
   const collectMutation = useCollectNews()
   const markProcessedMutation = useMarkNewsAsProcessed()
+  const providerCollectMutation = useCollectFromProvider()
+  const { data: providerStatusData } = useProviderStatus()
+  const providerStatus = providerStatusData?.data || []
 
   const news = newsData?.data || []
 
@@ -127,6 +134,67 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
   }
 
   const handleCustomSearch = () => doCustomSearch(customQuery)
+
+  const handleSelectSource = (mode: "news" | "scientific" | "patents" | "url") => {
+    setSourceMode(mode)
+    if ((mode === "scientific" || mode === "patents") && !providerQuery.trim()) {
+      const catName = categories.find((c: any) => c.id === selectedCategory)?.name
+      if (catName) setProviderQuery(catName)
+    }
+  }
+
+  const handleProviderCollect = async () => {
+    if (sourceMode === "url") {
+      if (!providerUrl.trim()) {
+        showAlert("error", "URL requerida", "Pega un enlace para importar")
+        return
+      }
+      try {
+        const result = await providerCollectMutation.mutateAsync({
+          source: "url",
+          categoryId: selectedCategory,
+          url: providerUrl.trim(),
+        })
+        const inserted = result?.data?.inserted || []
+        const errors = result?.data?.errors || []
+        if (inserted.length > 0) {
+          setSelectedNewsIds(inserted.map((r: any) => r.id))
+          showAlert("success", "OK artículo importado", `"${inserted[0]?.title}"`)
+          if (errors.length) showAlert("info", "Aviso", errors.join("\n"))
+          onNavigate?.("ai")
+        } else {
+          showAlert("error", "Sin resultados", errors.join("\n") || "No se pudo importar la URL")
+        }
+      } catch (e: any) {
+        showAlert("error", "Error al importar", e.message)
+      }
+      return
+    }
+
+    if (!providerQuery.trim()) {
+      showAlert("error", "Consulta requerida", "Escribe palabras clave del nicho")
+      return
+    }
+    try {
+      const result = await providerCollectMutation.mutateAsync({
+        source: sourceMode as "scientific" | "patents",
+        categoryId: selectedCategory,
+        query: providerQuery.trim(),
+        limit: 10,
+      })
+      const data = result?.data || {}
+      const collected = data.collected || 0
+      const errors = data.errors || []
+      if (collected > 0) {
+        const title = sourceMode === "scientific" ? `OK ${collected} artículos científicos` : `OK ${collected} patentes`
+        showAlert("success", title, errors.length ? errors.join("\n") : "Proveedores: PubMed, ClinicalTrials, Google Patents/EPO")
+      } else {
+        showAlert("info", "Sin resultados", errors.join("\n") || "No se encontraron resultados")
+      }
+    } catch (e: any) {
+      showAlert("error", "Error", e.message)
+    }
+  }
 
   const handleToggleCat = async (cat: any) => {
     try {
@@ -237,6 +305,95 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
 
       <Card>
         <CardContent className="p-4 space-y-4">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-medium text-muted-foreground">Fuente de contenido:</span>
+              {[
+                { value: "news" as const, label: "Noticias automáticas", icon: Newspaper },
+                { value: "scientific" as const, label: "Científicos y Patentes", icon: FlaskConical },
+                { value: "url" as const, label: "Importar desde URL", icon: Link2 },
+              ].map((opt) => {
+                const Icon = opt.icon
+                const active = sourceMode === opt.value || (opt.value === "scientific" && sourceMode === "patents")
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => handleSelectSource(opt.value)}
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
+                      active ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground border-input hover:bg-muted",
+                    )}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {opt.label}
+                  </button>
+                )
+              })}
+            </div>
+
+            {(sourceMode === "scientific" || sourceMode === "patents") && (
+              <div className="flex flex-wrap items-center gap-2 border-t pt-3">
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => setSourceMode("scientific")}
+                    className={cn(
+                      "px-2.5 py-1 rounded text-xs font-medium border transition-colors",
+                      sourceMode === "scientific"
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-muted-foreground border-input hover:bg-muted",
+                    )}
+                  >
+                    Repositorios científicos
+                  </button>
+                  <button
+                    onClick={() => setSourceMode("patents")}
+                    className={cn(
+                      "px-2.5 py-1 rounded text-xs font-medium border transition-colors",
+                      sourceMode === "patents"
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-muted-foreground border-input hover:bg-muted",
+                    )}
+                  >
+                    <Rocket className="h-3 w-3 inline mr-0.5" />
+                    Patentes
+                  </button>
+                </div>
+                <Input
+                  placeholder={sourceMode === "scientific" ? "Palabras clave del nicho (ej: AI, cáncer, baterías)..." : "Tecnología a patentar (ej: baterías de litio)..."}
+                  value={providerQuery}
+                  onChange={(e) => setProviderQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleProviderCollect()}
+                  className="h-9 flex-1 min-w-[180px]"
+                />
+                <Button size="sm" onClick={handleProviderCollect} disabled={providerCollectMutation.isPending} className="h-9">
+                  {providerCollectMutation.isPending ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <FlaskConical className="h-4 w-4 mr-1.5" />}
+                  Recolectar
+                </Button>
+                {sourceMode === "patents" && providerStatus.find((p: any) => p.id === "patents")?.hint && (
+                  <span className="text-[11px] text-amber-600 w-full sm:w-auto sm:flex-1">
+                    ⚠ {providerStatus.find((p: any) => p.id === "patents")?.hint}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {sourceMode === "url" && (
+              <div className="flex flex-wrap items-center gap-2 border-t pt-3">
+                <Input
+                  placeholder="Pega la URL de la noticia, blog, GitHub o documento web..."
+                  value={providerUrl}
+                  onChange={(e) => setProviderUrl(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleProviderCollect()}
+                  className="h-9 flex-1 min-w-[220px]"
+                />
+                <Button size="sm" onClick={handleProviderCollect} disabled={providerCollectMutation.isPending || !providerUrl.trim()} className="h-9">
+                  {providerCollectMutation.isPending ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Sparkles className="h-4 w-4 mr-1.5" />}
+                  Procesar con IA
+                </Button>
+              </div>
+            )}
+          </div>
+
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <div className="relative flex-1 min-w-[200px] max-w-sm">

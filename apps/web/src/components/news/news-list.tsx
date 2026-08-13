@@ -36,6 +36,12 @@ function dateLabel(pubDate: string | Date | null | undefined): string {
   return `${differenceInDays(new Date(), d)}d`
 }
 
+const SOURCE_TYPE_LABEL: Record<string, { label: string; className: string }> = {
+  SCIENTIFIC: { label: "Ciencia", className: "bg-violet-50 text-violet-700 border-violet-200" },
+  PATENT: { label: "Patente", className: "bg-amber-50 text-amber-700 border-amber-200" },
+  CUSTOM_URL: { label: "URL", className: "bg-teal-50 text-teal-700 border-teal-200" },
+}
+
 export function NewsList({ news, onNewsSelect, onProcess, selectedNews = [] }: NewsListProps) {
   const [expandedNews, setExpandedNews] = useState<Record<number, boolean>>({})
 
@@ -99,6 +105,11 @@ export function NewsList({ news, onNewsSelect, onProcess, selectedNews = [] }: N
                     {article.category && (
                       <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 font-normal">
                         {article.category.name || article.category}
+                      </Badge>
+                    )}
+                    {article.sourceType && article.sourceType !== "NEWS" && SOURCE_TYPE_LABEL[article.sourceType] && (
+                      <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 h-5 font-normal", SOURCE_TYPE_LABEL[article.sourceType].className)}>
+                        {SOURCE_TYPE_LABEL[article.sourceType].label}
                       </Badge>
                     )}
                     <Badge variant={article.isProcessed ? "success" : "warning"} className="text-[10px] px-1.5 py-0 h-5 font-normal whitespace-nowrap">

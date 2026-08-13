@@ -14,6 +14,7 @@ export const news = pgTable("news", {
   imageUrl: text("image_url"),
   aiImageUrl: text("ai_image_url"),
   sourceName: text("source_name"),
+  sourceType: text("source_type").default("NEWS"),
   publishedAt: timestamp("published_at", { withTimezone: true }),
   language: text("language").default("es"),
   isProcessed: boolean("is_processed").default(false),
