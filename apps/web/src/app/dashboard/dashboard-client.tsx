@@ -10,6 +10,7 @@ import { SourcesManager } from "@/components/sources/sources-manager"
 import { CategoryManager } from "@/components/categories/category-manager"
 import { CalendarView } from "@/components/scheduling/calendar-view"
 import { PublishedView } from "@/components/news/published-view"
+import { PublishPicker } from "@/components/publish/publish-picker"
 import { EmailTemplatesAdmin } from "./admin/email-templates-admin"
 import { AdminSubscriptions } from "@/components/admin/admin-subscriptions"
 import { SubscriptionManager } from "@/components/subscription/subscription-manager"
@@ -102,6 +103,8 @@ export default function DashboardClient({ user }: DashboardClientProps) {
             <StatsCard icon={PenSquare} label="Borradores IA" value={stats?.drafts ?? "—"} color="text-sky-600" bg="bg-sky-50" onClick={() => setActiveTab("ai")} />
             <StatsCard icon={CheckCircle2} label="Publicadas hoy" value={stats?.publishedToday ?? "—"} color="text-green-600" bg="bg-green-50" onClick={() => setActiveTab("published")} />
           </div>
+
+          <PublishPicker />
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <button

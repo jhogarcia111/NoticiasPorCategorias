@@ -38,6 +38,13 @@ const statusIcons: Record<string, any> = {
 const isOverdue = (p: any) =>
   (p.status === "scheduled" || p.status === "pending") && new Date(p.scheduledAt || p.scheduledTime).getTime() <= Date.now()
 
+const CONTENT_TYPE_LABELS: Record<string, string> = {
+  "linkedin-post": "Post LinkedIn",
+  social: "Red social",
+  blog: "Blog",
+  video: "Video",
+}
+
 const postBadge = (p: any) => {
   if (isOverdue(p)) return { color: "bg-orange-50 text-orange-700 border-orange-200", label: "Por publicar" }
   return { color: statusColors[p.status] || "bg-gray-50", label: statusLabels[p.status] || p.status }
@@ -258,11 +265,14 @@ export function CalendarView() {
                             <StatusIcon className="h-3 w-3 mr-1" />
                             {badge.label}
                           </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {post.scheduledAt
-                              ? new Date(post.scheduledAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })
-                              : ""}
+                          <span className="text-[10px] text-muted-foreground font-medium">
+                            {CONTENT_TYPE_LABELS[post.contentType] || "Post LinkedIn"}
                           </span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {post.scheduledAt
+                            ? new Date(post.scheduledAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })
+                            : ""}
                         </div>
                         {post.imageUrl && (
                           <div className="rounded-md overflow-hidden border border-border">

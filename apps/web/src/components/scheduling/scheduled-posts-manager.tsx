@@ -34,6 +34,13 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: "Cancelado",
 }
 
+const CONTENT_TYPE_LABELS: Record<string, string> = {
+  "linkedin-post": "Post LinkedIn",
+  social: "Red social",
+  blog: "Blog",
+  video: "Video",
+}
+
 export function ScheduledPostsManager() {
   const { scheduledPosts, cancelPost, deletePost, isCancelling, isDeleting, stats } =
     useScheduling()
@@ -219,6 +226,9 @@ export function ScheduledPostsManager() {
                       <h3 className="font-medium text-gray-900">{post.title}</h3>
                       <Badge variant={(STATUS_COLORS[post.status] || "default") as any}>
                         {STATUS_LABELS[post.status] || post.status}
+                      </Badge>
+                      <Badge variant="outline" className="text-[10px] font-normal">
+                        {CONTENT_TYPE_LABELS[post.contentType] || "Post LinkedIn"}
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground line-clamp-2">

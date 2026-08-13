@@ -92,6 +92,61 @@ Post para LinkedIn:`
   return callGroq(prompt, 2000)
 }
 
+export async function generateBlogArticle(
+  title: string,
+  summary: string,
+  options: { language?: string; style?: string } = {},
+) {
+  const { language = "es", style = "analítico" } = options
+  const langInstruction =
+    language === "es"
+      ? "IMPORTANTE: Escribe el artículo completamente en español."
+      : "IMPORTANTE: Write the article in English."
+
+  const prompt = `Eres un redactor editorial experto. Convierte la siguiente noticia en un artículo de blog profesional y bien estructurado.
+
+REGLAS:
+1. Usa SOLO los datos que aparezcan en la noticia. NO inventes cifras, citas ni fechas.
+2. Incluye la URL de la fuente al final.
+3. Estructura: titular + subtítulo atractivo, introducción que enganche, 4-6 secciones con subtítulos (contexto, desarrollo, implicaciones, aplicaciones), conclusión con reflexión y 3 hashtags.
+4. Tono: ${style}. Profesional pero cercano.
+
+Título: ${title}
+Resumen: ${summary}
+${langInstruction}
+
+Artículo para blog:`
+
+  return callGroq(prompt, 2500)
+}
+
+export async function generateVideoScript(title: string, summary: string, options: { language?: string } = {}) {
+  const { language = "es" } = options
+  const langInstruction =
+    language === "es"
+      ? "IMPORTANTE: Escribe el guion completamente en español."
+      : "IMPORTANTE: Write the script in English."
+
+  const prompt = `Eres un productor audiovisual y guionista. Crea un guion de video corto (45-60 segundos, formato vertical para redes sociales) basado en la noticia.
+
+REGLAS:
+1. Usa SOLO datos reales de la noticia. NO inventes.
+2. Formato de salida exacto:
+   - HOOK (primeros 3 segundos): frase que enganche.
+   - ESCENAS: lista numerada con [TIEMPO en segundos], [VISUAL: descripción de la imagen/plano], [VOZ EN OFF: texto a leer].
+   - CTA FINAL: pregunta o llamado a comentar.
+3. Lenguaje hablado, natural, sin tecnicismos.
+4. Incluye la URL de la fuente como texto en pantalla al final.
+
+Título: ${title}
+Resumen: ${summary}
+${langInstruction}
+
+Guion de video:`
+
+  return callGroq(prompt, 2000)
+}
+
 export async function generateHashtags(title: string, summary: string) {
   const prompt = `Genera 5-8 hashtags relevantes para LinkedIn basados en esta noticia:
 Título: ${title}

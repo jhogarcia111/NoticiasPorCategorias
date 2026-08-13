@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { useSession } from "next-auth/react"
 import { promptTemplates } from "@/data/prompt-templates"
+import { contentTypes, getContentType } from "@/data/content-types"
+import type { ContentTypeId } from "@/app/dashboard/dashboard-context"
 import {
   Brain, RefreshCw, Sparkles, Copy, Check, ChevronDown, ChevronRight,
-  Send, Calendar, Save, Loader2, ImageUp, X, Globe, ExternalLink, Images, FolderOpen, Search,
+  Send, Calendar, Save, Loader2, ImageUp, X, Globe, ExternalLink, Images, FolderOpen, Search, PenSquare,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useDashboard } from "@/app/dashboard/dashboard-context"
@@ -35,6 +37,7 @@ interface AIManagerProps {
 
 export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
   const [selectedTemplateId, setSelectedTemplateId] = useState(promptTemplates[0].id)
+  const [contentType, setContentType] = useState<ContentTypeId>("linkedin-post")
   const [showPrompt, setShowPrompt] = useState(false)
   const [processing, setProcessing] = useState(false)
   const [result, setResult] = useState<string | null>(null)
@@ -226,7 +229,15 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       selectedHeadlineIdx, headlines, customHeadline, textX, textY, textW, textH, textFontSz])
 
   // Collapsible sidebar via context
-  const { aiSidebarOpen: sidebarOpen, setAiSidebarOpen: setSidebarOpen } = useDashboard()
+  const { aiSidebarOpen: sidebarOpen, setAiSidebarOpen: setSidebarOpen, intendedContentType, setIntendedContentType } = useDashboard()
+
+  useEffect(() => {
+    if (intendedContentType) {
+      setContentType(intendedContentType)
+      setIntendedContentType(null)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [intendedContentType])
 
   // Drag/resize
   const dragRef = useRef<{ type: "label" | "text"; startX: number; startY: number; origX: number; origY: number; origW: number; origH: number; corner?: string } | null>(null)
@@ -897,6 +908,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     try {
       const postData: any = {
         linkedinProfileId: selectedProfileId,
+        contentType,
         title: activeNews[0]?.title || "Post generado por IA",
         content: parsedResult?.post || result,
         summary: activeNews[0]?.summary || "",
@@ -956,6 +968,26 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     }
   }
 
+  const buildAiBody = () => {
+    if (contentType === "blog") {
+      return {
+        type: "blog",
+        title: activeNews[0]?.title || "",
+        summary: activeNews[0]?.summary || activeNews[0]?.content || "",
+        options: { style: selectedTemplate.name, language: "es" },
+      }
+    }
+    if (contentType === "video") {
+      return {
+        type: "video-script",
+        title: activeNews[0]?.title || "",
+        summary: activeNews[0]?.summary || activeNews[0]?.content || "",
+        options: { language: "es" },
+      }
+    }
+    return getLinkedInPostBody()
+  }
+
   const handleProcess = async () => {
     setProcessing(true)
     setResult(null)
@@ -968,7 +1000,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       const res = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(getLinkedInPostBody()),
+        body: JSON.stringify(buildAiBody()),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Error al procesar")
@@ -977,6 +1009,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
       const parsed = parseAIResponse(rawResponse)
       setParsedResult(parsed)
 
+      const typeLabel = getContentType(contentType).label
       for (const newsId of activeNewsIds) {
         await fetch("/api/ai/save", {
           method: "POST",
@@ -984,7 +1017,7 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
           body: JSON.stringify({
             newsId,
             templateId: selectedTemplateId,
-            templateName: selectedTemplate.name,
+            templateName: `${typeLabel} · ${selectedTemplate.name}`,
             language: "es",
             linkedinPost: parsed?.post || rawResponse,
             fullResponse: rawResponse,
@@ -1003,6 +1036,10 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
   const handleRegeneratePost = async () => {
     if (activeNews.length === 0) {
       addToast("error", "Selecciona al menos una noticia para regenerar el post")
+      return
+    }
+    if (contentType === "blog" || contentType === "video") {
+      handleProcess()
       return
     }
     setRegenerating(true)
@@ -1205,6 +1242,39 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
         </div>
 
         <div className="space-y-4">
+          {/* Formato de publicación */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <PenSquare className="h-4 w-4 text-primary" />
+                Formato de publicación
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-2">
+                {contentTypes.map((t) => {
+                  const active = contentType === t.id
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => setContentType(t.id)}
+                      className={cn(
+                        "p-2.5 rounded-lg border text-left transition-all",
+                        active ? "border-primary/40 bg-primary/5 ring-1 ring-primary/20" : "hover:bg-muted border-border",
+                      )}
+                    >
+                      <p className="text-xs font-medium">{t.label}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{t.shortHint}</p>
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-2">
+                El formato cambia lo que genera la IA: post, artículo largo o guion de video.
+              </p>
+            </CardContent>
+          </Card>
+
           {/* Phase indicator */}
           <div className="flex gap-2 text-xs font-medium">
             {[

@@ -13,6 +13,7 @@ export const scheduledPosts = pgTable("scheduled_posts", {
   content: text("content"),
   summary: text("summary"),
   hashtags: text("hashtags").array(),
+  contentType: text("content_type").default("linkedin-post"),
   imageUrl: text("image_url"),
   scheduledTime: timestamp("scheduled_time", { withTimezone: true }).notNull(),
   scheduledAt: timestamp("scheduled_at", { withTimezone: true }),

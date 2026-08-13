@@ -15,6 +15,7 @@ import {
   Sparkles, Newspaper, Clock, BarChart3, Filter, ChevronDown, FlaskConical, Link2, Rocket,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useDashboard } from "@/app/dashboard/dashboard-context"
 
 interface NewsManagerProps {
   selectedNewsIds?: number[]
@@ -55,6 +56,20 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
   const [deleting, setDeleting] = useState(false)
 
   const queryClient = useQueryClient()
+
+  const { intendedSourceMode, setIntendedSourceMode } = useDashboard()
+
+  useEffect(() => {
+    if (intendedSourceMode) {
+      setSourceMode(intendedSourceMode)
+      if (intendedSourceMode !== "news" && !providerQuery.trim()) {
+        const catName = categories.find((c: any) => c.id === selectedCategory)?.name
+        if (catName) setProviderQuery(catName)
+      }
+      setIntendedSourceMode(null)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [intendedSourceMode])
 
   const { data: categoriesData, isLoading: catsLoading } = useCategories()
   const toggleCategory = useToggleCategory()

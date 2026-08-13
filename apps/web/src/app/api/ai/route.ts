@@ -7,6 +7,8 @@ import {
   generateImagePrompts,
   generateNewsImageData,
   generateHeadlines,
+  generateBlogArticle,
+  generateVideoScript,
 } from "@/services/ai-service"
 import { getDb } from "@/lib/db"
 import { news } from "@noticias/database"
@@ -49,6 +51,14 @@ export async function POST(request: Request) {
       }
       case "hashtags": {
         const result = await generateHashtags(body.title, body.summary)
+        return NextResponse.json({ data: result })
+      }
+      case "blog": {
+        const result = await generateBlogArticle(body.title, body.summary, body.options)
+        return NextResponse.json({ data: result })
+      }
+      case "video-script": {
+        const result = await generateVideoScript(body.title, body.summary, body.options)
         return NextResponse.json({ data: result })
       }
       case "process-news": {
