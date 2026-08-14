@@ -16,8 +16,7 @@ export const authConfig: NextAuthConfig = {
       clientSecret: process.env.VITE_LINKEDIN_CLIENT_SECRET || process.env.LINKEDIN_CLIENT_SECRET || "",
       authorization: {
         params: {
-          scope:
-            "openid profile email w_member_social r_1st_connections_size r_organization_social r_organization_admin w_organization_social",
+          scope: "openid profile email w_member_social",
         },
       },
     }),

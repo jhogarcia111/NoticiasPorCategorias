@@ -8,7 +8,7 @@ const LINKEDIN_REDIRECT_URI = process.env.VITE_LINKEDIN_REDIRECT_URI || process.
 
 export function getLinkedInAuthUrl() {
   const state = Math.random().toString(36).substring(7)
-  const scope = "openid,profile,email,w_member_social,r_1st_connections_size,r_organization_social,r_organization_admin,w_organization_social"
+  const scope = "openid,profile,email,w_member_social"
 
   const params = new URLSearchParams({
     response_type: "code",
