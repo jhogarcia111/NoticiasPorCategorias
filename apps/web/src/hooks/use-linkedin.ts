@@ -25,6 +25,40 @@ export function useLinkedInProfiles() {
   })
 }
 
+export function useLinkedInOrganizations() {
+  const { data: session } = useSession()
+  const userId = session?.user?.id
+
+  return useQuery({
+    queryKey: ["linkedin-organizations", userId],
+    queryFn: () => fetchJson(`/api/linkedin/organizations?userId=${userId}`),
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  })
+}
+
+export function useConnectLinkedInOrganization() {
+  const queryClient = useQueryClient()
+  const { data: session } = useSession()
+  const userId = session?.user?.id
+
+  return useMutation({
+    mutationFn: async ({ urn, name, logoUrl }: { urn: string; name?: string; logoUrl?: string }) => {
+      const result = await fetchJson("/api/linkedin/organizations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, urn, name, logoUrl }),
+      })
+      return result
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["linkedin-profiles"] })
+      queryClient.invalidateQueries({ queryKey: ["linkedin-organizations"] })
+    },
+  })
+}
+
 export function useConnectLinkedIn() {
   const queryClient = useQueryClient()
   const { data: session } = useSession()

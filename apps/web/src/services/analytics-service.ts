@@ -34,29 +34,35 @@ export async function getLinkedInProfileById(profileId: number) {
 // ---------------------------------------------------------------------------
 
 async function fetchNetworkSizeFromLinkedIn(profile: any) {
-  const personUrn = `urn:li:person:${profile.linkedinId}`
+  const isOrganization =
+    profile.profileType === "company" || profile.profileType === "organization"
   try {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 6000)
-    const resp = await fetch(
-      `https://api.linkedin.com/v2/networkSizes/${personUrn}?projection=(firstDegreeSize,secondDegreeSize)`,
-      {
-        headers: {
-          Authorization: `Bearer ${profile.accessToken}`,
-          "X-Restli-Protocol-Version": "2.0.0",
-        },
-        signal: controller.signal,
+    let url: string
+    if (isOrganization) {
+      // Página de empresa: follower count via Organization Network Size API
+      url = `https://api.linkedin.com/v2/networkSizes/urn:li:organization:${profile.linkedinId}?edgeType=COMPANY_FOLLOWED_BY_MEMBER`
+    } else {
+      // Perfil personal: Connections Size API (reemplaza networkSizes deprecado)
+      url = `https://api.linkedin.com/v2/connections/urn:li:person:${profile.linkedinId}`
+    }
+    const resp = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${profile.accessToken}`,
+        "X-Restli-Protocol-Version": "2.0.0",
       },
-    )
+      signal: controller.signal,
+    })
     clearTimeout(timeout)
     if (!resp.ok) return null
     const data = await resp.json()
     return {
-      connections: data.firstDegreeSize ?? 0,
-      followers: data.firstDegreeSize ?? 0,
+      connections: !isOrganization ? (data.firstDegreeSize ?? 0) : undefined,
+      followers: isOrganization ? (data.firstDegreeSize ?? 0) : undefined,
     }
   } catch (e) {
-    console.error("[analytics] networkSizes fallo:", e)
+    console.error("[analytics] network size fetch fallo:", e)
     return null
   }
 }
@@ -85,8 +91,12 @@ export async function captureProfileBaseline(
   const api = await fetchNetworkSizeFromLinkedIn(profile)
   if (api) {
     source = "api"
-    followers = manual?.followers ?? api.followers
-    connections = manual?.connections ?? api.connections
+    if (api.followers !== undefined) {
+      followers = manual?.followers ?? api.followers
+    }
+    if (api.connections !== undefined) {
+      connections = manual?.connections ?? api.connections
+    }
   }
 
   const [row] = await db

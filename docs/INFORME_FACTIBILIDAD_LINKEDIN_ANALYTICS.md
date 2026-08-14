@@ -6,7 +6,7 @@ Este informe documenta la viabilidad de los **scopes** y **endpoints** de la API
 usados por el módulo de Analíticas (baseline, métricas por publicación y métricas acumuladas)
 y las limitaciones entre **cuentas personales** vs **páginas de empresa**.
 
-Fecha: 2026-08-13. Proyecto: NoticiasPorCategorías.
+Fecha: 2026-08-14. Proyecto: NoticiasPorCategorías.
 
 ---
 
@@ -20,9 +20,13 @@ La aplicación ya usa el flujo OAuth 2.0 con los scopes:
 | `profile` | Nombre, apellido, foto |
 | `email` | Email del usuario |
 | `w_member_social` | Publicar posts en el perfil personal |
+| `r_1st_connections_size` | Conteo de conexiones de 1er grado (Connections Size API) |
+| `r_organization_social` | Analíticas de la página de empresa (share statistics) |
+| `r_organization_admin` | Listar páginas administradas (organizationAcls) y followers |
+| `w_organization_social` | Publicar posts como página de empresa |
 
-El módulo de analíticas **no requiere scopes adicionales para la publicación** pero **sí necesita
-acceso de lectura a métricas**, que no está cubierto por los scopes actuales.
+> **Nota:** al ampliar el scope, los usuarios ya conectados deben **re-conectar** su perfil
+> para que el nuevo token incluya los scopes de lectura/empresa.
 
 ---
 
@@ -31,12 +35,16 @@ acceso de lectura a métricas**, que no está cubierto por los scopes actuales.
 | Scope | Endpoint | Disponible hoy | Perfil personal | Página de empresa |
 |---|---|---|---|---|
 | `w_member_social` | `POST /rest/posts` | ✅ Ya integrado | ✅ | ❌ (requiere `w_organization_social`) |
+| `w_organization_social` | `POST /rest/posts` | ✅ Ya integrado (author = org) | — | ✅ |
+| `r_1st_connections_size` | `GET /v2/connections/urn:li:person:{id}` | ✅ Ya integrado | ✅ Conexiones | — |
+| `r_organization_social` | `organizationalEntityShareStatistics` | ✅ Ya integrado (si admin de la página) | — | ✅ |
+| `r_organization_admin` | `GET /v2/organizationAcls?q=roleAssignee` | ✅ Ya integrado | — | ✅ Listar páginas |
+| `r_organization_admin` | `GET /v2/networkSizes/urn:li:organization:{id}` | ✅ Ya integrado | — | ✅ Followers de la página |
 | `r_member_social` | Lectura de posts del miembro (`ugcPosts`) | ⚠️ Requiere **partnership** aprobado | Parcial | — |
-| `r_organization_social` | `organizationalEntityShareStatistics` | ⚠️ Requiere **partnership** + ser admin de la página | — | ✅ (si partner) |
 | `r_liteprofile` | `userinfo` | ✅ Ya integrado | ✅ | ✅ |
 | `r_emailaddress` | `emailAddress` | ✅ Ya integrado | ✅ | ✅ |
-| `r_basicprofile` / `networkSizes` | Conteo de conexiones | ❌ **Deprecado** en v2 | ❌ | ❌ |
-| Member Data Portability | Visitas al perfil, followers | ❌ Solo para partners aprobados bajo contrato | ❌ | ❌ |
+| `r_basicprofile` / `networkSizes` (persona) | Conteo de conexiones | ❌ **Deprecado** en v2 | ❌ | ❌ |
+| Member Data Portability | Visitas al perfil, followers del perfil | ❌ Solo para partners aprobados bajo contrato | ❌ | ❌ |
 
 ---
 
@@ -48,26 +56,33 @@ acceso de lectura a métricas**, que no está cubierto por los scopes actuales.
    LinkedIn reserva `r_member_social` + acceso a `totalShareStatistics` para partners con
    contrato (Marketing Developer Platform / Community Management API). Sin partnership,
    las llamadas responden `403 FORBIDDEN` o no devuelven las estadísticas.
-2. **El conteo de seguidores/conexiones no es accesible.** El endpoint `networkSizes` fue
-   deprecado y eliminado de la API v2 pública. La alternativa (Member Data Portability) exige
-   aprobación contractual.
-3. **Las visitas al perfil no existen en la API pública.** Es una métrica del producto
+2. **El conteo de conexiones de 1er grado SÍ es accesible** vía Connections Size API
+   (`r_1st_connections_size`): `GET /v2/connections/urn:li:person:{id}` → `firstDegreeSize`.
+   Reemplaza al deprecado `networkSizes`.
+3. **El conteo de seguidores del perfil personal NO es accesible.** `networkSizes` de persona
+   fue deprecado; la alternativa (Member Data Portability / `memberFollowersCount`) exige
+   `r_member_profileAnalytics`, no disponible.
+4. **Las visitas al perfil no existen en la API pública.** Es una métrica del producto
    (dashboard nativo de LinkedIn) sin contraparte en la API abierta para personas.
 
 ### 4.2 Páginas de empresa (Community Management)
 
 1. `organizationalEntityShareStatistics` devuelve `impressionCount`, `likeCount`,
-   `commentCount` y `shareCount` reales por post.
-2. `organizationalEntityFollowerStatistics` devuelve el crecimiento de followers de la página.
-3. **Requisito:** ser admin de la página, solicitar `r_organization_social` y estar aprobado
-   como partner (o usar el programa "Community Management API").
+   `commentCount` y `shareCount` reales por post de la página.
+2. `GET /v2/networkSizes/urn:li:organization:{id}?edgeType=COMPANY_FOLLOWED_BY_MEMBER`
+   devuelve el número de followers de la página (`firstDegreeSize`).
+3. `GET /v2/organizationAcls?q=roleAssignee&role=ADMINISTRATOR` lista las páginas que
+   administra el usuario conectado (para el flujo "Conectar Página").
+4. **Requisito:** ser admin de la página (`r_organization_admin` + `w_organization_social`).
 
 ### 4.3 Conclusión de factibilidad
 
-- La publicación por perfil personal ya funciona.
-- Las **métricas por post** y el **baseline de followers** **no son obtenibles por API pública
-  en cuentas personales** hoy.
-- Por ello el módulo implementa un **flujo híbrido**:
+- La publicación funciona en **perfil personal** (`w_member_social`) y **página de empresa**
+  (`w_organization_social`, author = org URN).
+- Las **métricas por post** y el **baseline de followers** en cuentas personales **no son
+  obtenibles por API pública** hoy; pero las **páginas de empresa sí tienen métricas reales**.
+- Por ello el módulo implementa un **flujo híbrido** y recomienda las páginas de empresa
+  para datos 100% reales.
 
 ---
 
@@ -75,19 +90,30 @@ acceso de lectura a métricas**, que no está cubierto por los scopes actuales.
 
 | Métrica | Estrategia | Fuente |
 |---|---|---|
-| Baseline de followers/conexiones | Intento de `networkSizes` (mejor esfuerzo) + **captura manual** desde la UI | API (si responde) / manual |
-| Métricas por post (impresiones, likes, comentarios, shares) | Intento de `organizationalEntityShareStatistics` (empresas) y `ugcPosts.totalShareStatistics` (personas). Si responde `403`/vacío, se registra snapshot `unavailable` | API / marcador `unavailable` |
+| Baseline de conexiones (personal) | **Connections Size API** (`r_1st_connections_size`) | API |
+| Baseline de followers (empresa) | **networkSizes org** (`edgeType=COMPANY_FOLLOWED_BY_MEMBER`) | API |
+| Baseline de followers (personal) | **Captura manual** desde la UI (no hay API pública) | Manual |
+| Métricas por post (empresa) | `organizationalEntityShareStatistics` | API |
+| Métricas por post (personal) | `ugcPosts.totalShareStatistics`; si responde `403`/vacío, snapshot `unavailable` | API / marcador `unavailable` |
 | Visitas al perfil | No disponible → se usa **alcance acumulado** (impresiones de posts) como proxy | Derivada |
 | Crecimiento de red | `seguidores actuales − baseline` | Derivada |
 | Tendencia semanal | Agregación de snapshots de `post_metrics_history` | Base de datos |
 
+### Publicación en páginas de empresa
+
+- El flujo "Conectar Página" lista las páginas que el usuario administra vía
+  `GET /v2/organizationAcls?q=roleAssignee&role=ADMINISTRATOR` y las guarda con
+  `profile_type = 'company'`.
+- `postToLinkedIn` usa `author = urn:li:organization:{id}` cuando el perfil es de empresa.
+- `uploadImageToLinkedIn` usa el owner de la organización para el registro de imagen.
+
 ### Cuándo desbloquear datos 100% reales
 
-1. Solicitar **partnership** de LinkedIn (Marketing Developer Platform).
-2. Obtener aprobación para `r_member_social` + `r_organization_social`.
+1. Usar **páginas de empresa** (Community Management API), ya habilitadas, donde
+   las métricas sí están disponibles.
+2. Para métricas del perfil personal: solicitar **partnership** de LinkedIn y aprobación
+   de `r_member_social` / `r_member_profileAnalytics`.
 3. Completar el **Member Data Portability application** para followers y visitas.
-4. Alternativa de corto plazo: migrar usuarios a **páginas de empresa** (Community
-   Management API), donde las métricas sí están disponibles.
 
 ---
 

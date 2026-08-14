@@ -4,7 +4,13 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { useLinkedInProfiles, useLinkedInAuth, useDisconnectLinkedIn } from "@/hooks/use-linkedin"
+import {
+  useLinkedInProfiles,
+  useLinkedInAuth,
+  useDisconnectLinkedIn,
+  useLinkedInOrganizations,
+  useConnectLinkedInOrganization,
+} from "@/hooks/use-linkedin"
 import {
   Linkedin,
   Plus,
@@ -18,6 +24,8 @@ import {
   ShieldCheck,
   ShieldAlert,
   Loader2,
+  Building2,
+  X,
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -27,9 +35,17 @@ export function LinkedInProfilesManager() {
   const { data: profilesData, isLoading, error } = useLinkedInProfiles()
   const { connectProfile, isConnecting } = useLinkedInAuth()
   const disconnectMutation = useDisconnectLinkedIn()
+  const {
+    data: orgsData,
+    isLoading: orgsLoading,
+    refetch: refetchOrgs,
+  } = useLinkedInOrganizations()
+  const connectOrgMutation = useConnectLinkedInOrganization()
   const [showSuccess, setShowSuccess] = useState(false)
+  const [showOrgs, setShowOrgs] = useState(false)
 
   const profiles = profilesData?.data || []
+  const orgs = orgsData?.data || []
   const queryError = error as Error | null
 
   const handleDisconnect = async (profileId: number) => {
@@ -91,10 +107,23 @@ export function LinkedInProfilesManager() {
             <p className="text-xs text-muted-foreground">Conecta tus perfiles para programar publicaciones</p>
           </div>
         </div>
-        <Button onClick={connectProfile} disabled={isConnecting} className="h-9 text-xs">
-          {isConnecting ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Plus className="h-4 w-4 mr-1.5" />}
-          {isConnecting ? "Conectando..." : "Conectar Perfil"}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setShowOrgs(true)
+              refetchOrgs()
+            }}
+            className="h-9 text-xs"
+          >
+            <Building2 className="h-4 w-4 mr-1.5" />
+            Conectar Página
+          </Button>
+          <Button onClick={connectProfile} disabled={isConnecting} className="h-9 text-xs">
+            {isConnecting ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Plus className="h-4 w-4 mr-1.5" />}
+            {isConnecting ? "Conectando..." : "Conectar Perfil"}
+          </Button>
+        </div>
       </div>
 
       {queryError && (
@@ -148,6 +177,12 @@ export function LinkedInProfilesManager() {
                         <h4 className="text-sm font-semibold text-foreground">
                           {profile.firstName} {profile.lastName}
                         </h4>
+                        {profile.profileType === "company" && (
+                          <Badge variant="outline" className="text-[10px] h-5 bg-[#0A66C2]/5 text-[#0A66C2]">
+                            <Building2 className="h-3 w-3 mr-1" />
+                            Empresa
+                          </Badge>
+                        )}
                         {profile.isPrimary && <Badge variant="default" className="text-[10px] h-5">Principal</Badge>}
                         {!profile.isActive && <Badge variant="secondary" className="text-[10px] h-5">Inactivo</Badge>}
                       </div>
@@ -220,6 +255,71 @@ export function LinkedInProfilesManager() {
           </div>
         </CardContent>
       </Card>
+
+      {showOrgs && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowOrgs(false)}>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b">
+              <div>
+                <h3 className="text-sm font-semibold">Conectar Página de Empresa</h3>
+                <p className="text-xs text-muted-foreground">Selecciona la página que administras en LinkedIn</p>
+              </div>
+              <button onClick={() => setShowOrgs(false)} className="p-1.5 rounded-lg hover:bg-muted">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="p-4 space-y-2">
+              {orgsLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : orgs.length === 0 ? (
+                <div className="text-center py-8 text-sm text-muted-foreground">
+                  No encontramos páginas disponibles.
+                  <p className="text-xs mt-1">Asegúrate de ser administrador de la página y de haber aceptado el scope r_organization_admin al conectar.</p>
+                </div>
+              ) : (
+                orgs.map((org: any) => (
+                  <div key={org.urn} className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/50">
+                    <div className="flex-shrink-0">
+                      {org.logoUrl ? (
+                        <img src={org.logoUrl} alt={org.name} className="h-10 w-10 rounded-lg object-cover" />
+                      ) : (
+                        <div className="h-10 w-10 rounded-lg bg-[#0A66C2]/10 flex items-center justify-center">
+                          <Building2 className="h-5 w-5 text-[#0A66C2]" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{org.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{org.urn}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() =>
+                        connectOrgMutation.mutate(
+                          { urn: org.urn, name: org.name, logoUrl: org.logoUrl },
+                          {
+                            onSuccess: () => {
+                              setShowOrgs(false)
+                              setShowSuccess(true)
+                              setTimeout(() => setShowSuccess(false), 3000)
+                            },
+                          },
+                        )
+                      }
+                      disabled={connectOrgMutation.isPending}
+                      className="h-8 text-xs"
+                    >
+                      {connectOrgMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Conectar"}
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -8,7 +8,7 @@ const LINKEDIN_REDIRECT_URI = process.env.VITE_LINKEDIN_REDIRECT_URI || process.
 
 export function getLinkedInAuthUrl() {
   const state = Math.random().toString(36).substring(7)
-  const scope = "openid,profile,email,w_member_social"
+  const scope = "openid,profile,email,w_member_social,r_1st_connections_size,r_organization_social,r_organization_admin,w_organization_social"
 
   const params = new URLSearchParams({
     response_type: "code",
@@ -71,6 +71,69 @@ export async function saveLinkedInProfile(profileData: any, tokens: any, userId:
   return profile
 }
 
+export async function getLinkedInOrganizations(accessToken: string) {
+  const resp = await fetch(
+    `https://api.linkedin.com/v2/organizationAcls?q=roleAssignee&role=ADMINISTRATOR&state=APPROVED&projection=(elements*(*,organization~(localizedName,logoV2(original~:playableStreams))))`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "X-Restli-Protocol-Version": "2.0.0",
+      },
+    },
+  )
+
+  if (!resp.ok) {
+    console.error(`[linkedin] organizationAcls fallo (${resp.status})`)
+    return []
+  }
+
+  const data = await resp.json().catch(() => ({ elements: [] }))
+  return (data.elements || [])
+    .filter((e: any) => e.organization)
+    .map((e: any) => {
+      const org = e.organization
+      const orgId = org.includes(":") ? org.split(":").pop() : org
+      const streams =
+        e["organization~"]?.logoV2?.["original~"]?.elements?.[0]?.identifiers?.[0]?.identifier || null
+      return {
+        urn: org,
+        id: orgId,
+        name: e["organization~"]?.localizedName || `Página ${orgId}`,
+        logoUrl: streams,
+        role: e.role,
+      }
+    })
+}
+
+export async function saveLinkedInOrganization(
+  org: { urn: string; id: string; name: string; logoUrl?: string | null },
+  tokens: any,
+  userId: string,
+) {
+  const db = getDb()
+  const [profile] = await db
+    .insert(linkedinProfiles)
+    .values({
+      userId,
+      linkedinId: org.id,
+      firstName: org.name,
+      lastName: null,
+      profileName: org.name,
+      profilePictureUrl: org.logoUrl || null,
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token,
+      tokenExpiresAt: tokens.expires_in
+        ? new Date(Date.now() + tokens.expires_in * 1000)
+        : null,
+      profileType: "company",
+      isActive: true,
+      isPrimary: false,
+    })
+    .returning()
+
+  return profile
+}
+
 export async function uploadImageToLinkedIn(profileId: number, imageUrlOrBase64: string, isBase64?: boolean, imageMime?: string): Promise<string | null> {
   const db = getDb()
   const [profile] = await db
@@ -79,6 +142,8 @@ export async function uploadImageToLinkedIn(profileId: number, imageUrlOrBase64:
     .where(eq(linkedinProfiles.id, profileId))
     .limit(1)
   if (!profile) throw new Error("LinkedIn profile not found")
+
+  const isOrg = profile.profileType === "company" || profile.profileType === "organization"
 
   let imageBody: ArrayBuffer
   let mimeType = imageMime || "image/jpeg"
@@ -101,7 +166,9 @@ export async function uploadImageToLinkedIn(profileId: number, imageUrlOrBase64:
     },
     body: JSON.stringify({
       initializeUploadRequest: {
-        owner: `urn:li:person:${profile.linkedinId}`,
+        owner: isOrg
+          ? `urn:li:organization:${profile.linkedinId}`
+          : `urn:li:person:${profile.linkedinId}`,
       },
     }),
   })
@@ -195,7 +262,9 @@ export async function postToLinkedIn(
   }
 
   const body: any = {
-    author: `urn:li:person:${profile.linkedinId}`,
+    author: profile.profileType === "company" || profile.profileType === "organization"
+      ? `urn:li:organization:${profile.linkedinId}`
+      : `urn:li:person:${profile.linkedinId}`,
     commentary,
     visibility: "PUBLIC",
     distribution: {
