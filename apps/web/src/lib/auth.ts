@@ -127,10 +127,14 @@ export const authConfig: NextAuthConfig = {
       }
 
       if (account?.provider === "linkedin" && account.access_token) {
+        const linkedinId = account.providerAccountId || profileId
         const [existingLinkedIn] = await db
           .select()
           .from(linkedinProfiles)
-          .where(eq(linkedinProfiles.userId, profileId))
+          .where(and(
+            eq(linkedinProfiles.userId, profileId),
+            eq(linkedinProfiles.linkedinId, linkedinId),
+          ))
           .limit(1)
 
         if (existingLinkedIn) {
@@ -140,13 +144,15 @@ export const authConfig: NextAuthConfig = {
               accessToken: account.access_token,
               refreshToken: account.refresh_token,
               tokenExpiresAt: account.expires_at ? new Date(account.expires_at * 1000) : null,
-              linkedinId: account.providerAccountId || profileId,
+              linkedinId,
+              isActive: true,
+              updatedAt: new Date(),
             })
             .where(eq(linkedinProfiles.id, existingLinkedIn.id))
         } else {
           await db.insert(linkedinProfiles).values({
             userId: profileId,
-            linkedinId: account.providerAccountId || profileId,
+            linkedinId,
             firstName: user.name,
             accessToken: account.access_token,
             refreshToken: account.refresh_token,
