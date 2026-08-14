@@ -1,5 +1,7 @@
 "use client"
 
+import { currentVersion } from "@/data/changelog"
+
 interface AppFooterProps {
   onVersionClick: () => void
 }
@@ -14,7 +16,7 @@ export function AppFooter({ onVersionClick }: AppFooterProps) {
           onClick={onVersionClick}
           className="text-muted-foreground hover:text-foreground transition-colors underline decoration-dotted underline-offset-2 cursor-pointer"
         >
-          v1.1.0
+          v{currentVersion}
         </button>
       </div>
     </footer>
