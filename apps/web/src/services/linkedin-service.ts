@@ -66,6 +66,22 @@ export async function saveLinkedInProfile(profileData: any, tokens: any, userId:
       isActive: true,
       isPrimary: false,
     })
+    .onConflictDoUpdate({
+      target: [linkedinProfiles.userId, linkedinProfiles.linkedinId],
+      set: {
+        firstName: profileData.given_name,
+        lastName: profileData.family_name,
+        email: profileData.email,
+        profilePictureUrl: profileData.picture,
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+        tokenExpiresAt: tokens.expires_in
+          ? new Date(Date.now() + tokens.expires_in * 1000)
+          : null,
+        isActive: true,
+        updatedAt: new Date(),
+      },
+    })
     .returning()
 
   return profile
@@ -128,6 +144,21 @@ export async function saveLinkedInOrganization(
       profileType: "company",
       isActive: true,
       isPrimary: false,
+    })
+    .onConflictDoUpdate({
+      target: [linkedinProfiles.userId, linkedinProfiles.linkedinId],
+      set: {
+        firstName: org.name,
+        profileName: org.name,
+        profilePictureUrl: org.logoUrl || null,
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+        tokenExpiresAt: tokens.expires_in
+          ? new Date(Date.now() + tokens.expires_in * 1000)
+          : null,
+        isActive: true,
+        updatedAt: new Date(),
+      },
     })
     .returning()
 
