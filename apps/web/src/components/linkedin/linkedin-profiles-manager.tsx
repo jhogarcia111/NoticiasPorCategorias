@@ -273,6 +273,24 @@ export function LinkedInProfilesManager() {
                 <div className="flex justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
+              ) : orgsData?.error ? (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium">No se pudieron cargar las páginas</p>
+                      <p className="text-xs mt-1">{orgsData.error}</p>
+                      <div className="mt-3 flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => refetchOrgs()} className="h-7 text-xs">
+                          Reintentar
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => setShowOrgs(false)} className="h-7 text-xs">
+                          Cerrar
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               ) : orgs.length === 0 ? (
                 <div className="text-center py-8 text-sm text-muted-foreground">
                   No encontramos páginas disponibles.

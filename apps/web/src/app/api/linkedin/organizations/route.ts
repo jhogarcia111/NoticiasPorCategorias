@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server"
 import { getLinkedInProfiles, getLinkedInOrganizations, saveLinkedInOrganization } from "@/services/linkedin-service"
 import { getDb, linkedinProfiles } from "@noticias/database"
-import { eq } from "drizzle-orm"
+import { eq, and, ne, desc } from "drizzle-orm"
 
 async function getPersonToken(userId: string) {
   const db = getDb()
   const [person] = await db
     .select()
     .from(linkedinProfiles)
-    .where(eq(linkedinProfiles.userId, userId))
+    .where(and(eq(linkedinProfiles.userId, userId), ne(linkedinProfiles.profileType, "company")))
+    .orderBy(desc(linkedinProfiles.updatedAt))
     .limit(1)
   return person || null
 }
@@ -32,7 +33,14 @@ export async function GET(request: Request) {
     const available = orgs.filter((o: any) => !connectedUrns.has(o.urn))
     return NextResponse.json({ data: available })
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    const status = error?.status
+    const isAuth = status === 401 || status === 403
+    return NextResponse.json({
+      data: [],
+      error: isAuth
+        ? "Tu token de LinkedIn no tiene el permiso para ver páginas. Desconecta y vuelve a conectar tu perfil personal para renovarlo con los scopes de empresa."
+        : error.message,
+    }, { status })
   }
 }
 

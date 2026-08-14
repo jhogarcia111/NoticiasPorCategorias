@@ -99,8 +99,11 @@ export async function getLinkedInOrganizations(accessToken: string) {
   )
 
   if (!resp.ok) {
-    console.error(`[linkedin] organizationAcls fallo (${resp.status})`)
-    return []
+    const body = await resp.text().catch(() => "")
+    const err: any = new Error(`organizationAcls fallo (${resp.status}): ${body.substring(0, 500)}`)
+    err.status = resp.status
+    console.error("[linkedin] organizationAcls fallo:", err.message)
+    throw err
   }
 
   const data = await resp.json().catch(() => ({ elements: [] }))
