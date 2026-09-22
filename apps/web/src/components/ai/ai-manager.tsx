@@ -307,6 +307,20 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
     return news.filter((n: any) => activeNewsIds.includes(n.id))
   }, [news, activeNewsIds])
 
+  // Preferir foto real cargada (ej. foto subida con historia personal) antes de generar con IA
+  useEffect(() => {
+    if (activeNews.length > 0) {
+      const first = activeNews[0]
+      if (first.imageUrl && !assemblerImage && imageOptions.length === 0) {
+        setImageOptions([first.imageUrl])
+        setAssemblerImage(first.imageUrl)
+        setImageLoadStates({ 0: "loaded" })
+        ensureHeadlines()
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeNewsIds, news])
+
   const handleRecuperar = (saved: any) => {
     setRecuperando(true)
     setResult(saved.fullResponse || saved.linkedinPost || "")
@@ -1332,6 +1346,14 @@ export function AIManager({ selectedNewsIds, news }: AIManagerProps) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              {activeNews[0]?.sourceType === "PERSONAL_STORY" && activeNews[0]?.imageUrl && (
+                <div className="p-2 rounded-md bg-rose-50 border border-rose-200 text-xs text-rose-800 flex items-center justify-between">
+                  <span>Foto original adjunta seleccionada como imagen base.</span>
+                  <Badge variant="outline" className="text-[10px] bg-white text-rose-700 border-rose-300">
+                    Foto Real
+                  </Badge>
+                </div>
+              )}
               <div className="flex items-center gap-2 flex-wrap">
                 <Button
                   onClick={handleGenerateImages}

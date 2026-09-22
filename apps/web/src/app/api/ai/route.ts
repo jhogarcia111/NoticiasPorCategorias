@@ -9,6 +9,7 @@ import {
   generateHeadlines,
   generateBlogArticle,
   generateVideoScript,
+  generateEventBrief,
 } from "@/services/ai-service"
 import { getDb } from "@/lib/db"
 import { news } from "@noticias/database"
@@ -59,6 +60,10 @@ export async function POST(request: Request) {
       }
       case "video-script": {
         const result = await generateVideoScript(body.title, body.summary, body.options)
+        return NextResponse.json({ data: result })
+      }
+      case "event-brief": {
+        const result = await generateEventBrief(body.transcript, body.options)
         return NextResponse.json({ data: result })
       }
       case "process-news": {

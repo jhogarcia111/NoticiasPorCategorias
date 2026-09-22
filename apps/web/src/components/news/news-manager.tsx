@@ -12,10 +12,11 @@ import { useCategories, useToggleCategory, useCreateCategory } from "@/hooks/use
 import { useCollectFromProvider, useProviderStatus } from "@/hooks/use-provider"
 import {
   Search, RefreshCw, CheckCircle, Circle, Download, Plus, Trash2, Globe, X, Loader2,
-  Sparkles, Newspaper, Clock, BarChart3, Filter, ChevronDown, FlaskConical, Link2, Rocket,
+  Sparkles, Newspaper, Clock, BarChart3, Filter, ChevronDown, FlaskConical, Link2, Rocket, Mic,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useDashboard } from "@/app/dashboard/dashboard-context"
+import { useDashboard, type SourceMode } from "@/app/dashboard/dashboard-context"
+import { PersonalStoryCapture } from "./personal-story-capture"
 
 interface NewsManagerProps {
   selectedNewsIds?: number[]
@@ -32,7 +33,7 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
   const [internalSelectedIds, setInternalSelectedIds] = useState<number[]>([])
   const [showFilters, setShowFilters] = useState(false)
   const [showDangerZone, setShowDangerZone] = useState(false)
-  const [sourceMode, setSourceMode] = useState<"news" | "scientific" | "patents" | "url">("news")
+  const [sourceMode, setSourceMode] = useState<SourceMode>("news")
   const [providerQuery, setProviderQuery] = useState("")
   const [providerUrl, setProviderUrl] = useState("")
 
@@ -62,7 +63,7 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
   useEffect(() => {
     if (intendedSourceMode) {
       setSourceMode(intendedSourceMode)
-      if (intendedSourceMode !== "news" && !providerQuery.trim()) {
+      if (intendedSourceMode !== "news" && intendedSourceMode !== "personal_story" && !providerQuery.trim()) {
         const catName = categories.find((c: any) => c.id === selectedCategory)?.name
         if (catName) setProviderQuery(catName)
       }
@@ -150,7 +151,7 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
 
   const handleCustomSearch = () => doCustomSearch(customQuery)
 
-  const handleSelectSource = (mode: "news" | "scientific" | "patents" | "url") => {
+  const handleSelectSource = (mode: SourceMode) => {
     setSourceMode(mode)
     if ((mode === "scientific" || mode === "patents") && !providerQuery.trim()) {
       const catName = categories.find((c: any) => c.id === selectedCategory)?.name
@@ -325,6 +326,7 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
               <span className="text-xs font-medium text-muted-foreground">Fuente de contenido:</span>
               {[
                 { value: "news" as const, label: "Noticias automáticas", icon: Newspaper },
+                { value: "personal_story" as const, label: "Historia personal (Voz / Foto)", icon: Mic },
                 { value: "scientific" as const, label: "Científicos y Patentes", icon: FlaskConical },
                 { value: "url" as const, label: "Importar desde URL", icon: Link2 },
               ].map((opt) => {
@@ -405,6 +407,17 @@ export function NewsManager({ selectedNewsIds: externalIds, onSelectionChange, o
                   {providerCollectMutation.isPending ? <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> : <Sparkles className="h-4 w-4 mr-1.5" />}
                   Procesar con IA
                 </Button>
+              </div>
+            )}
+
+            {sourceMode === "personal_story" && (
+              <div className="border-t pt-3">
+                <PersonalStoryCapture
+                  onSuccess={(newId) => {
+                    handleProcessNews(newId)
+                  }}
+                  onClose={() => setSourceMode("news")}
+                />
               </div>
             )}
           </div>

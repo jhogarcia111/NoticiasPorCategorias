@@ -1,4 +1,4 @@
-export type SourceType = "NEWS" | "SCIENTIFIC" | "PATENT" | "CUSTOM_URL"
+export type SourceType = "NEWS" | "SCIENTIFIC" | "PATENT" | "CUSTOM_URL" | "PERSONAL_STORY"
 
 export type Niche =
   | "health"

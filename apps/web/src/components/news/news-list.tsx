@@ -40,6 +40,7 @@ const SOURCE_TYPE_LABEL: Record<string, { label: string; className: string }> = 
   SCIENTIFIC: { label: "Ciencia", className: "bg-violet-50 text-violet-700 border-violet-200" },
   PATENT: { label: "Patente", className: "bg-amber-50 text-amber-700 border-amber-200" },
   CUSTOM_URL: { label: "URL", className: "bg-teal-50 text-teal-700 border-teal-200" },
+  PERSONAL_STORY: { label: "Historia personal", className: "bg-rose-50 text-rose-700 border-rose-200" },
 }
 
 export function NewsList({ news, onNewsSelect, onProcess, selectedNews = [] }: NewsListProps) {

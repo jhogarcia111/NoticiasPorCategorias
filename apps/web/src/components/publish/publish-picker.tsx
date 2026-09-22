@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useDashboard, type ContentTypeId, type SourceMode } from "@/app/dashboard/dashboard-context"
 import { contentTypes } from "@/data/content-types"
-import { Linkedin, Share2, FileText, Video, Newspaper, FlaskConical, Link2, ArrowRight, PenSquare } from "lucide-react"
+import { Linkedin, Share2, FileText, Video, Newspaper, FlaskConical, Link2, ArrowRight, PenSquare, Mic } from "lucide-react"
 
 const SOURCE_OPTIONS: { value: SourceMode; label: string; icon: any; color: string }[] = [
   { value: "news", label: "Noticias automáticas", icon: Newspaper, color: "text-blue-600" },
+  { value: "personal_story", label: "Historia personal (Voz)", icon: Mic, color: "text-rose-600" },
   { value: "scientific", label: "Científicos y Patentes", icon: FlaskConical, color: "text-violet-600" },
   { value: "url", label: "Importar desde URL", icon: Link2, color: "text-teal-600" },
 ]

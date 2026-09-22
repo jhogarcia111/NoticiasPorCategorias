@@ -5,7 +5,7 @@ import { createContext, useContext, useState, type Dispatch, type SetStateAction
 export type Tab = "home" | "news" | "ai" | "calendar" | "config" | "published" | "analytics" | "subscription" | "admin"
 export type ConfigSubTab = "linkedin" | "sources"
 export type ContentTypeId = "linkedin-post" | "blog" | "video" | "social"
-export type SourceMode = "news" | "scientific" | "patents" | "url"
+export type SourceMode = "news" | "scientific" | "patents" | "url" | "personal_story"
 
 interface DashboardState {
   activeTab: Tab

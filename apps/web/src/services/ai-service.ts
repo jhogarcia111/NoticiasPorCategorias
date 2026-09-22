@@ -317,3 +317,103 @@ Ejemplo:
     .filter((s: string) => s.length > 10)
     .slice(0, 3)
 }
+
+export interface EventBriefResult {
+  narrative_core: string
+  suggested_angles: Array<{
+    id: string
+    title: string
+    rationale: string
+  }>
+}
+
+export async function generateEventBrief(
+  transcript: string,
+  options: { photoCaption?: string; language?: string } = {},
+  retries = 2,
+): Promise<EventBriefResult> {
+  const { photoCaption, language = "es" } = options
+  const langInstruction =
+    language === "es"
+      ? "IMPORTANTE: Todo el texto debe estar completamente en español."
+      : "IMPORTANT: All text must be in English."
+
+  const photoContext = photoCaption ? `\nContexto de la foto adjunta: ${photoCaption}` : ""
+
+  const prompt = `Eres un estratega editorial experto en storytelling para LinkedIn y narrativas profesionales.
+Tu tarea es analizar la siguiente transcripción de una experiencia o historia personal contada en primera persona y estructurarla en un brief narrativo claro con 2-3 ángulos estratégicos para publicarla en LinkedIn.
+
+REGLAS ESTRICTAS:
+1. Basado ÚNICAMENTE en lo que dice explícitamente la transcripción. NO inventes hechos, estadísticas, nombres, cifras, clientes ficticios ni fechas.
+2. Identifica el núcleo narrativo real (narrative_core): qué ocurrió, cuál fue el aprendizaje o impacto profesional.
+3. Propón entre 2 y 3 ángulos narrativos distintos (suggested_angles). Cada ángulo debe tener un id corto (ej: "angulo_1", "angulo_2"), un título o hook atractivo y una justificación breve (rationale) de por qué conectará con la audiencia.
+4. ${langInstruction}
+
+Transcripción:
+"""
+${transcript}
+"""${photoContext}
+
+Devuelve ÚNICAMENTE un objeto JSON válido con este formato exacto (sin markdown, sin bloques de código, sin texto antes ni después):
+{
+  "narrative_core": "Descripción concisa del núcleo de la historia...",
+  "suggested_angles": [
+    {
+      "id": "angulo_1",
+      "title": "Título o gancho del ángulo 1",
+      "rationale": "Breve explicación de por qué este enfoque conecta con la audiencia..."
+    },
+    {
+      "id": "angulo_2",
+      "title": "Título o gancho del ángulo 2",
+      "rationale": "Breve explicación de este enfoque alternativo..."
+    }
+  ]
+}`
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const result = await callGroq(prompt, 1200)
+      if (!result) continue
+
+      const jsonMatch = result.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) continue
+
+      const parsed = JSON.parse(jsonMatch[0])
+      if (
+        parsed &&
+        typeof parsed.narrative_core === "string" &&
+        Array.isArray(parsed.suggested_angles) &&
+        parsed.suggested_angles.length >= 2
+      ) {
+        return {
+          narrative_core: parsed.narrative_core.trim(),
+          suggested_angles: parsed.suggested_angles.slice(0, 3).map((a: any, i: number) => ({
+            id: String(a.id || `angulo_${i + 1}`),
+            title: String(a.title || `Ángulo ${i + 1}`).trim(),
+            rationale: String(a.rationale || "").trim(),
+          })),
+        }
+      }
+    } catch {
+      continue
+    }
+  }
+
+  // Fallback seguro si falla el parseo de LLM
+  return {
+    narrative_core: transcript.slice(0, 300).trim(),
+    suggested_angles: [
+      {
+        id: "angulo_1",
+        title: "Lección práctica y experiencia real",
+        rationale: "Enfoque directo en el aprendizaje compartido en el relato.",
+      },
+      {
+        id: "angulo_2",
+        title: "Reflexión estratégica para profesionales",
+        rationale: "Enfoque en cómo este hecho aplica al crecimiento y negocio.",
+      },
+    ],
+  }
+}
