@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Hook SessionStart: imprime los pendientes abiertos del usuario al iniciar la sesión.
+# Hook SessionStart: imprime los pendientes abiertos (del usuario y de la IA) al iniciar la sesión.
 # Todo lo que imprime este script llega al contexto de Claude en SessionStart.
 
 ARCHIVO="${CLAUDE_PROJECT_DIR:-$PWD}/ACCIONES_USUARIO.md"
@@ -9,10 +9,28 @@ if [ ! -f "$ARCHIVO" ]; then
   exit 0
 fi
 
-PENDIENTE=$(awk '/^## Pendiente/{f=1;next} /^## /{f=0} f' "$ARCHIVO")
-ABIERTOS=$(printf '%s\n' "$PENDIENTE" | grep -c '^- \[ \]' || true)
+# Secciones: usuario = "## Pendiente" o "## Pendiente del usuario"; IA = "## Pendiente de la IA"
+seccion() {
+  tr -d '\r' < "$ARCHIVO" | awk -v modo="$1" '
+    /^## /{
+      f=0
+      if (modo=="ia"      && $0 ~ /^## Pendiente de la IA/) f=1
+      if (modo=="usuario" && $0 ~ /^## Pendiente/ && $0 !~ /^## Pendiente de la IA/) f=1
+      next
+    }
+    f && $0 !~ /^[[:space:]]*$/'
+}
 
-echo "=== ACCIONES PENDIENTES DEL USUARIO ($ABIERTOS abiertas) ==="
-echo "Muéstrale al usuario este resumen antes de empezar a trabajar."
+USUARIO=$(seccion usuario)
+IA=$(seccion ia)
+N_USU=$(printf '%s\n' "$USUARIO" | grep -c '^- \[ \]' || true)
+N_IA=$(printf '%s\n' "$IA" | grep -c '^- \[ \]' || true)
+
+echo "=== PENDIENTES DEL PROYECTO: $N_USU del usuario, $N_IA de la IA ==="
+echo "Muéstrale al usuario este resumen antes de empezar a trabajar y retoma los pendientes de la IA."
 echo
-printf '%s\n' "$PENDIENTE" | grep -v '^<!--\|^-->\|^Formato'
+echo "--- Pendiente del usuario ---"
+printf '%s\n' "$USUARIO"
+echo
+echo "--- Pendiente de la IA ---"
+printf '%s\n' "$IA"

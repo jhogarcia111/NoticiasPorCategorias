@@ -12,3 +12,7 @@ _(Nada pendiente por ahora.)_
 ## Hecho
 
 _(Aquí se mueven los ítems resueltos.)_
+
+## Pendiente de la IA
+
+_(Nada pendiente por ahora.)_
